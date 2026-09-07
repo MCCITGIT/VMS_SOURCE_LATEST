@@ -9,7 +9,11 @@ Partial Class VprDashboard
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
         CheckLogin()
         If Not IsPostBack Then
-            SetDefaultDateFilter()
+            If Session("PaymentReconciliationSearchCriteria") IsNot Nothing Then
+                RetrieveSearchCriteria()
+            Else
+                SetDefaultDateFilter()
+            End If
             BindGrid()
         End If
     End Sub
@@ -26,6 +30,31 @@ Partial Class VprDashboard
         txtFromDate.Text = New DateTime(currentYear, 1, 1).ToString("dd-MM-yyyy")
         txtToDate.Text = New DateTime(currentYear, 12, 31).ToString("dd-MM-yyyy")
         txtVendorName.Text = String.Empty
+
+        SaveSearchCriteria()
+    End Sub
+
+    Private Sub SaveSearchCriteria()
+        Session("PaymentReconciliationSearchCriteria") = Nothing
+        Dim dto As New VendorPaymentSearchCriteria()
+        dto.VendorName = txtVendorName.Text.Trim()
+        dto.FromDate = txtFromDate.Text.Trim()
+        dto.ToDate = txtToDate.Text.Trim()
+        dto.PageNo = gvFgVendorlist.PageIndex
+        Session("PaymentReconciliationSearchCriteria") = dto
+    End Sub
+
+    Public Sub RetrieveSearchCriteria()
+        If Session("PaymentReconciliationSearchCriteria") IsNot Nothing Then
+            Dim searchCriteria As VendorPaymentSearchCriteria =
+            CType(Session("PaymentReconciliationSearchCriteria"), VendorPaymentSearchCriteria)
+            txtVendorName.Text = searchCriteria.VendorName
+            txtFromDate.Text = searchCriteria.FromDate
+            txtToDate.Text = searchCriteria.ToDate
+            gvFgVendorlist.PageIndex = searchCriteria.PageNo
+        End If
+        'Update session with current values
+        SaveSearchCriteria()
     End Sub
 
     Private Sub BindGrid()
@@ -37,19 +66,22 @@ Partial Class VprDashboard
             Dim fromDate As String = FormatDate(txtFromDate.Text)
             Dim toDate As String = FormatDate(txtToDate.Text)
 
-            Dim pageNo = gvFgVendorlist.PageIndex + 1
-            Dim pageSize = gvFgVendorlist.PageSize
+            'Dim pageNo = gvFgVendorlist.PageIndex + 1
+            'Dim pageSize = gvFgVendorlist.PageSize
 
             Dim obj As POLinkingRequestClass = New POLinkingRequestClass()
-            Dim ds As DataSet = obj.GetVendorPaymentDashboardDetails(vendorName, fromDate, toDate, pageNo, pageSize, userInfo.userIDEntity)
+            'Dim ds As DataSet = obj.GetVendorPaymentDashboardDetails(vendorName, fromDate, toDate, pageNo, pageSize, userInfo.userIDEntity)
+            Dim ds As DataSet = obj.GetVendorPaymentDashboardDetails(vendorName, fromDate, toDate, userInfo.userIDEntity)
             Dim table As DataTable = RmGridHelper.GetTable(ds)
             'RmGridHelper.BindPaged(gvRmPendingList, table)
             If table IsNot Nothing AndAlso table.Rows.Count > 0 Then
                 gvFgVendorlist.Visible = True
                 gvFgVendorlist.DataSource = table
                 gvFgVendorlist.DataBind()
-                TotalRecords = Convert.ToInt32(table.Rows(0)("total_records"))
-                BindPager()
+                '        gvFgVendorlist.VirtualItemCount =
+                'Convert.ToInt32(table.Rows(0)("total_records"))
+                'TotalRecords = Convert.ToInt32(table.Rows(0)("total_records"))
+                'BindPager()
             End If
         Catch ex As Exception
             Throw
@@ -82,48 +114,50 @@ Partial Class VprDashboard
 
     End Function
 
-    Private Property TotalRecords As Integer
-        Get
-            Return If(ViewState("TotalRecords") Is Nothing, 0, Convert.ToInt32(ViewState("TotalRecords")))
-        End Get
-        Set(value As Integer)
-            ViewState("TotalRecords") = value
-        End Set
-    End Property
+    'Private Property TotalRecords As Integer
+    '    Get
+    '        Return If(ViewState("TotalRecords") Is Nothing, 0, Convert.ToInt32(ViewState("TotalRecords")))
+    '    End Get
+    '    Set(value As Integer)
+    '        ViewState("TotalRecords") = value
+    '    End Set
+    'End Property
 
-    Private Sub BindPager()
-        Dim totalPages As Integer = CInt(Math.Ceiling(TotalRecords / gvFgVendorlist.PageSize))
-        ddlPageNumber.Items.Clear()
-        For i As Integer = 1 To totalPages
-            ddlPageNumber.Items.Add(
-                New ListItem(i.ToString(), i.ToString())
-            )
-        Next
-        ddlPageNumber.SelectedValue = (gvFgVendorlist.PageIndex + 1).ToString()
-        lblTotalPages.Text = totalPages.ToString()
-    End Sub
+    'Private Sub BindPager()
+    '    Dim totalPages As Integer = CInt(Math.Ceiling(TotalRecords / gvFgVendorlist.PageSize))
+    '    ddlPageNumber.Items.Clear()
+    '    For i As Integer = 1 To totalPages
+    '        ddlPageNumber.Items.Add(
+    '            New ListItem(i.ToString(), i.ToString())
+    '        )
+    '    Next
+    '    ddlPageNumber.SelectedValue = (gvFgVendorlist.PageIndex + 1).ToString()
+    '    lblTotalPages.Text = totalPages.ToString()
+    'End Sub
 
-    Protected Sub Page_Click(sender As Object, e As EventArgs)
-        Dim btn As LinkButton = CType(sender, LinkButton)
-        gvFgVendorlist.PageIndex = Convert.ToInt32(btn.CommandArgument) - 1
-        BindGrid()
-    End Sub
+    'Protected Sub Page_Click(sender As Object, e As EventArgs)
+    '    Dim btn As LinkButton = CType(sender, LinkButton)
+    '    gvFgVendorlist.PageIndex = Convert.ToInt32(btn.CommandArgument) - 1
+    '    BindGrid()
+    'End Sub
 
     Protected Sub btnSubmit_Click(sender As Object, e As EventArgs)
         gvFgVendorlist.PageIndex = 0
+        SaveSearchCriteria()
         BindGrid()
     End Sub
     Protected Sub btnReset_Click(sender As Object, e As EventArgs)
-        txtVendorName.Text = ""
-        txtFromDate.Text = String.Empty
-        txtToDate.Text = String.Empty
+        Session("PaymentReconciliationSearchCriteria") = Nothing
+        SetDefaultDateFilter()
+        gvFgVendorlist.PageIndex = 0
+        BindGrid()
     End Sub
 
-    'Protected Sub gvFgVendorlist_PageIndexChanging(sender As Object, e As GridViewPageEventArgs)
-    '    gvFgVendorlist.PageIndex = e.NewPageIndex
-
-    '    BindGrid()
-    'End Sub
+    Protected Sub gvFgVendorlist_PageIndexChanging(sender As Object, e As GridViewPageEventArgs)
+        gvFgVendorlist.PageIndex = e.NewPageIndex
+        SaveSearchCriteria()
+        BindGrid()
+    End Sub
 
     Protected Sub gvFgVendorlist_RowCommand(sender As Object, e As GridViewCommandEventArgs)
         Try
@@ -145,6 +179,18 @@ Partial Class VprDashboard
             '    "&toDate=" & Server.UrlEncode(toDate)
             '    )
             'End If
+
+            If e.CommandName = "Page" Then
+                Exit Sub
+            End If
+
+
+            Dim linkButton As LinkButton = TryCast(e.CommandSource, LinkButton)
+
+            If linkButton Is Nothing Then
+                Exit Sub
+            End If
+
             Dim row As GridViewRow = CType(CType(e.CommandSource, LinkButton).NamingContainer, GridViewRow)
             Dim hdnBrandId As HiddenField = CType(row.FindControl("hdnBrandId"), HiddenField)
             Dim unitCode As String = hdnBrandId.Value
@@ -213,30 +259,30 @@ Partial Class VprDashboard
         End Try
     End Sub
 
-    Protected Sub lnkPrev_Click(sender As Object, e As EventArgs)
-        If gvFgVendorlist.PageIndex > 0 Then
-            gvFgVendorlist.PageIndex -= 1
-            BindGrid()
-        End If
-    End Sub
+    'Protected Sub lnkPrev_Click(sender As Object, e As EventArgs)
+    '    If gvFgVendorlist.PageIndex > 0 Then
+    '        gvFgVendorlist.PageIndex -= 1
+    '        BindGrid()
+    '    End If
+    'End Sub
 
-    Protected Sub lnkNext_Click(sender As Object, e As EventArgs)
-        Dim totalPages As Integer = Convert.ToInt32(ViewState("TotalPages"))
+    'Protected Sub lnkNext_Click(sender As Object, e As EventArgs)
+    '    Dim totalPages As Integer = Convert.ToInt32(ViewState("TotalPages"))
 
-        If gvFgVendorlist.PageIndex < totalPages - 1 Then
-            gvFgVendorlist.PageIndex += 1
-            BindGrid()
-        End If
-    End Sub
+    '    If gvFgVendorlist.PageIndex < totalPages - 1 Then
+    '        gvFgVendorlist.PageIndex += 1
+    '        BindGrid()
+    '    End If
+    'End Sub
 
-    Protected Sub lnkPage_Click(sender As Object, e As EventArgs)
-        Dim btn As LinkButton = CType(sender, LinkButton)
-        gvFgVendorlist.PageIndex = Convert.ToInt32(btn.CommandArgument) - 1
-        BindGrid()
-    End Sub
+    'Protected Sub lnkPage_Click(sender As Object, e As EventArgs)
+    '    Dim btn As LinkButton = CType(sender, LinkButton)
+    '    gvFgVendorlist.PageIndex = Convert.ToInt32(btn.CommandArgument) - 1
+    '    BindGrid()
+    'End Sub
 
-    Protected Sub ddlPageNumber_SelectedIndexChanged(sender As Object, e As EventArgs)
-        gvFgVendorlist.PageIndex = Convert.ToInt32(ddlPageNumber.SelectedValue) - 1
-        BindGrid()
-    End Sub
+    'Protected Sub ddlPageNumber_SelectedIndexChanged(sender As Object, e As EventArgs)
+    '    gvFgVendorlist.PageIndex = Convert.ToInt32(ddlPageNumber.SelectedValue) - 1
+    '    BindGrid()
+    'End Sub
 End Class

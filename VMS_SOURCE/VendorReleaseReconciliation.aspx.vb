@@ -159,10 +159,13 @@ Partial Class VendorReleaseReconciliation
             Dim ds As New DataSet
             If Not String.IsNullOrEmpty(SelectedFlag) Then
                 If SelectedFlag = "GRNNOTDONE" Then
+                    lblPanelTitle.Text = "Grn Not Done List"
                     ds = obj.GetGrnNotDoneList(ddlUnit.SelectedValue, FromDate, ToDate, pageNo, pageSize)
                 ElseIf SelectedFlag = "MANUALGRN" Then
+                    lblPanelTitle.Text = "Manual Grn List"
                     ds = obj.GetManualGrnList(ddlUnit.SelectedValue, FromDate, ToDate, pageNo, pageSize)
                 ElseIf SelectedFlag = "PAID" Then
+                    lblPanelTitle.Text = "Payment List"
                     ds = obj.GetInvPaymentList(ddlUnit.SelectedValue, FromDate, ToDate, pageNo, pageSize)
                 End If
                 Dim totalRecords As Integer = 0
