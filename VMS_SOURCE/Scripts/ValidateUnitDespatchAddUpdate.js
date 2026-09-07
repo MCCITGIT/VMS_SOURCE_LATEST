@@ -1,7 +1,15 @@
-﻿//Riddhi
+//Riddhi
 //20/12/2011 
 var check = false;
 var GridTotalRate = 0;
+
+// Modified-by MUKESH BHAGAT on 07-09-2026 : under the redesigned MasterPage server controls
+// render with the ctl00_ContentPlaceHolder1_ prefix, so every bare getElementById in this
+// file returned null. Resolves the bare id first (backward compatible), then the mangled one.
+function vmsEl(id) {
+    return document.getElementById(id) || document.querySelector('[id$="_' + id + '"]');
+}
+
 function ValidateSubmit() {
  firstErrorControl = "";
     errMsg = "";
@@ -63,14 +71,14 @@ function ValidateSubmit() {
           return false;
       }
       else {
-          var n = document.getElementById('btnSubmit').value;
+          var n = vmsEl('btnSubmit').value;
           //         if ((document.getElementById("lblErrorMessage").innerHTML == '' ) {
-          if (document.getElementById('hdnNoMaster').value == 'Y') {
+          if (vmsEl('hdnNoMaster').value == 'Y') {
                alert("No Transit day found for this Depot .Please kindly intimate HO")
           }
           if (confirm('Are you sure to Submit?')) {
-              document.getElementById('btnSubmit').disabled = true;
-              __doPostBack(document.getElementById('btnSubmit').name, '');
+              vmsEl('btnSubmit').disabled = true;
+              __doPostBack(vmsEl('btnSubmit').name, '');
               document.getElementById("lblErrorMessage").innerHTML = ''
           }
           else {
@@ -84,7 +92,8 @@ function ValidateSubmit() {
 function validateGrid() {
 
    
-    var Grid = document.getElementById('gvSKUDetails');
+    var Grid = vmsEl('gvSKUDetails');
+    if (!Grid || !Grid.rows) { return true; }
     var rowcount = Grid.rows.length - 1;
   
     for (var rowno = 1; rowno < Grid.rows.length-1; rowno++) {
@@ -123,12 +132,12 @@ function RowCheck(chk, txt, txtLotNo, hdnSkuRate, hdnSkuGST, lblTotalRate) {
         textBox.focus()
              
          var txtDate;
-         txtDate = document.getElementById('txtChallanDt').value;
+         txtDate = vmsEl('txtChallanDt').value;
          var DD = txtDate.substring(0, 2);
          var MM = txtDate.substring(3, 5);
          var YYYY = txtDate.substring(6, 10);
-         var UnitOracleId = document.getElementById('hdnUnitOracleId').value;
-         var PONo = document.getElementById('ddlPONo').value;
+         var UnitOracleId = vmsEl('hdnUnitOracleId').value;
+         var PONo = vmsEl('ddlPONo').value;
          var lotNo = "IND-" + UnitOracleId + "-" + PONo + "-" + DD + "-" + MM + "-" + YYYY;
 
          document.getElementById(txtLotNo).value = lotNo;
@@ -157,7 +166,9 @@ function CheckMaxLimit(txt, lbl, hdnSkuRate, hdnSkuGST, lblTotalRate) {
     var label = document.getElementById(lbl);
     var pendingLoad = parseFloat(label.innerHTML);
     var enterdValue = parseFloat(textBox.value);
-    var maxLimit = parseFloat(document.getElementById('hdnMaxDespLimit').value);
+    var maxLimit = parseFloat(vmsEl('hdnMaxDespLimit').value);
+    debugger;
+    console.log('maxLimit:', maxLimit);
     var maxVal = parseFloat(pendingLoad + (pendingLoad * maxLimit / 100));
 
 
@@ -169,18 +180,34 @@ function CheckMaxLimit(txt, lbl, hdnSkuRate, hdnSkuGST, lblTotalRate) {
     let totalAmtWithGST = totalAmt + (totalAmt * (parseFloat(gst) / 100))
     totalAmtWithGST = totalAmtWithGST.toFixed(2);
     document.getElementById(lblTotalRate).innerHTML = totalAmtWithGST;
-
-    if (enterdValue > maxVal && pendingLoad != 0) {
+    if (pendingLoad==0) {
+        alert('Pending Despatch NOP Value Is Zero');
+        document.getElementById(txt).value = '';
+        document.getElementById(lblTotalRate).innerHTML = '';
+    }
+    else if (enterdValue > maxVal && pendingLoad != 0) {
         alert('Despatch NOP Exceeds Maximum Limit');
         document.getElementById(txt).value = '';
         document.getElementById(lblTotalRate).innerHTML = '';
     }
+    else if (enterdValue < 0) {
+        alert('Despatch NOP Cannot Be Negative');
+        document.getElementById(txt).value = '';
+        document.getElementById(lblTotalRate).innerHTML = '';
+    }
+ 
     GridSummation();
 }
 
 function GridSummation() {
-   
-    var Grid = document.getElementById('gvSKUDetails');
+
+    // Modified-by MUKESH BHAGAT on 07-09-2026 : under the redesigned MasterPage the grid
+    // renders as ctl00_ContentPlaceHolder1_gvSKUDetails, so the bare id returned null and
+    // this threw "Cannot read properties of null (reading 'rows')". Resolve either id, and
+    // bail out quietly when the grid has no rows (GridView renders no table at all then).
+    var Grid = vmsEl('gvSKUDetails');
+    console.log('Grid:', Grid);
+    if (!Grid || !Grid.rows) { return; }
     var rowcount = Grid.rows.length - 1;
     let totalAmtWithGST = 0;
     let totalQty = 0;
