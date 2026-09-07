@@ -192,7 +192,8 @@ function calculatePercentage(tsl, depot_indent_nop, percent_label, indent_nop)
        }
    }
 
-   AddTotalLtrKg()}
+   AddTotalLtrKg()
+}
 
 
 function AddTotalLtrKg() {
@@ -238,40 +239,47 @@ function AddTotalLtrKg() {
 }
 function validateSKUList_vr1() {
     debugger;
-    var theGridView = document.getElementById('ctl00_ContentPlaceHolder1_gvIndentSKUList');
+    // ddlDepot / ddlVendorUnit use ClientIDMode="Static" on AddUpdateIndentEntry_HO.aspx
+    var ddlDepotId = "ddlDepot";
+    var ddlVendorUnitId = "ddlVendorUnit";
+    var theGridView = document.getElementById('ctl00_ContentPlaceHolder1_gvIndentSKUList')
+        || document.getElementById('gvIndentSKUList');
+    var lblErrorMessage = document.getElementById("ctl00_ContentPlaceHolder1_lblErrorMessage")
+        || document.getElementById("lblErrorMessage");
     var flag = 0;
     var flag1 = 0;
     firstErrorControl = "";
     var txtNewLoad_id = null;
-    //document.getElementById("lblErrorMessage").innerHTML = "";
-    document.getElementById("ctl00_ContentPlaceHolder1_lblErrorMessage").innerHTML = "";
+    if (lblErrorMessage) {
+        lblErrorMessage.innerHTML = "";
+    }
 
     errMsg = "";
     var allowedExtensions = [".xls", ".xlsx", ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".eml", ".msg"];
 
     
-    if (ValidateRequired("ctl00_ContentPlaceHolder1_ddlDepot", "Please Select a Depot.<br/>")) {
-        var select = document.querySelector("#" + "ctl00_ContentPlaceHolder1_ddlDepot" + "+ .select2-container .selection .select2-selection");
+    if (ValidateRequired(ddlDepotId, "Please Select a Depot.<br/>")) {
+        var select = document.querySelector("#" + ddlDepotId + "+ .select2-container .selection .select2-selection");
         if (select != null) {
             select.style.backgroundColor = "white";
         }
     }
     else {
-        firstErrorControl = "ctl00_ContentPlaceHolder1_ddlDepot";
-        var select = document.querySelector("#" + "ctl00_ContentPlaceHolder1_ddlDepot" + "+ .select2-container .selection .select2-selection");
+        firstErrorControl = ddlDepotId;
+        var select = document.querySelector("#" + ddlDepotId + "+ .select2-container .selection .select2-selection");
         if (select != null) {
             select.style.backgroundColor = "yellow";
         }
     }
-    if (ValidateRequired("ctl00_ContentPlaceHolder1_ddlVendorUnit", "Please Select Vendor Unit.<br/>")) {
-        var select = document.querySelector("#" + "ctl00_ContentPlaceHolder1_ddlVendorUnit" + "+ .select2-container .selection .select2-selection");
+    if (ValidateRequired(ddlVendorUnitId, "Please Select Vendor Unit.<br/>")) {
+        var select = document.querySelector("#" + ddlVendorUnitId + "+ .select2-container .selection .select2-selection");
         if (select != null) {
             select.style.backgroundColor = "white";
         }
     }
     else {
-        firstErrorControl = "ctl00_ContentPlaceHolder1_ddlVendorUnit";
-        var select = document.querySelector("#" + "ctl00_ContentPlaceHolder1_ddlVendorUnit" + "+ .select2-container .selection .select2-selection");
+        firstErrorControl = ddlVendorUnitId;
+        var select = document.querySelector("#" + ddlVendorUnitId + "+ .select2-container .selection .select2-selection");
         if (select != null) {
             select.style.backgroundColor = "yellow";
         }
@@ -341,8 +349,12 @@ function validateSKUList_vr1() {
         errMsg += "Please enter at least one Quantity greater than 0.<br/>";
     }
     if (flag1 === 1 || flag === 0 || errMsg != "") {
-        document.getElementById("ctl00_ContentPlaceHolder1_lblErrorMessage").innerHTML = errMsg;
-        if (firstErrorControl !== "") document.getElementById(firstErrorControl).focus();
+        if (lblErrorMessage) {
+            lblErrorMessage.innerHTML = errMsg;
+        }
+        if (firstErrorControl !== "" && document.getElementById(firstErrorControl)) {
+            document.getElementById(firstErrorControl).focus();
+        }
         return false;
     }
     var confirmSave = confirm("Are you sure you want to save this record?");

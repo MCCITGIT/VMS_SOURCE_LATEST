@@ -10,13 +10,15 @@
     <script type="text/javascript">
         document.onkeydown = checkValue;
         function checkValue() {
-
+            // Modified-by MUKESH BHAGAT on 07-09-2026 : ClientID resolution - bare ids return
+            // null under the MasterPage prefix, so F7/F8 threw instead of clicking.
             if (event.keyCode == 118) {  // button Add (F7 keypress)
-                document.getElementById('btnSubmit').click()
+                var b = document.getElementById('<%= btnSubmit.ClientID %>');
+                if (b) { b.click(); }
             }
             else if (event.keyCode == 119) { // button Search (F8 keypress)
-
-                document.getElementById('btnCancel').click()
+                var c = document.getElementById('<%= btnCancel.ClientID %>');
+                if (c) { c.click(); }
             }
         }
 
@@ -71,16 +73,15 @@
     </script>
 
     <script type="text/javascript">
+        // Modified-by MUKESH BHAGAT on 07-09-2026 : these lookups used bare ids, which return
+        // null under the MasterPage's ctl00_ContentPlaceHolder1_ prefixing - both handlers threw
+        // on every load. Resolved through ClientID, with a null guard.
         document.addEventListener("DOMContentLoaded", function () {
-            var currentDate = new Date();
-            currentDate.setDate(currentDate.getDate());
-            document.getElementById('txtCenvatDt').setAttribute('max', currentDate.toISOString().split('T')[0]);
-        });
-
-        document.addEventListener("DOMContentLoaded", function () {
-            var currentDate = new Date();
-            currentDate.setDate(currentDate.getDate());
-            document.getElementById('txtChallanDt').setAttribute('max', currentDate.toISOString().split('T')[0]);
+            var maxDate = new Date().toISOString().split('T')[0];
+            var cenvatDt = document.getElementById('<%= txtCenvatDt.ClientID %>');
+            if (cenvatDt) { cenvatDt.setAttribute('max', maxDate); }
+            var challanDt = document.getElementById('<%= txtChallanDt.ClientID %>');
+            if (challanDt) { challanDt.setAttribute('max', maxDate); }
         });
     </script>
     <script src="Scripts/ValidateUnitDespatchAddUpdate.js?time=<%=  DateTime.Now.ToString("yyyy.MM.dd-HH.mm.ss.fff") %>" type="text/javascript"></script>
@@ -310,7 +311,20 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-control-label">Truck No:<span class="mandatory">*</span></label>
-                        <asp:TextBox ID="txtTruckNo" CssClass="form-control" TabIndex="7" runat="server" MaxLength="10"></asp:TextBox>
+                        <%-- Modified-by MUKESH BHAGAT on 07-09-2026 : must sit inside an UpdatePanel -
+                             the Indent selection posts back asynchronously and auto-fills this field
+                             (PopulateIndentDetails), but a control outside a panel is never
+                             re-rendered, so the vehicle number was set server-side yet never showed.
+                             MaxLength raised 10 -> 20: Pando vehicle numbers like "WB 61 B 7116"
+                             are longer than 10 and would be un-typeable manually. --%>
+                        <asp:UpdatePanel ID="UpdatePanelTruckNo" runat="server">
+                            <ContentTemplate>
+                                <asp:TextBox ID="txtTruckNo" CssClass="form-control" TabIndex="7" runat="server" MaxLength="20"></asp:TextBox>
+                            </ContentTemplate>
+                            <Triggers>
+                                <asp:PostBackTrigger ControlID="btnSubmit" />
+                            </Triggers>
+                        </asp:UpdatePanel>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -387,7 +401,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-control-label">Final Invoice Value (After Tax):<span id="Span1" class="mandatory" runat="server">*</span></label>
-                        <asp:TextBox ID="txtFinalInvoiceValue" CssClass="form-control" MaxLength="10" TextMode="Number" TabIndex="10" runat="server"></asp:TextBox>
+                        <asp:TextBox ID="txtFinalInvoiceValue" CssClass="form-control" MaxLength="10" step="0.01" TextMode="Number" TabIndex="10" runat="server"></asp:TextBox>
                     </div>
                 </div>
                 <div class="col-md-6">
