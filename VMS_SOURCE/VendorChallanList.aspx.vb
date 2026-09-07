@@ -303,6 +303,23 @@ Partial Class VendorChallanList
     'End Sub
 
     Protected Sub ImgbtnSearch_Click(sender As Object, e As EventArgs) Handles ImgbtnSearch.Click
+        'Modified-by MUKESH BHAGAT on 07-09-2026 : a fresh search always starts at page 1
+        gvChallanDetails.PageIndex = 0
+        BindGrid()
+    End Sub
+
+    'Modified-by MUKESH BHAGAT on 07-09-2026 : Results Per Page / pagination were present in the
+    'markup but had no handlers - changing the page size did nothing and clicking a pager link
+    'threw "PageIndexChanging which wasn't handled". Wired the same pattern as
+    'UsrPrflListNewMod.aspx (ddlPageSize_SelectedIndexChanged + IndexChanging).
+    Protected Sub ddlPageSize_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles ddlPageSize.SelectedIndexChanged
+        gvChallanDetails.PageSize = Convert.ToInt32(ddlPageSize.SelectedValue)
+        gvChallanDetails.PageIndex = 0
+        BindGrid()
+    End Sub
+
+    Protected Sub gvChallanDetails_IndexChanging(ByVal sender As Object, ByVal e As GridViewPageEventArgs) Handles gvChallanDetails.PageIndexChanging
+        gvChallanDetails.PageIndex = e.NewPageIndex
         BindGrid()
     End Sub
 
@@ -391,7 +408,11 @@ Partial Class VendorChallanList
             End Try
             System.Math.Min(System.Threading.Interlocked.Increment(index), index - 1)
         End While
-        ddlPageSize.Items.Insert(0, New ListItem("999", 999, True))
+        'Modified-by MUKESH BHAGAT on 07-09-2026 : 999 was inserted as the SELECTED default,
+        'so the grid always showed everything and the pager never engaged. Default is now the
+        'first configured page size (same behaviour as UsrPrflListNewMod.aspx); 999 stays
+        'available at the end as the "show all" choice.
+        ddlPageSize.Items.Add(New ListItem("999", "999"))
         gvChallanDetails.PageSize = ddlPageSize.SelectedValue
     End Sub
     Private Sub PopulateUnit()
