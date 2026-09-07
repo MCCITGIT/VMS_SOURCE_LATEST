@@ -676,11 +676,11 @@ Public Class POLinkingRequestClass
         End Try
     End Function
 
-    Public Function GetVendorPaymentDashboardDetails(ByVal vendorName As String, ByVal fromDate As String, ByVal toDate As String, ByVal pageNo As Integer, ByVal pageSize As Integer, ByVal userId As String) As DataSet
+    Public Function GetVendorPaymentDashboardDetails(ByVal vendorName As String, ByVal fromDate As String, ByVal toDate As String, ByVal userId As String) As DataSet
 
         Try
             Dim DS As DataSet
-            Dim sqlParams(5) As SqlParameter
+            Dim sqlParams(3) As SqlParameter
 
             sqlParams(0) = New SqlParameter()
             sqlParams(0).ParameterName = "@from_date"
@@ -706,17 +706,17 @@ Public Class POLinkingRequestClass
             sqlParams(3).Direction = ParameterDirection.Input
             sqlParams(3).Value = If(String.IsNullOrEmpty(vendorName), DBNull.Value, CObj(vendorName))
 
-            sqlParams(4) = New SqlParameter()
-            sqlParams(4).ParameterName = "@page_number"
-            sqlParams(4).DbType = DbType.Int32
-            sqlParams(4).Direction = ParameterDirection.Input
-            sqlParams(4).Value = pageNo
+            'sqlParams(4) = New SqlParameter()
+            'sqlParams(4).ParameterName = "@page_number"
+            'sqlParams(4).DbType = DbType.Int32
+            'sqlParams(4).Direction = ParameterDirection.Input
+            'sqlParams(4).Value = pageNo
 
-            sqlParams(5) = New SqlParameter()
-            sqlParams(5).ParameterName = "@page_size"
-            sqlParams(5).DbType = DbType.Int32
-            sqlParams(5).Direction = ParameterDirection.Input
-            sqlParams(5).Value = pageSize
+            'sqlParams(5) = New SqlParameter()
+            'sqlParams(5).ParameterName = "@page_size"
+            'sqlParams(5).DbType = DbType.Int32
+            'sqlParams(5).Direction = ParameterDirection.Input
+            'sqlParams(5).Value = pageSize
 
             DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[payment_reconciliation_dashboard_dtls]", CommandType.StoredProcedure, sqlParams)
             Return DS
