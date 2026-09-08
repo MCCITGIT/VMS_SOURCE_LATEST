@@ -317,7 +317,9 @@ Partial Class UnitDespatchPlanListVr1
             End Try
             System.Math.Min(System.Threading.Interlocked.Increment(index), index - 1)
         End While
-        ddlPageSize.Items.Insert(0, New ListItem("999", 999, True))
+        'Modified-by MUKESH BHAGAT on 08-09-2026 : removed the hard-coded 999 "show all" default.
+        'The dropdown now holds only the sizes configured in Web.config (PageSize), and the
+        'default is the first of those - same as Estimation_Data_Despatched_Status.aspx.
         gvChallanDetails.PageSize = ddlPageSize.SelectedValue
     End Sub
     Private Sub PopulateUnit()
@@ -566,5 +568,22 @@ z:
     End Sub
 #End Region
 
+    'Modified-by MUKESH BHAGAT on 07-09-2026 : Results Per Page and the pager were both dead on
+    'this page - ddlPageSize posted back with nothing handling it, and the pager links did
+    'nothing because PageIndexChanging was never handled. Wired the same way as the working
+    'Estimation_Data_Despatched_Status.aspx. PageIndex is reset when the size changes so the
+    'grid cannot be left sitting on a page number that no longer exists under the new size.
+#Region "Paging"
+    Protected Sub ddlPageSize_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles ddlPageSize.SelectedIndexChanged
+        gvChallanDetails.PageSize = Convert.ToInt32(ddlPageSize.SelectedValue)
+        gvChallanDetails.PageIndex = 0
+        BindGrid()
+    End Sub
+
+    Protected Sub gvChallanDetails_PageIndexChanging(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewPageEventArgs) Handles gvChallanDetails.PageIndexChanging
+        gvChallanDetails.PageIndex = e.NewPageIndex
+        BindGrid()
+    End Sub
+#End Region
 
 End Class

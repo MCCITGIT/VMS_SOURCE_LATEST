@@ -408,11 +408,9 @@ Partial Class VendorChallanList
             End Try
             System.Math.Min(System.Threading.Interlocked.Increment(index), index - 1)
         End While
-        'Modified-by MUKESH BHAGAT on 07-09-2026 : 999 was inserted as the SELECTED default,
-        'so the grid always showed everything and the pager never engaged. Default is now the
-        'first configured page size (same behaviour as UsrPrflListNewMod.aspx); 999 stays
-        'available at the end as the "show all" choice.
-        ddlPageSize.Items.Add(New ListItem("999", "999"))
+        'Modified-by MUKESH BHAGAT on 08-09-2026 : the hard-coded 999 "show all" size is gone.
+        'The dropdown now holds only the sizes configured in Web.config (PageSize), and the
+        'default is the first of those - same as Estimation_Data_Despatched_Status.aspx.
         gvChallanDetails.PageSize = ddlPageSize.SelectedValue
     End Sub
     Private Sub PopulateUnit()
