@@ -855,5 +855,91 @@ Public Class POLinkingRequestClass
         End Try
     End Function
 
+    Public Function GetDispatchList(ByVal unitCode As String, ByVal fromDate As String, ByVal toDate As String, ByVal pageNo As Integer, ByVal pageSize As Integer) As DataSet
+        Try
+            Dim DS As DataSet
+            Dim sqlParams(2) As SqlParameter
+
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@unit_code"
+            sqlParams(0).DbType = DbType.String
+            sqlParams(0).Direction = ParameterDirection.Input
+            sqlParams(0).Value = unitCode
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@from_date"
+            sqlParams(1).DbType = DbType.DateTime
+            sqlParams(1).Direction = ParameterDirection.Input
+            sqlParams(1).Value = fromDate
+
+            sqlParams(2) = New SqlParameter()
+            sqlParams(2).ParameterName = "@to_date"
+            sqlParams(2).DbType = DbType.DateTime
+            sqlParams(2).Direction = ParameterDirection.Input
+            sqlParams(2).Value = toDate
+
+            'sqlParams(3) = New SqlParameter()
+            'sqlParams(3).ParameterName = "@page_number"
+            'sqlParams(3).DbType = DbType.Int32
+            'sqlParams(3).Direction = ParameterDirection.Input
+            'sqlParams(3).Value = pageNo
+
+            'sqlParams(4) = New SqlParameter()
+            'sqlParams(4).ParameterName = "@page_size"
+            'sqlParams(4).DbType = DbType.Int32
+            'sqlParams(4).Direction = ParameterDirection.Input
+            'sqlParams(4).Value = pageSize
+
+            DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[get_dispatched_details]", CommandType.StoredProcedure, sqlParams)
+            Return DS
+
+        Catch ex As Exception
+            Throw
+        End Try
+    End Function
+
+    Public Function GetDeliveredList(ByVal unitCode As String, ByVal fromDate As String, ByVal toDate As String, ByVal pageNo As Integer, ByVal pageSize As Integer) As DataSet
+        Try
+            Dim DS As DataSet
+            Dim sqlParams(2) As SqlParameter
+
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@unit_code"
+            sqlParams(0).DbType = DbType.String
+            sqlParams(0).Direction = ParameterDirection.Input
+            sqlParams(0).Value = unitCode
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@from_date"
+            sqlParams(1).DbType = DbType.DateTime
+            sqlParams(1).Direction = ParameterDirection.Input
+            sqlParams(1).Value = fromDate
+
+            sqlParams(2) = New SqlParameter()
+            sqlParams(2).ParameterName = "@to_date"
+            sqlParams(2).DbType = DbType.DateTime
+            sqlParams(2).Direction = ParameterDirection.Input
+            sqlParams(2).Value = toDate
+
+            'sqlParams(3) = New SqlParameter()
+            'sqlParams(3).ParameterName = "@page_number"
+            'sqlParams(3).DbType = DbType.Int32
+            'sqlParams(3).Direction = ParameterDirection.Input
+            'sqlParams(3).Value = pageNo
+
+            'sqlParams(4) = New SqlParameter()
+            'sqlParams(4).ParameterName = "@page_size"
+            'sqlParams(4).DbType = DbType.Int32
+            'sqlParams(4).Direction = ParameterDirection.Input
+            'sqlParams(4).Value = pageSize
+
+            DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[get_delivered_details]", CommandType.StoredProcedure, sqlParams)
+            Return DS
+
+        Catch ex As Exception
+            Throw
+        End Try
+    End Function
+
 #End Region
 End Class
