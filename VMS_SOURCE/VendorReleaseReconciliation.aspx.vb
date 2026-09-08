@@ -167,6 +167,12 @@ Partial Class VendorReleaseReconciliation
                 ElseIf SelectedFlag = "PAID" Then
                     lblPanelTitle.Text = "Payment List"
                     ds = obj.GetInvPaymentList(ddlUnit.SelectedValue, FromDate, ToDate, pageNo, pageSize)
+                ElseIf SelectedFlag = "DISPATCHED" Then
+                    lblPanelTitle.Text = "Dispatched List"
+                    ds = obj.GetDispatchList(ddlUnit.SelectedValue, FromDate, ToDate, pageNo, pageSize)
+                ElseIf SelectedFlag = "DELIVERED" Then
+                    lblPanelTitle.Text = "Delivered List"
+                    ds = obj.GetDeliveredList(ddlUnit.SelectedValue, FromDate, ToDate, pageNo, pageSize)
                 End If
                 Dim totalRecords As Integer = 0
 
