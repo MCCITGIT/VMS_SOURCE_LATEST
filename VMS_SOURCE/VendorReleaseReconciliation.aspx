@@ -166,6 +166,28 @@
                                     <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                     <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
+                                <asp:BoundField HeaderText="PO No" DataField="po_number">
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                </asp:BoundField>
+                                <asp:BoundField HeaderText="Rtv Qty" DataField="rtv_qty"
+                                    DataFormatString="{0:N2}">
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                </asp:BoundField>
+                                <asp:BoundField HeaderText="Rtv Reason" DataField="rtv_reason">
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                </asp:BoundField>
+                                <asp:BoundField HeaderText="Deliver Qty" DataField="deliver_qty"
+                                    DataFormatString="{0:N2}">
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                </asp:BoundField>
+                                <asp:BoundField HeaderText="Grn Status" DataField="grn_status">
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                </asp:BoundField>
                             </Columns>
 
                             <%--<Columns>
@@ -211,7 +233,7 @@
                     </Columns>--%>
                         </asp:GridView>
                     </div>
-                    <div class="custom-pagination">
+                    <%--<div class="custom-pagination">
 
                         <div class="page-selector">
 
@@ -233,7 +255,7 @@
 
                         </div>
 
-                    </div>
+                    </div>--%>
                     <asp:Label ID="lblErrorMessage" CssClass="errormsg" Visible="true" runat="server"></asp:Label>
                     <div id="divErrorMessage"></div>
                 </div>
@@ -252,9 +274,9 @@
                 EventName="Click" />
 
 
-            <asp:AsyncPostBackTrigger
+            <%--<asp:AsyncPostBackTrigger
                 ControlID="ddlPageNumber"
-                EventName="SelectedIndexChanged" />
+                EventName="SelectedIndexChanged" />--%>
 
         </Triggers>
 
