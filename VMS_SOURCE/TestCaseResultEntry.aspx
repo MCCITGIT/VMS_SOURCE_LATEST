@@ -4,9 +4,11 @@
 <%--<asp:Content ID="Content1" ContentPlaceHolderID="Head1" runat="Server">
 </asp:Content>--%>
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <script type="text/javascript" src="Scripts/FunctionValidator.js"></script>
     <script type="text/javascript" src="Scripts/TestCaseResultEntryJs.js?key=<%= DateTime.Now.ToString %>"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script type="text/javascript">
         document.onkeydown = checkValue;
         function checkValue() {
@@ -91,6 +93,12 @@
             document.getElementById('txtBatchDate').setAttribute('min', currentDate.toISOString().split('T')[0]);
         });
     </script>
+    <script>
+            flatpickr("#<%= txtBatchDate.ClientID %>", {
+                dateFormat: "d/m/y",
+                minDate: "2026-09-01"
+            });
+    </script>
 
     <div class="breadcrumbs">
         <div class="leftFung">
@@ -112,7 +120,7 @@
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label class="form-control-label">Vendor:</label>
-                                <asp:DropDownList ID="ddlVendor" ClientIDMode="Static"  CssClass="form-control select2" runat="server" AutoPostBack="true" />
+                                <asp:DropDownList ID="ddlVendor" ClientIDMode="Static" CssClass="form-control select2" runat="server" AutoPostBack="true" />
                             </div>
                         </div>
                         <div class="col-md-3">
