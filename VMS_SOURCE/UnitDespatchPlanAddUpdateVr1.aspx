@@ -536,6 +536,16 @@
                 </div>
             </div>
 
+            <%-- Modified-by MUKESH BHAGAT on 08-09-2026 : full-page blocking loader shown while the
+                 uploaded bill is being validated by OCR (same look as the master page UpdateProgress),
+                 so the user can neither edit fields nor miss that something is in progress. --%>
+            <div id="divOcrLoader" class="pageLoader" style="display: none;">
+                <div class="innerLoader">
+                    <img class="loaderImg" alt="progress" src="images/ajax-loader.gif" />
+                    <p class="loaderTx">Validating the uploaded invoice, please wait...</p>
+                </div>
+            </div>
+
             <%-- Modified-by MUKESH BHAGAT on 24-08-2026 : values read from the uploaded bill by OCR.
                  Read-only - shown for verification against what the user entered above. --%>
             <div class="row" id="divInvoiceOcrPanel" style="display: none;">
@@ -1118,12 +1128,16 @@
 
         // Modified-by MUKESH BHAGAT on 31-08-2026 : while the bill is being validated the
         // user must not be able to Delete or Cancel out from under the pending save.
+        // Modified-by MUKESH BHAGAT on 08-09-2026 : also raise/lower the full-page loader so
+        // every field on the page is blocked (not just the three buttons) while the check runs.
         function ocrLockActions(lock) {
             var ids = ['<%= btnSubmit.ClientID %>', '<%= btnDelete.ClientID %>', '<%= btnCancel.ClientID %>'];
             for (var i = 0; i < ids.length; i++) {
                 var el = ocrEl(ids[i]);
                 if (el) { el.disabled = lock; }
             }
+            var loader = ocrEl('divOcrLoader');
+            if (loader) { loader.style.display = lock ? 'flex' : 'none'; }
         }
 
         function triggerInvoiceOcrUpload(fileUpload, btn) {
