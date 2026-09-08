@@ -3852,12 +3852,28 @@ body {
 }
 
 
-    /* Dropdown items */
-    .bootstrap-select .dropdown-menu li a {
-        font-size: 14px;
-        padding: 8px 12px;
-    }
+/* Dropdown items */
+.bootstrap-select .dropdown-menu li a {
+    font-size: 14px;
+    padding: 8px 12px;
+}
 
+
+
+.bootstrap-select .dropdown-menu li a:hover {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.ajax__calendar_container TABLE {
+    width: 100% !important;
+}
+.ajax__calendar_dayname {
+    white-space: nowrap;
+}
+.ajax__calendar_container {
+    width: 175px !important;
+}
 
         /* Hover */
         .bootstrap-select .dropdown-menu li a:hover {
@@ -3866,23 +3882,3 @@ body {
         }
 
 
-/*.ajax__calendar .ajax__calendar_day {
-    white-space: nowrap;
-}
-
-.ajax__calendar {
-    width: 100%;
-    z-index: 999999;
-}
-.ajax__calendar_container {
-    width: 100%;
-}
-.ajax__calendar_header {
-    width: 100%;
-}
-.ajax__calendar_body {
-    width: 100%;
-}
-.ajax__calendar_dayname {
-    white-space: nowrap;
-}*/

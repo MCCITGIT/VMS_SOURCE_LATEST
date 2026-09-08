@@ -18,8 +18,8 @@
             }
             else if (event.keyCode == 119) { // button Search (F8 keypress)
                 var c = document.getElementById('<%= btnCancel.ClientID %>');
-                if (c) { c.click(); }
-            }
+                    if (c) { c.click(); }
+                }
         }
 
         function disableBackButton() {
@@ -85,7 +85,21 @@
         });
     </script>
     <script src="Scripts/ValidateUnitDespatchAddUpdate.js?time=<%=  DateTime.Now.ToString("yyyy.MM.dd-HH.mm.ss.fff") %>" type="text/javascript"></script>
+    <style>
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
+        }
 
+        .txtBox {
+            width: 100% !important;
+            border: 1px solid #c5c5c5;
+            border-radius: 5px;
+            padding: 4px 5px;
+        }
+    </style>
     <div class="breadcrumbs">
         <div class="leftFung">
             <a href="Home.aspx" title="Home"><i class="fas fa-home"></i></a>
@@ -464,7 +478,7 @@
                                      name above the download button. --%>
                                 <div>
                                     <asp:Label ID="lblEwayDocName" runat="server" Visible="false"
-                                        Style="display: block; font-size: 11px; color: #6c757d; margin-top: 4px;white-space: nowrap;"></asp:Label>
+                                        Style="display: block; font-size: 11px; color: #6c757d; margin-top: 4px; white-space: nowrap;"></asp:Label>
                                     <asp:LinkButton ID="lnkDownloadEway" runat="server" Visible="false"
                                         CssClass="btn btn-primary btn-sm" CausesValidation="false"
                                         OnClick="lnkDownloadEway_Click"
@@ -692,7 +706,7 @@
                                 <asp:TemplateField HeaderText="This Despatch" HeaderStyle-HorizontalAlign="Center">
                                     <ItemTemplate>
                                         <asp:TextBox ID="txtThisDesp" CssClass="txtBox" runat="server" Text='<%# Bind("pendingLoad") %>' TextMode="Number"
-                                            Width="45px" MaxLength="30" Enabled="False"></asp:TextBox>
+                                            MaxLength="30" Enabled="False"></asp:TextBox>
                                     </ItemTemplate>
                                     <FooterTemplate>
                                         <asp:Label ID="lblftrThisDesp" runat="server" Text=''></asp:Label>
