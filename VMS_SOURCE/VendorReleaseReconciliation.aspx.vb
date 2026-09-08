@@ -167,6 +167,12 @@ Partial Class VendorReleaseReconciliation
                 ElseIf SelectedFlag = "PAID" Then
                     lblPanelTitle.Text = "Payment List"
                     ds = obj.GetInvPaymentList(ddlUnit.SelectedValue, FromDate, ToDate, pageNo, pageSize)
+                ElseIf SelectedFlag = "DISPATCHED" Then
+                    lblPanelTitle.Text = "Dispatched List"
+                    ds = obj.GetDispatchList(ddlUnit.SelectedValue, FromDate, ToDate, pageNo, pageSize)
+                ElseIf SelectedFlag = "DELIVERED" Then
+                    lblPanelTitle.Text = "Delivered List"
+                    ds = obj.GetDeliveredList(ddlUnit.SelectedValue, FromDate, ToDate, pageNo, pageSize)
                 End If
                 Dim totalRecords As Integer = 0
 
@@ -194,25 +200,25 @@ Partial Class VendorReleaseReconciliation
 
     Private Sub BindPager(ByVal totalRecords As Integer)
 
-        Dim totalPages As Integer = 0
+        'Dim totalPages As Integer = 0
 
-        If totalRecords > 0 Then
-            totalPages = CInt(Math.Ceiling(totalRecords / gvVendorInvoiceDtls.PageSize))
-        End If
+        'If totalRecords > 0 Then
+        '    totalPages = CInt(Math.Ceiling(totalRecords / gvVendorInvoiceDtls.PageSize))
+        'End If
 
-        ddlPageNumber.Items.Clear()
+        'ddlPageNumber.Items.Clear()
 
-        For i As Integer = 1 To totalPages
-            ddlPageNumber.Items.Add(
-            New ListItem(i.ToString(), i.ToString())
-        )
-        Next
+        'For i As Integer = 1 To totalPages
+        '    ddlPageNumber.Items.Add(
+        '    New ListItem(i.ToString(), i.ToString())
+        ')
+        'Next
 
-        If totalPages > 0 Then
-            ddlPageNumber.SelectedValue = (gvVendorInvoiceDtls.PageIndex + 1).ToString()
-        End If
+        'If totalPages > 0 Then
+        '    ddlPageNumber.SelectedValue = (gvVendorInvoiceDtls.PageIndex + 1).ToString()
+        'End If
 
-        lblTotalPages.Text = totalPages.ToString()
+        'lblTotalPages.Text = totalPages.ToString()
 
     End Sub
 
@@ -495,10 +501,10 @@ Partial Class VendorReleaseReconciliation
         Response.AppendHeader("content-disposition", "attachment; filename=" & file_name)
     End Sub
 
-    Protected Sub ddlPageNumber_SelectedIndexChanged(sender As Object, e As EventArgs)
-        gvVendorInvoiceDtls.PageIndex = Convert.ToInt32(ddlPageNumber.SelectedValue) - 1
-        BindGrid()
-    End Sub
+    'Protected Sub ddlPageNumber_SelectedIndexChanged(sender As Object, e As EventArgs)
+    '    gvVendorInvoiceDtls.PageIndex = Convert.ToInt32(ddlPageNumber.SelectedValue) - 1
+    '    BindGrid()
+    'End Sub
 
     Protected Sub btnBack_Click(sender As Object, e As EventArgs)
         Response.Redirect("VprDashboard.aspx")
