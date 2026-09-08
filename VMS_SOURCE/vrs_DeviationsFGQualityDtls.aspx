@@ -346,6 +346,9 @@
                 <div class="col-md-12">
                     <asp:UpdatePanel ID="UpdatePanel1" runat="server">
                         <ContentTemplate>
+                            <%-- Modified-by MUKESH BHAGAT on 08-09-2026 : table-responsive gives the grid the
+                                 440px scroll box (upgrad-style.css) so the sticky headerGrid row stays pinned. --%>
+                            <div class="table-responsive">
                             <asp:GridView ID="gvTestList" runat="server" AutoGenerateColumns="False" EmptyDataText="No records found" AllowPaging="true" PageSize="20" CssClass="upgradDataGrid m-0" CellSpacing="0" CellPadding="0">
                                 <RowStyle CssClass="tlrowlight" />
                                 <SelectedRowStyle />
@@ -422,6 +425,7 @@
                                     </asp:TemplateField>
                                 </Columns>
                             </asp:GridView>
+                            </div>
                         </ContentTemplate>
                         <Triggers>
                             <%--<asp:AsyncPostBackTrigger ControlID="btnUpload" EventName="Click" />--%>
@@ -434,6 +438,7 @@
                 <div class="col-md-12">
                     <asp:UpdatePanel ID="UpdatePanel11" runat="server">
                         <ContentTemplate>
+                            <div class="table-responsive">
                             <asp:GridView ID="gvExteriorTestList" runat="server" AutoGenerateColumns="False" EmptyDataText="No records found" AllowPaging="true" PageSize="20" CssClass="upgradDataGrid" border="1" CellSpacing="0" CellPadding="0">
                                 <RowStyle CssClass="tlrowlight" />
                                 <SelectedRowStyle />
@@ -509,6 +514,7 @@
                                     </asp:TemplateField>
                                 </Columns>
                             </asp:GridView>
+                            </div>
                         </ContentTemplate>
                         <Triggers>
                             <asp:PostBackTrigger ControlID="gvExteriorTestList" />

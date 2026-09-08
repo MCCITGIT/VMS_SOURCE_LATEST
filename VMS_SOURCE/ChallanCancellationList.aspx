@@ -86,7 +86,12 @@
                         </div>
                         <div class="col-md-3 form-btn-mt">
                             <div class="form-group">
-                                <asp:ImageButton ID="ImgbtnSearch" CssClass="btn btn-primary btn-sm" runat="server" ImageUrl="images/ic_search.gif" />
+                                <%-- Modified-by MUKESH BHAGAT on 08-09-2026 : this page still used the old
+                                     ic_search.gif ImageButton, so the button rendered as an image inside the
+                                     Bootstrap box and sat differently from every other list page. Switched to
+                                     the LinkButton used by UnitDespatchPlanListVr1 / VendorChallanList.
+                                <asp:ImageButton ID="ImgbtnSearch" CssClass="btn btn-primary btn-sm" runat="server" ImageUrl="images/ic_search.gif" /> --%>
+                                <asp:LinkButton CssClass="btn btn-primary btn-sm" ID="ImgbtnSearch" runat="server">Search</asp:LinkButton>
                             </div>
                         </div>
                     </div>
