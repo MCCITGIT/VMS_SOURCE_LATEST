@@ -195,7 +195,8 @@ Partial Class Dashboard
             End Try
             System.Math.Min(System.Threading.Interlocked.Increment(index), index - 1)
         End While
-        ddlPageSize0.Items.Insert(0, New ListItem("999", 999, True))
+        'Modified-by MUKESH BHAGAT on 08-09-2026 : removed the hard-coded 999 "show all" default.
+        'The dropdown now holds only the sizes configured in Web.config (PageSize).
         gvDepotSummery.PageSize = ddlPageSize.SelectedValue
     End Sub
 
