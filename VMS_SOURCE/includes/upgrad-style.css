@@ -3875,10 +3875,6 @@ body {
     width: 175px !important;
 }
 
-        /* Hover */
-        .bootstrap-select .dropdown-menu li a:hover {
-            background: #eff6ff;
-            color: #2563eb;
-        }
+
 
 
