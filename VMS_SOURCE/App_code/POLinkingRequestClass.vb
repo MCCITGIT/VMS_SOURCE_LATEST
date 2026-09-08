@@ -729,7 +729,7 @@ Public Class POLinkingRequestClass
     Public Function GetGrnNotDoneList(ByVal unitCode As String, ByVal fromDate As String, ByVal toDate As String, ByVal pageNo As Integer, ByVal pageSize As Integer) As DataSet
         Try
             Dim DS As DataSet
-            Dim sqlParams(4) As SqlParameter
+            Dim sqlParams(2) As SqlParameter
 
             sqlParams(0) = New SqlParameter()
             sqlParams(0).ParameterName = "@unit_code"
@@ -749,17 +749,17 @@ Public Class POLinkingRequestClass
             sqlParams(2).Direction = ParameterDirection.Input
             sqlParams(2).Value = toDate
 
-            sqlParams(3) = New SqlParameter()
-            sqlParams(3).ParameterName = "@page_number"
-            sqlParams(3).DbType = DbType.Int32
-            sqlParams(3).Direction = ParameterDirection.Input
-            sqlParams(3).Value = pageNo
+            'sqlParams(3) = New SqlParameter()
+            'sqlParams(3).ParameterName = "@page_number"
+            'sqlParams(3).DbType = DbType.Int32
+            'sqlParams(3).Direction = ParameterDirection.Input
+            'sqlParams(3).Value = pageNo
 
-            sqlParams(4) = New SqlParameter()
-            sqlParams(4).ParameterName = "@page_size"
-            sqlParams(4).DbType = DbType.Int32
-            sqlParams(4).Direction = ParameterDirection.Input
-            sqlParams(4).Value = pageSize
+            'sqlParams(4) = New SqlParameter()
+            'sqlParams(4).ParameterName = "@page_size"
+            'sqlParams(4).DbType = DbType.Int32
+            'sqlParams(4).Direction = ParameterDirection.Input
+            'sqlParams(4).Value = pageSize
 
             DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[get_grn_not_done_details]", CommandType.StoredProcedure, sqlParams)
             Return DS
