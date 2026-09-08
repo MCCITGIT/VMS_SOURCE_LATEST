@@ -165,6 +165,9 @@
                                 <div class="col-md-12">
                                     <asp:UpdatePanel runat="server">
                                         <ContentTemplate>
+                                            <%-- Modified-by MUKESH BHAGAT on 08-09-2026 : table-responsive gives the grid the
+                                                 440px scroll box (upgrad-style.css) so the sticky headerGrid row stays pinned. --%>
+                                            <div class="table-responsive">
                                             <asp:GridView ID="gvDirectDispatch" runat="server" AutoGenerateColumns="False" EmptyDataText="No records found"
                                                 AllowPaging="true" PageSize="20" CssClass="upgradDataGrid"  border="1" CellSpacing="0" CellPadding="0">
                                                 <RowStyle CssClass="tlrowlight" Font-Strikeout="False"  />
@@ -217,6 +220,7 @@
                                                     </asp:TemplateField>
                                                 </Columns>
                                             </asp:GridView>
+                                            </div>
                                           
                                            
                                         </ContentTemplate>
@@ -269,7 +273,12 @@
                             </div>
                             <hr />
 
-                            <asp:GridView ID="gvStatutoryDetails" runat="server" AutoGenerateColumns="false" CssClass="table table-bordered table-striped">
+                            <%-- Modified-by MUKESH BHAGAT on 08-09-2026 : this grid had neither the upgradDataGrid
+                                 class nor a headerGrid header row, so the global sticky rule could not apply. Both
+                                 added, plus the table-responsive scroll box, to freeze the header like the others. --%>
+                            <div class="table-responsive">
+                            <asp:GridView ID="gvStatutoryDetails" runat="server" AutoGenerateColumns="false" CssClass="table table-bordered table-striped upgradDataGrid">
+                                <HeaderStyle CssClass="headerGrid" />
                                 <Columns>
                                     <asp:TemplateField HeaderText="Slno." ControlStyle-Width="90%">
                                         <ItemTemplate>
@@ -344,6 +353,7 @@
                                     </asp:TemplateField>
                                 </Columns>
                             </asp:GridView>
+                            </div>
 
                         </ContentTemplate>
                     </asp:UpdatePanel>

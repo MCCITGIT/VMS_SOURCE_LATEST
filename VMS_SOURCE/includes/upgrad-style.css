@@ -3859,7 +3859,7 @@ body {
 }
 
 
-/* Hover */
+
 .bootstrap-select .dropdown-menu li a:hover {
     background: #eff6ff;
     color: #2563eb;
@@ -3874,3 +3874,11 @@ body {
 .ajax__calendar_container {
     width: 175px !important;
 }
+
+        /* Hover */
+        .bootstrap-select .dropdown-menu li a:hover {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+
