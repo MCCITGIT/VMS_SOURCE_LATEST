@@ -323,9 +323,13 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             'A newly uploaded bill must have been read and matched by OCR (gross value +
             'invoice no/date). The browser sets hdnOcrVerified; this server-side check makes
             'sure the validation cannot be skipped by disabling script.
+            'Modified-by MUKESH BHAGAT on 09-09-2026 : "S" is also accepted - the browser sets it when the
+            'bill could not be validated (OCR service down / unreadable PDF) and the user explicitly
+            'chose to save anyway after the warning. Only an unchecked submit ("N") is refused.
             If sch_fld1.HasFile Then
-                If Not String.Equals(hdnOcrVerified.Value, "Y", StringComparison.OrdinalIgnoreCase) Then
-                    ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('Please click Extract & Validate Invoice and make sure the entered invoice details match the uploaded bill.');", True)
+                Dim ocrFlag As String = Convert.ToString(hdnOcrVerified.Value).Trim().ToUpperInvariant()
+                If ocrFlag <> "Y" AndAlso ocrFlag <> "S" Then
+                    ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('The uploaded invoice has not been validated yet. Please click Submit again so it can be checked.');", True)
                     Exit Sub
                 End If
             End If
@@ -1155,6 +1159,12 @@ Partial Class UnitDespatchPlanAddUpdateVr1
         If Not (GetChallanId < 0) Then
             DeleteDetail(sqlConn, sqlTrans)
             InsertDetail(hdnChallanno.Value, sqlConn, sqlTrans)
+            'Modified-by MUKESH BHAGAT on 09-09-2026 : an invoice PDF attached while EDITING was
+            'validated by OCR but never stored (only the insert path called InsertDocument). The
+            'copy must always be kept - including when the user saved after the "could not be
+            'validated" warning - so support can later show exactly which PDF was submitted.
+            '[challan_entry_insert_doc] updates the existing CHALLAN_DOC row when one exists.
+            InsertDocument(Convert.ToInt64(hdnChallanno.Value), userInfo.userIDEntity, userInfo.userBranchEntity, sqlConn, sqlTrans)
             'Modified-by MUKESH BHAGAT on 31-08-2026 : the update transaction was NEVER
             'committed (long-standing defect, present in the old source too). The edit was
             'silently lost, and worse: the idle connection kept the open transaction and its
