@@ -172,7 +172,7 @@
                          <div class="col-md-2 form-btn-mt">
                             <div class="form-group">
                                 <asp:Button ID="btnAdd" runat="server" Text="Add" CssClass="btn btn-primary btn-sm" />
-                                <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="btn btn-danger btn-sm"/>
+                                <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="btn btn-secondary btn-sm"/>
                                 <asp:UpdatePanel ID="UpdatePanel11" runat="server">
                                     <ContentTemplate>
                                         <asp:Label ID="lblValidationMessage" runat="server" ForeColor="Red" Text=""></asp:Label>
@@ -316,7 +316,7 @@
 
                                 <asp:TemplateField HeaderText="Action" HeaderStyle-HorizontalAlign="Center">
                                     <ItemTemplate>
-                                        <asp:Button ID="btnCmdRemove" runat="server" Text="Remove" title="Remove" BackColor="Red"
+                                        <asp:Button ID="btnCmdRemove" runat="server" Text="Remove" title="Remove" class="btn btn-danger btn-sm"
                                             CommandName="CmdRemove" OnClientClick="return confirm('Are you sure to remove?')"
                                             CommandArgument='<%# Container.DataItemIndex %>' />
                                     </ItemTemplate>
