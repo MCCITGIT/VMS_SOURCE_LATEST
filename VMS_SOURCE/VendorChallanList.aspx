@@ -500,6 +500,10 @@
                     <asp:Button ID="btnCancelPartner" runat="server" Font-Bold="true" Text="Cancel" value="Cancel" class="btn btn-secondary" />
                 </div>
             </asp:Panel>
+
         </ContentTemplate>
+       <Triggers>
+            <asp:PostBackTrigger ControlID="gvChallanDetails" />
+        </Triggers>
     </asp:UpdatePanel>
 </asp:Content>
