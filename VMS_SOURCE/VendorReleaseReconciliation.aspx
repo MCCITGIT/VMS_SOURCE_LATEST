@@ -85,7 +85,7 @@
                                 <%--<asp:ImageButton CssClass="btn btn-primary btn-sm" ID="ImgbtnSearch" runat="server" ImageUrl="images/ic_search.gif" ToolTip="Search" AlternateText="Search" />--%>
                                 <asp:LinkButton CssClass="btn btn-primary btn-sm" ID="ImgbtnSearch" runat="server" OnClick="ImgbtnSearch_Click" ToolTip="Search" Text="Search"></asp:LinkButton>
                                 <asp:LinkButton CssClass="btn btn-success btn-sm" ID="btndownload" runat="server" OnClick="btndownload_Click" Text="Download" ToolTip="Download" />
-                                <asp:LinkButton CssClass="btn btn-success btn-sm" ID="btnBack" runat="server" OnClick="btnBack_Click" Text="Back" ToolTip="Back" />
+                                <asp:LinkButton CssClass="btn btn-secondary btn-sm" ID="btnBack" runat="server" OnClick="btnBack_Click" Text="Back" ToolTip="Back" />
                             </div>
                         </div>
                     </div>
