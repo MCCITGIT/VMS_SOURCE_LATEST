@@ -12,7 +12,6 @@ Partial Class VprDashboard
             If Session("PaymentReconciliationSearchCriteria") IsNot Nothing Then
                 RetrieveSearchCriteria()
             Else
-                SetDefaultDateFilter()
             End If
             BindGrid()
         End If
@@ -23,22 +22,6 @@ Partial Class VprDashboard
         Else
             Response.Redirect("~/Login.aspx")
         End If
-    End Sub
-
-    Private Sub SetDefaultDateFilter()
-        Dim currentDate As DateTime = DateTime.Now
-
-        ' First day of current month
-        Dim firstDay As New DateTime(currentDate.Year, currentDate.Month, 1)
-
-        ' Last day of current month
-        Dim lastDay As DateTime = firstDay.AddMonths(1).AddDays(-1)
-
-        txtFromDate.Text = firstDay.ToString("dd-MM-yyyy")
-        txtToDate.Text = lastDay.ToString("dd-MM-yyyy")
-        txtVendorName.Text = String.Empty
-
-        SaveSearchCriteria()
     End Sub
 
     Private Sub SaveSearchCriteria()
@@ -64,32 +47,73 @@ Partial Class VprDashboard
         SaveSearchCriteria()
     End Sub
 
+    'Private Sub BindGrid()
+    '    Try
+    '        Dim vendorName As String = txtVendorName.Text.Trim()
+
+    '        'Dim fromDate As String = "2026-01-01"
+    '        'Dim toDate As String = "2026-12-31"
+    '        Dim fromDate As String = FormatDate(txtFromDate.Text)
+    '        Dim toDate As String = FormatDate(txtToDate.Text)
+
+    '        'Dim pageNo = gvFgVendorlist.PageIndex + 1
+    '        'Dim pageSize = gvFgVendorlist.PageSize
+
+    '        Dim obj As POLinkingRequestClass = New POLinkingRequestClass()
+    '        'Dim ds As DataSet = obj.GetVendorPaymentDashboardDetails(vendorName, fromDate, toDate, pageNo, pageSize, userInfo.userIDEntity)
+    '        Dim ds As DataSet = obj.GetVendorPaymentDashboardDetails(vendorName, fromDate, toDate, userInfo.userIDEntity)
+    '        Dim table As DataTable = RmGridHelper.GetTable(ds)
+    '        'RmGridHelper.BindPaged(gvRmPendingList, table)
+    '        If table IsNot Nothing AndAlso table.Rows.Count > 0 Then
+    '            gvFgVendorlist.Visible = True
+    '            gvFgVendorlist.DataSource = table
+    '            gvFgVendorlist.DataBind()
+    '            '        gvFgVendorlist.VirtualItemCount =
+    '            'Convert.ToInt32(table.Rows(0)("total_records"))
+    '            'TotalRecords = Convert.ToInt32(table.Rows(0)("total_records"))
+    '            'BindPager()
+    '        End If
+    '    Catch ex As Exception
+    '        Throw
+    '    End Try
+    'End Sub
     Private Sub BindGrid()
         Try
             Dim vendorName As String = txtVendorName.Text.Trim()
 
-            'Dim fromDate As String = "2026-01-01"
-            'Dim toDate As String = "2026-12-31"
-            Dim fromDate As String = FormatDate(txtFromDate.Text)
-            Dim toDate As String = FormatDate(txtToDate.Text)
-
-            'Dim pageNo = gvFgVendorlist.PageIndex + 1
-            'Dim pageSize = gvFgVendorlist.PageSize
+            Dim fromDate As Nullable(Of DateTime) = GetDateValue(txtFromDate.Text)
+            Dim toDate As Nullable(Of DateTime) = GetDateValue(txtToDate.Text)
 
             Dim obj As POLinkingRequestClass = New POLinkingRequestClass()
-            'Dim ds As DataSet = obj.GetVendorPaymentDashboardDetails(vendorName, fromDate, toDate, pageNo, pageSize, userInfo.userIDEntity)
             Dim ds As DataSet = obj.GetVendorPaymentDashboardDetails(vendorName, fromDate, toDate, userInfo.userIDEntity)
-            Dim table As DataTable = RmGridHelper.GetTable(ds)
             'RmGridHelper.BindPaged(gvRmPendingList, table)
-            If table IsNot Nothing AndAlso table.Rows.Count > 0 Then
-                gvFgVendorlist.Visible = True
-                gvFgVendorlist.DataSource = table
-                gvFgVendorlist.DataBind()
-                '        gvFgVendorlist.VirtualItemCount =
-                'Convert.ToInt32(table.Rows(0)("total_records"))
-                'TotalRecords = Convert.ToInt32(table.Rows(0)("total_records"))
-                'BindPager()
+            If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0).Rows.Count > 0 Then
+                Dim dateRow As DataRow = ds.Tables(0).Rows(0)
+
+                If Not IsDBNull(dateRow("from_date")) Then
+                    txtFromDate.Text = Convert.ToDateTime(dateRow("from_date")).ToString("dd-MM-yyyy")
+                End If
+
+                If Not IsDBNull(dateRow("to_date")) Then
+                    txtToDate.Text = Convert.ToDateTime(dateRow("to_date")).ToString("dd-MM-yyyy")
+                End If
             End If
+
+            If ds IsNot Nothing AndAlso ds.Tables.Count > 1 Then
+                Dim table As DataTable = ds.Tables(1)
+                If table IsNot Nothing AndAlso table.Rows.Count > 0 Then
+                    gvFgVendorlist.Visible = True
+                    gvFgVendorlist.DataSource = table
+                    gvFgVendorlist.DataBind()
+                Else
+                    gvFgVendorlist.Visible = False
+                    gvFgVendorlist.DataSource = Nothing
+                    gvFgVendorlist.DataBind()
+                End If
+            End If
+
+            'Save resolved dates so pagination/navigation retains them
+            SaveSearchCriteria()
         Catch ex As Exception
             Throw
         End Try
@@ -118,6 +142,28 @@ Partial Class VprDashboard
             dt = FormatDateTime(dt, DateFormat.LongDate)
             Return dt
         End If
+
+    End Function
+
+    Private Function GetDateValue(ByVal value As String) As Nullable(Of DateTime)
+
+        If String.IsNullOrWhiteSpace(value) Then
+            Return Nothing
+        End If
+
+        Dim parsedDate As DateTime
+
+        If DateTime.TryParseExact(
+        value.Trim(),
+        "dd-MM-yyyy",
+        System.Globalization.CultureInfo.InvariantCulture,
+        System.Globalization.DateTimeStyles.None,
+        parsedDate) Then
+
+            Return parsedDate
+        End If
+
+        Return Nothing
 
     End Function
 
@@ -155,7 +201,9 @@ Partial Class VprDashboard
     End Sub
     Protected Sub btnReset_Click(sender As Object, e As EventArgs)
         Session("PaymentReconciliationSearchCriteria") = Nothing
-        SetDefaultDateFilter()
+        txtVendorName.Text = String.Empty
+        txtFromDate.Text = String.Empty
+        txtToDate.Text = String.Empty
         gvFgVendorlist.PageIndex = 0
         BindGrid()
     End Sub

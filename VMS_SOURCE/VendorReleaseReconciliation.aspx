@@ -105,7 +105,7 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive rm-grid-scroll">
-                        <asp:GridView ID="gvVendorInvoiceDtls" runat="server" AutoGenerateColumns="false" AllowPaging="True" PageSize="10" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
+                        <asp:GridView ID="gvVendorInvoiceDtls" runat="server" AutoGenerateColumns="false" PageSize="10" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
                             <RowStyle CssClass="tlrowlight" />
                             <PagerStyle CssClass="PagerGrid" HorizontalAlign="left" />
                             <HeaderStyle CssClass="headerGrid" />
