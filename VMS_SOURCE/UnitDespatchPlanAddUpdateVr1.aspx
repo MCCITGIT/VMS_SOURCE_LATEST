@@ -1064,9 +1064,32 @@
             return found ? total : NaN;
         }
 
+        // Modified-by MUKESH BHAGAT on 09-09-2026 : 'Y' = validated against the bill,
+        // 'N' = not validated, 'S' = user chose to save although the bill could not be validated.
         function ocrSetVerified(flag) {
             var h = ocrEl('<%= hdnOcrVerified.ClientID %>');
-            if (h) { h.value = flag ? 'Y' : 'N'; }
+            if (h) { h.value = (flag === 'S') ? 'S' : (flag ? 'Y' : 'N'); }
+        }
+
+        // Modified-by MUKESH BHAGAT on 09-09-2026 : when the bill cannot be validated - the OCR
+        // service is down, or it cannot read the PDF (scanned image, unusual layout) - the user
+        // is no longer blocked. The save goes ahead only after an explicit confirmation, the same
+        // way the optional checks (quantity / GSTN / E-Way no) are accepted. Cancel holds the save.
+        function ocrConfirmUnverifiedSave(reasons, btn) {
+            var proceed = window.confirm(
+                'Invoice validation could not be completed.\n\n- ' + reasons.join('\n- ') +
+                '\n\nThe Invoice No, Invoice Date and Final Invoice Value you entered could NOT be verified against the uploaded PDF.' +
+                '\nYou may still save this despatch challan with the PDF attached, but you do so at your own risk - ' +
+                'please double-check the entered details before continuing.' +
+                '\n\nDo you want to save anyway?');
+            if (!proceed) {
+                ocrSetVerified(false);
+                ocrMsg('Save cancelled: the uploaded invoice could not be validated. Please check the PDF and try again.', 'danger');
+                return;
+            }
+            ocrSetVerified('S');
+            ocrMsg('Saving without invoice validation - accepted by user.', 'info');
+            ocrContinueSubmit(btn);
         }
 
         // Any manual edit after a successful check invalidates the verification, so the
@@ -1160,13 +1183,12 @@
                 if (xhr.status === 200 && result && result.success) {
                     applyInvoiceOcrResult(result, fileUpload, btn);
                 } else if (result && result.message) {
-                    // the service answered and rejected the document -> block the save
-                    ocrSetVerified(false);
-                    fileUpload.value = '';
-                    ocrMsg('Bill rejected: ' + result.message, 'danger');
+                    // Modified-by MUKESH BHAGAT on 09-09-2026 : the service answered but could not
+                    // read the document -> no longer a hard block; the user decides (with warning).
+                    ocrConfirmUnverifiedSave(['The uploaded PDF could not be read: ' + result.message], btn);
                 } else if (OCR_FAIL_OPEN) {
-                    // the service itself failed -> do not hold up the despatch
-                    ocrContinueSubmit(btn);
+                    // the service itself failed -> do not hold up the despatch, but say so
+                    ocrConfirmUnverifiedSave(['The invoice validation service is not available right now.'], btn);
                 } else {
                     ocrMsg('Invoice validation service is unavailable. Please try again.', 'danger');
                 }
@@ -1175,7 +1197,7 @@
             xhr.onerror = function () {
                 ocrLockActions(false);
                 if (OCR_FAIL_OPEN) {
-                    ocrContinueSubmit(btn);
+                    ocrConfirmUnverifiedSave(['The invoice validation service could not be reached.'], btn);
                 } else {
                     ocrMsg('Invoice validation service is unavailable. Please try again.', 'danger');
                 }
@@ -1205,12 +1227,13 @@
             var txtInvDate = ocrEl('<%= txtCenvatDt.ClientID %>');
             var txtValue = ocrEl('<%= txtFinalInvoiceValue.ClientID %>');
 
-            var errors = [];
+            var errors = [];       // value READ from the bill and it differs -> save blocked
+            var unreadable = [];   // value could NOT be read -> user may save after a warning (09-09-2026)
             var warnings = [];
 
             // ---- Invoice number : mandatory, must match exactly ----
             if (!ocrInvNo) {
-                errors.push('Invoice number could not be read from the bill.');
+                unreadable.push('Invoice number could not be read from the bill.');
             } else if (ocrNormalizeText(txtInvNo.value) === '') {
                 txtInvNo.value = ocrInvNo;                       // empty -> fill from the bill
             } else if (ocrNormalizeText(txtInvNo.value) !== ocrNormalizeText(ocrInvNo)) {
@@ -1219,7 +1242,7 @@
 
             // ---- Invoice date : mandatory, must match exactly ----
             if (!ocrInvDate) {
-                errors.push('Invoice date could not be read from the bill.');
+                unreadable.push('Invoice date could not be read from the bill.');
             } else if (ocrNormalizeText(txtInvDate.value) === '') {
                 txtInvDate.value = ocrInvDate;
             } else if (ocrNormalizeDate(txtInvDate.value) !== ocrInvDate) {
@@ -1230,7 +1253,7 @@
             var ocrGrossNum = ocrToNumber(ocrGross);
             if (isNaN(ocrGrossNum)) {
                 if (OCR_REQUIRE_GROSS_VALUE) {
-                    errors.push('Gross value could not be read from the bill.');
+                    unreadable.push('Gross value could not be read from the bill.');
                 }
             } else if (ocrToNumber(txtValue.value) === 0 || txtValue.value === '') {
                 txtValue.value = ocrGrossNum;
@@ -1275,12 +1298,20 @@
             }
 
             if (errors.length > 0) {
-                // mandatory check failed -> the save is blocked and, only now, the user is
-                // shown what the bill contains alongside the reasons
+                // a value was read from the bill and it does not match -> the save is blocked
+                // and, only now, the user is shown what the bill contains alongside the reasons
                 ocrSetVerified(false);
                 fileUpload.value = '';
                 ocrEl('divInvoiceOcrPanel').style.display = '';
-                ocrMsg('Bill rejected: ' + errors.join(' ') + ' Please correct the details and upload the correct bill.', 'danger');
+                ocrMsg('Bill rejected: ' + errors.concat(unreadable).join(' ') + ' Please correct the details and upload the correct bill.', 'danger');
+                return;
+            }
+
+            // Modified-by MUKESH BHAGAT on 09-09-2026 : nothing contradicts the entry, but the bill
+            // could not be fully read -> show what was read and let the user decide (with warning).
+            if (unreadable.length > 0) {
+                ocrEl('divInvoiceOcrPanel').style.display = '';
+                ocrConfirmUnverifiedSave(unreadable.concat(warnings), btn);
                 return;
             }
 
