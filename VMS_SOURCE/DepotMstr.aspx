@@ -26,9 +26,9 @@
     <style type="text/css">
         .box-label {
             border: 1px solid #bfc9d3;
-            border-radius: 13px;
+            border-radius: 8px;
             padding: 6px 12px;
-            min-height: 38px;
+            min-height: 0px;
             background-color: #fff;
             font-weight: 400;
             color: #24425c;

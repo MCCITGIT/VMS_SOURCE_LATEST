@@ -95,6 +95,7 @@
 
         .txtBox {
             width: 100% !important;
+            min-width: 110px !important;
             border: 1px solid #c5c5c5;
             border-radius: 5px;
             padding: 4px 5px;
