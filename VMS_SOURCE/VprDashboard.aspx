@@ -316,7 +316,7 @@
                                             <asp:LinkButton
                                                 ID="lnkDispatched"
                                                 runat="server"
-                                                Text='<%# Bind("dispatched_status") %>'
+                                                Text='<%# Bind("approved_challan_count") %>'
                                                 CommandName="Dispatched"
                                                 CssClass="text-primary fw-bold">
                                             </asp:LinkButton>
@@ -330,7 +330,7 @@
                                             <asp:LinkButton
                                                 ID="lnkDelivered"
                                                 runat="server"
-                                                Text='<%# Bind("delivered_status") %>'
+                                                Text='<%# Bind("delivered_qty") %>'
                                                 CommandName="Delivered"
                                                 CssClass="text-primary fw-bold">
                                             </asp:LinkButton>

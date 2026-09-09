@@ -26,9 +26,16 @@ Partial Class VprDashboard
     End Sub
 
     Private Sub SetDefaultDateFilter()
-        Dim currentYear As Integer = DateTime.Now.Year
-        txtFromDate.Text = New DateTime(currentYear, 1, 1).ToString("dd-MM-yyyy")
-        txtToDate.Text = New DateTime(currentYear, 12, 31).ToString("dd-MM-yyyy")
+        Dim currentDate As DateTime = DateTime.Now
+
+        ' First day of current month
+        Dim firstDay As New DateTime(currentDate.Year, currentDate.Month, 1)
+
+        ' Last day of current month
+        Dim lastDay As DateTime = firstDay.AddMonths(1).AddDays(-1)
+
+        txtFromDate.Text = firstDay.ToString("dd-MM-yyyy")
+        txtToDate.Text = lastDay.ToString("dd-MM-yyyy")
         txtVendorName.Text = String.Empty
 
         SaveSearchCriteria()
