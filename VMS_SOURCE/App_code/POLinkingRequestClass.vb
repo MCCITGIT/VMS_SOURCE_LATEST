@@ -676,7 +676,7 @@ Public Class POLinkingRequestClass
         End Try
     End Function
 
-    Public Function GetVendorPaymentDashboardDetails(ByVal vendorName As String, ByVal fromDate As String, ByVal toDate As String, ByVal userId As String) As DataSet
+    Public Function GetVendorPaymentDashboardDetails(ByVal vendorName As String, ByVal fromDate As Nullable(Of DateTime), ByVal toDate As Nullable(Of DateTime), ByVal userId As String) As DataSet
 
         Try
             Dim DS As DataSet
@@ -686,13 +686,13 @@ Public Class POLinkingRequestClass
             sqlParams(0).ParameterName = "@from_date"
             sqlParams(0).DbType = DbType.DateTime
             sqlParams(0).Direction = ParameterDirection.Input
-            sqlParams(0).Value = fromDate
+            sqlParams(0).Value = If(fromDate.HasValue, CType(fromDate.Value, Object), DBNull.Value)
 
             sqlParams(1) = New SqlParameter()
             sqlParams(1).ParameterName = "@to_date"
             sqlParams(1).DbType = DbType.DateTime
             sqlParams(1).Direction = ParameterDirection.Input
-            sqlParams(1).Value = toDate
+            sqlParams(1).Value = If(toDate.HasValue, CType(toDate.Value, Object), DBNull.Value)
 
             sqlParams(2) = New SqlParameter()
             sqlParams(2).ParameterName = "@user_id"
