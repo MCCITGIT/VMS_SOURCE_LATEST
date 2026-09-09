@@ -456,15 +456,7 @@
                             </asp:LinkButton>
                         </div>
                     </div>
-                </div>
-                <%-- Modified-by MUKESH BHAGAT on 24-08-2026 : optional E-Way bill document.
-                     Saved next to the invoice copy under Challan_Docs\<dd_MM_yyyy>.
-                     Modified-by MUKESH BHAGAT on 27-08-2026 : moved out of the "E-Way Bill No"
-                     column into its own column beside the invoice upload, so the two upload
-                     fields line up and the top row keeps a uniform height. --%>
-                <div class="col-md-6">
                     <div class="form-group">
-
                         <asp:UpdatePanel ID="UpdatePanelEway" runat="server" style="display: flex; align-items: center; gap: 30px;">
                             <ContentTemplate>
                                 <div style="width: 48%">
@@ -496,6 +488,41 @@
                         </asp:UpdatePanel>
                     </div>
                 </div>
+                <%-- Modified-by MUKESH BHAGAT on 24-08-2026 : optional E-Way bill document.
+                     Saved next to the invoice copy under Challan_Docs\<dd_MM_yyyy>.
+                     Modified-by MUKESH BHAGAT on 27-08-2026 : moved out of the "E-Way Bill No"
+                     column into its own column beside the invoice upload, so the two upload
+                     fields line up and the top row keeps a uniform height. --%>
+                <div class="col-md-6">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-control-label">Invoicing Depot GSTN:<span class="mandatory">*</span></label>
+                                <asp:UpdatePanel ID="UpdatePanelDepotGstn" runat="server" UpdateMode="Always">
+                                    <ContentTemplate>
+                                        <asp:TextBox ID="txtDepotGstn" runat="server" CssClass="form-control" ReadOnly="true"></asp:TextBox>
+                                    </ContentTemplate>
+                                    <Triggers>
+                                        <asp:AsyncPostBackTrigger ControlID="ddlDeliveryDepot" EventName="SelectedIndexChanged" />
+                                        <asp:AsyncPostBackTrigger ControlID="ddlSite" EventName="SelectedIndexChanged" />
+                                    </Triggers>
+                                </asp:UpdatePanel>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-control-label">Supplier GSTN:<span class="mandatory">*</span></label>
+                                <asp:UpdatePanel ID="UpdatePanelSupplierGstn" runat="server" UpdateMode="Always">
+                                    <ContentTemplate>
+                                        <asp:TextBox ID="txtSupplierGstn" runat="server" CssClass="form-control" ReadOnly="true"></asp:TextBox>
+                                    </ContentTemplate>
+                                    <Triggers>
+                                        <asp:AsyncPostBackTrigger ControlID="ddlDeliveryDepot" EventName="SelectedIndexChanged" />
+                                        <asp:AsyncPostBackTrigger ControlID="ddlSite" EventName="SelectedIndexChanged" />
+                                    </Triggers>
+                                </asp:UpdatePanel>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <%-- Modified-by MUKESH BHAGAT on 24-08-2026 : GSTN of the invoicing depot (from the depot
@@ -505,36 +532,7 @@
                  ddlDeliveryDepot and ddlSite post back asynchronously, so anything outside an
                  UpdatePanel is never re-rendered - the server was setting these values correctly but
                  the browser never received them, which is why the Depot GSTN stayed blank. --%>
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-control-label">Invoicing Depot GSTN:<span class="mandatory">*</span></label>
-                        <asp:UpdatePanel ID="UpdatePanelDepotGstn" runat="server" UpdateMode="Always">
-                            <ContentTemplate>
-                                <asp:TextBox ID="txtDepotGstn" runat="server" CssClass="form-control" ReadOnly="true"></asp:TextBox>
-                            </ContentTemplate>
-                            <Triggers>
-                                <asp:AsyncPostBackTrigger ControlID="ddlDeliveryDepot" EventName="SelectedIndexChanged" />
-                                <asp:AsyncPostBackTrigger ControlID="ddlSite" EventName="SelectedIndexChanged" />
-                            </Triggers>
-                        </asp:UpdatePanel>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-control-label">Supplier GSTN:<span class="mandatory">*</span></label>
-                        <asp:UpdatePanel ID="UpdatePanelSupplierGstn" runat="server" UpdateMode="Always">
-                            <ContentTemplate>
-                                <asp:TextBox ID="txtSupplierGstn" runat="server" CssClass="form-control" ReadOnly="true"></asp:TextBox>
-                            </ContentTemplate>
-                            <Triggers>
-                                <asp:AsyncPostBackTrigger ControlID="ddlDeliveryDepot" EventName="SelectedIndexChanged" />
-                                <asp:AsyncPostBackTrigger ControlID="ddlSite" EventName="SelectedIndexChanged" />
-                            </Triggers>
-                        </asp:UpdatePanel>
-                    </div>
-                </div>
-            </div>
+
 
             <%-- Modified-by MUKESH BHAGAT on 08-09-2026 : full-page blocking loader shown while the
                  uploaded bill is being validated by OCR (same look as the master page UpdateProgress),
