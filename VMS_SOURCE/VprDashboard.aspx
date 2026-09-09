@@ -275,7 +275,7 @@
                     <div class="card-body">
                         <div class="table-responsive rm-grid-scroll">
                             <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0"
-                                ID="gvFgVendorlist" runat="server" AutoGenerateColumns="false" AllowPaging="true" PageSize="10" Visible="true" OnPageIndexChanging="gvFgVendorlist_PageIndexChanging" OnRowCommand="gvFgVendorlist_RowCommand"
+                                ID="gvFgVendorlist" runat="server" AutoGenerateColumns="false" PageSize="10" Visible="true" OnPageIndexChanging="gvFgVendorlist_PageIndexChanging" OnRowCommand="gvFgVendorlist_RowCommand"
                                 ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
                                 PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
                                 <RowStyle CssClass="tlrowlight" />
@@ -330,7 +330,7 @@
                                             <asp:LinkButton
                                                 ID="lnkDelivered"
                                                 runat="server"
-                                                Text='<%# Bind("delivered_qty") %>'
+                                                Text='<%# Bind("delivered_count") %>'
                                                 CommandName="Delivered"
                                                 CssClass="text-primary fw-bold">
                                             </asp:LinkButton>
@@ -376,8 +376,8 @@
                                                 CommandName="Paid"
                                                 CssClass="text-success fw-bold">
                                             </asp:LinkButton>
-                                            <asp:HiddenField ID="hdnInvAmt" runat="server" Value='<%# Bind("invoice_amount") %>' />
-                                            <asp:HiddenField ID="hdnAmtPaid" runat="server" Value='<%# Bind("amount_paid") %>' />
+                                            <%--<asp:HiddenField ID="hdnInvAmt" runat="server" Value='<%# Bind("invoice_amount") %>' />
+                                            <asp:HiddenField ID="hdnAmtPaid" runat="server" Value='<%# Bind("amount_paid") %>' />--%>
                                             <asp:HiddenField ID="hfnBalAmt" runat="server" Value='<%# Bind("balance_amount") %>' />
                                         </ItemTemplate>
                                         <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="10%" CssClass="text-left" />
