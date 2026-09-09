@@ -54,8 +54,8 @@
             <div class="headSection">
                 <div class="leftDtls">
                     <div class="bLogoBIconBg">
-                        <a href="Home.aspx" title="Home">
-                            <img id="logo" class="bLogo" src="images/h-logo.png" alt="Best Wall Paint Colors, House Painting Colors" title="Berger Paints" />
+                        <a href="Home.aspx" title="Home" style="display: flex; justify-content: flex-start; width: 100%;">
+                            <img id="logo" class="bLogo" src="images/logo-rbr.png" alt="Best Wall Paint Colors, House Painting Colors" title="Berger Paints" />
                         </a>
                         <button type="button" id="sidebarCollapse" class="btn btn-light humMenuIcon">
                             <i class="fa fa-bars"></i>

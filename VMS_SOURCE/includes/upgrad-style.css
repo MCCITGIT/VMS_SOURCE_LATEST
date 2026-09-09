@@ -3880,7 +3880,7 @@ body {
     bottom: 0;
     z-index: 2;
     background: #ffffff !important;
-    display: flex;
+    display: table-row;
     justify-content: left;
     width: 100%;
     left: 0;
