@@ -791,6 +791,65 @@ Public Class UnitDespatchClassVr1
         Return UnitDS
     End Function
 
+    'Modified-by MUKESH BHAGAT on 11-09-2026 : VendorChallanList grid now shows GRN No, GRN Date and
+    'SKU NOP. Same parameters as GetChallanDetails_Vr1; calls the new _vr4 SP which returns the
+    'extra columns GRN_No, GRN_Date and sku_nop. _Vr1 / _vr3 are left untouched for other callers.
+    Public Function GetChallanDetails_Vr2(ByVal Unit As String, ByVal Depot As String, ByVal Year As String, ByVal Month As String, ByVal ChalanNo As Integer, ByVal status As String, ByVal UserId As String, ByVal DespatchType As String) As DataSet
+        Dim UnitDS As New DataSet
+        Dim sqlParams(7) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@desph_desp_unit"
+        sqlParams(0).DbType = DbType.String
+        sqlParams(0).Direction = Data.ParameterDirection.Input
+        sqlParams(0).Value = IIf(Unit <> String.Empty, Unit, DBNull.Value)
+
+        sqlParams(1) = New SqlParameter()
+        sqlParams(1).ParameterName = "@desph_desp_depot"
+        sqlParams(1).DbType = DbType.String
+        sqlParams(1).Direction = Data.ParameterDirection.Input
+        sqlParams(1).Value = IIf(Depot <> String.Empty, Depot, DBNull.Value)
+
+        sqlParams(2) = New SqlParameter()
+        sqlParams(2).ParameterName = "@desph_challan_fin_year"
+        sqlParams(2).DbType = DbType.String
+        sqlParams(2).Direction = Data.ParameterDirection.Input
+        sqlParams(2).Value = Year
+
+        sqlParams(3) = New SqlParameter()
+        sqlParams(3).ParameterName = "@desph_process_month"
+        sqlParams(3).DbType = DbType.String
+        sqlParams(3).Direction = Data.ParameterDirection.Input
+        sqlParams(3).Value = Month
+
+        sqlParams(4) = New SqlParameter()
+        sqlParams(4).ParameterName = "@desph_challan_no"
+        sqlParams(4).DbType = DbType.Int64
+        sqlParams(4).Direction = Data.ParameterDirection.Input
+        sqlParams(4).Value = IIf(ChalanNo <> Integer.MinValue, ChalanNo, DBNull.Value)
+
+        sqlParams(5) = New SqlParameter()
+        sqlParams(5).ParameterName = "@status"
+        sqlParams(5).DbType = DbType.String
+        sqlParams(5).Direction = Data.ParameterDirection.Input
+        sqlParams(5).Value = status
+
+        sqlParams(6) = New SqlParameter()
+        sqlParams(6).ParameterName = "@UserId"
+        sqlParams(6).DbType = DbType.String
+        sqlParams(6).Direction = Data.ParameterDirection.Input
+        sqlParams(6).Value = UserId
+
+        sqlParams(7) = New SqlParameter()
+        sqlParams(7).ParameterName = "@desph_type"
+        sqlParams(7).DbType = DbType.String
+        sqlParams(7).Direction = Data.ParameterDirection.Input
+        sqlParams(7).Value = DespatchType
+
+        UnitDS = DBFactory.GetHelper().ExecuteDataSet("[Unit_Dspatch_Get_Challan_Detail_vr4]", Data.CommandType.StoredProcedure, sqlParams)
+        Return UnitDS
+    End Function
+
 #End Region
 #Region "Get Document Details"
     Public Function GetDocsDetails(ByVal ChalanNo As Integer) As DataSet

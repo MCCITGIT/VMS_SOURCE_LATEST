@@ -1048,7 +1048,7 @@ Partial Class Home
         Dim sb As New StringBuilder()
 
         For Each row As DataRow In dt.Rows
-            Dim sku As String = row("SKU").ToString()
+            Dim sku As String = row("SKU_Name").ToString()
             Dim totalLoad As Decimal = Convert.ToDecimal(row("Total_Load_NOP"))
             Dim totalDispatch As Decimal = Convert.ToDecimal(row("Total_Despatched_NOP"))
             Dim pct As Decimal = Convert.ToDecimal(row("Dispatch_Percentage"))

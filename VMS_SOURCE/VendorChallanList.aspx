@@ -243,6 +243,27 @@
                                     <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="35%" />
                                     <FooterStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="35%" />
                                 </asp:BoundField>
+                                <%-- Modified-by MUKESH BHAGAT on 11-09-2026 : GRN No / GRN Date / SKU NOP from SP _vr4.
+                                     Inserting them here shifts the "Aproved/Pending" and "Print" cell indexes used in
+                                     gvChallanDetails_RowDataBound (11->14, 12->15). --%>
+                                <asp:BoundField HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center"
+                                    HeaderText="GRN No" DataField="GRN_No">
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
+                                    <FooterStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
+                                </asp:BoundField>
+                                <asp:BoundField HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center"
+                                    HeaderText="GRN Date" DataField="GRN_Date">
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
+                                    <FooterStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
+                                </asp:BoundField>
+                                <asp:BoundField HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center"
+                                    HeaderText="SKU NOP (Pcs)" DataField="sku_nop">
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="5%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="5%" />
+                                    <FooterStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="5%" />
+                                </asp:BoundField>
                                 <asp:BoundField HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center"
                                     HeaderText="Aproved/Pending" DataField="">
                                     <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />

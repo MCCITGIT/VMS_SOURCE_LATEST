@@ -1321,8 +1321,17 @@ System.Web.Services.WebMethod()>
 
         'Dim DocsFileName As String = GetFileNameWithoutExtension(sch_fld.FileName) + "." + Extension
         'Dim DocsOrgFileName As String = GetFileNameWithoutExtension(sch_fld.FileName) + "." + Extension
-        Dim DocsFileName As String = sch_fld1.FileName
-        Dim DocsOrgFileName As String = sch_fld1.FileName
+        'Modified-by MUKESH BHAGAT on 09-09-2026 : the file was stored under the user's original
+        'name in a per-DAY folder shared by every vendor, so two uploads called e.g. "invoice.pdf"
+        'on the same day silently overwrote each other and one challan's download served the
+        'other vendor's bill. The stored name is now a GUID plus the original extension
+        '(same scheme as VMS_CORE) so every stored copy is unique. doc_org_filename carries the
+        'stored name because the download paths (list page, edit page, invoice_document_push)
+        'build the file name from it.
+        Dim originalName As String = System.IO.Path.GetFileName(sch_fld1.FileName)
+        Dim uniqueName As String = Guid.NewGuid().ToString("N") & System.IO.Path.GetExtension(originalName)
+        Dim DocsFileName As String = uniqueName
+        Dim DocsOrgFileName As String = uniqueName
         Dim DocPath As String = Format(Date.Now, "dd_MM_yyyy")
 
         If Not sch_fld1.PostedFile Is Nothing And sch_fld1.PostedFile.ContentLength > 0 Then
@@ -1340,9 +1349,9 @@ System.Web.Services.WebMethod()>
                         Dim projectPath As String = ConfigurationManager.AppSettings.Get("UPLOAD_DOCS_FOLDER_ABS_PATH") & userInfo.userCompanyEntity & "\" & "Challan_Docs" & "\" & DocPath
 
 
-                        Dim fn As String = System.IO.Path.GetFileName(sch_fld1.PostedFile.FileName)
-                        'fn = GetFileNameWithoutExtension(fn) + "." + Extension
-                        'fn = fn
+                        'Modified-by MUKESH BHAGAT on 09-09-2026 : save under the unique name
+                        'registered above, not the browser-supplied one
+                        Dim fn As String = uniqueName
                         Dim saveLocation As String = projectPath & "\" & fn
 
 

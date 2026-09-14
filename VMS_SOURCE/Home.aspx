@@ -147,9 +147,9 @@
                 <asp:Literal ID="litPending" runat="server" Visible="false"></asp:Literal>
                 <asp:Literal ID="litDespatch" runat="server" Visible="false">></asp:Literal>
 
-                <div class="card">
+                <div id="divSearch" class="card" runat="server">
                     <div class="card-body">
-                        <div id="divSearch" runat="server">
+                        <div runat="server">
                             <div class="row align-items-center">
                                 <div id="divVendor" class="col-md-3" runat="server">
                                     <div class="form-group">
@@ -193,9 +193,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="card">
+                <div id="divNewsCard" class="card" runat="server">
                     <div class="card-body">
-                        <div id="divNewsCard" class="row" runat="server">
+                        <div class="row" runat="server">
                             <div class="col-md-12">
                                 <div class="flashComplainBTCCard">
                                     <div class="newCard w100 home-card-flash">
@@ -218,9 +218,9 @@
                     </div>
                 </div>
                 <%--Modified-by MUKESH BHAGAT on 20-08-2026 : restored from old UAT source (Action Required panel and Last Stock Update Date)--%>
-                <div class="card">
+                <div id="divAction" class="card" runat="server">
                     <div class="card-body">
-                        <div id="divAction" class="row" runat="server">
+                        <div class="row" runat="server">
                             <div class="col-md-8">
                                 <div class="newCard w100 home-card-action">
                                     <div class="newCardHead">
@@ -302,9 +302,9 @@
                         </div>
                     </div>
                 </div>--%>
-                <div class="card">
+                <div id="divSkuChart" class="card" runat="server">
                     <div class="card-body">
-                        <div id="divSkuChart" class="dashboard" runat="server">
+                        <div class="dashboard" runat="server">
                             <div class="mst-panel-header">
                                 <div class="mst-panel-header-left">
                                     <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
@@ -323,9 +323,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="card">
+                <div id="divDespatch" class="card" runat="server">
                     <div class="card-body">
-                        <div id="divDespatch" runat="server">
+                        <div runat="server">
                             <div class="mst-panel-header">
                                 <div class="mst-panel-header-left">
                                     <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
