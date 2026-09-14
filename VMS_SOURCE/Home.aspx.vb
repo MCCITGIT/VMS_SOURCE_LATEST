@@ -1007,6 +1007,7 @@ Partial Class Home
                 divDespatch.Visible = True
                 divSkuChart.Visible = True
                 divSearch.Visible = True
+                divSumData.Visible = False
 
                 'Dim unitCode = ddlvendor.SelectedValue
                 'Dim year = ddlProcessYr.SelectedValue
