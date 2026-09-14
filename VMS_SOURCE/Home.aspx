@@ -40,57 +40,68 @@
                 background: #2ecc71; /* same green as bar-fill.total-dispatch */
             }
 
+        /* Modified-by MUKESH BHAGAT on 14-09-2026 : kept on one line, as before - splitting the
+           card in half (see .sku-panel-row) halved the width available, so the fixed-width label
+           (was 160px, flex-shrink:0) plus dots (205px) plus fixed-width stats (was 300px) no
+           longer fit and forced a scrolled, left-clipped horizontal scrollbar inside
+           #chartContainer. Fixed by making the LABEL the one thing that gives: it now shrinks and
+           truncates with an ellipsis (full name on hover via title=) instead of the row wrapping
+           to two lines or silently scrolling. Dots and stats stay their normal size/position. */
         .sku-row {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             padding: 10px 0;
             border-bottom: 1px solid #f0f0f0;
         }
 
         .sku-label {
-            width: 160px;
+            flex: 1 1 auto;
+            min-width: 40px;
             font-size: 13px;
             color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; /* full name still available on hover via the title attribute */
+        }
+
+        /* Modified-by MUKESH BHAGAT on 14-09-2026 : replaced .sku-bars / .bar-track / .bar-fill
+           (two overlapping progress bars) with a 10-dot pictogram. 1 dot = SKU's Total_Load_NOP / 10;
+           dispatch fills dots left to right, with a partial (pie-style) fill for a dot that isn't
+           fully dispatched, built server-side in Home.aspx.vb BindLoadDispatchChart(). */
+        .sku-dots {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 0 0 auto;
+        }
+
+        .sku-dot {
+            box-sizing: border-box; /* 14-09-2026: keeps the bordered empty dot the same 16x16
+                                       outer size as the borderless full/partial dots, so all 10
+                                       stay on one vertical line instead of the border pushing the
+                                       empty dot's box to 19x19 and knocking it out of alignment */
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
             flex-shrink: 0;
         }
 
-        .sku-bars {
-            flex: 0 1 45%; /* was flex: 1 — shrunk to make room for the wider stats text */
-            min-width: 120px;
+        .sku-dot-full {
+            background: #0ca30c;
         }
 
-        .bar-track {
-            background: #e9ecef;
-            border-radius: 4px;
-            height: 10px;
-            margin-bottom: 4px;
-            overflow: hidden;
+        .sku-dot-empty {
+            background: transparent;
+            border: 1.5px solid #2f8fd6;
+            opacity: 0.55;
         }
-
-        .dispatch-track {
-            height: 6px;
-        }
-
-        .bar-fill {
-            height: 100%;
-            border-radius: 4px;
-        }
-
-            .bar-fill.total-load {
-                background: #2f8fd6;
-            }
-
-            .bar-fill.total-dispatch {
-                background: #2ecc71;
-            }
 
         .sku-stats {
-            width: 300px; /* was 220px — widened to fit the added "Pending" segment */
-            font-size: 13px;
+            flex: 0 0 auto;
+            white-space: nowrap;
+            font-size: 12px;
             color: #444;
-            flex-shrink: 0;
-            text-align: right;
         }
 
         .pending-value {
@@ -125,6 +136,121 @@
 
         .badge-success {
             background: #27ae60;
+        }
+
+        /* Modified-by MUKESH BHAGAT on 14-09-2026 : SKU List card split in half - list on the
+           left, overall serviceability donut on the right. */
+        .sku-panel-row {
+            display: flex;
+            align-items: stretch;
+            gap: 24px;
+        }
+
+        .sku-list-col {
+            /* Modified-by MUKESH BHAGAT on 14-09-2026 : widened from 55% to keep the SKU rows
+               comfortably on one line (see .sku-row above) - the donut column shrank to match
+               (170px ring -> 130px). */
+            flex: 1 1 68%;
+            min-width: 0; /* lets the row shrink instead of overflowing when the card narrows */
+        }
+
+        .sku-summary-col {
+            flex: 1 1 32%;
+            min-width: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid #f0f0f0;
+            padding-left: 20px;
+        }
+
+        .sku-summary-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+        }
+
+        .sku-summary-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            letter-spacing: .3px;
+            text-transform: uppercase;
+        }
+
+        .sku-donut-wrap {
+            /* Modified-by MUKESH BHAGAT on 14-09-2026 : the ring itself wasn't visible - the
+               "pending" slice used #dce6f0, too close to the white card to render as anything but
+               blank space. Switched to the same gray the old bar-track used (proven visible on
+               this card elsewhere) and added a faint outline here so the ring reads even when the
+               dispatched share is tiny (a few % green sliver against a near-white remainder).
+               Shrunk 170px -> 130px so .sku-list-col could get its width back (see above) without
+               the card growing taller. Chart is drawn non-responsive at this exact pixel size (set
+               in BuildSkuSummaryPanel) so there's no resize-observer timing to race against on the
+               next async postback (vendor/year/month search) that was the likely cause of the
+               chart occasionally not appearing after switching the month. */
+            position: relative;
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            box-shadow: inset 0 0 0 1px #eef1f4;
+        }
+
+        .sku-donut-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .sku-donut-pct {
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .sku-donut-caption {
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        .sku-summary-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 13px;
+            color: #444;
+            width: 100%;
+        }
+
+            .sku-summary-stats > div {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+            }
+
+            .sku-summary-stats .dot {
+                margin-right: 6px;
+            }
+
+        @media (max-width: 820px) {
+            .sku-panel-row {
+                flex-direction: column;
+            }
+
+            .sku-summary-col {
+                border-left: none;
+                border-top: 1px solid #f0f0f0;
+                padding-left: 0;
+                padding-top: 20px;
+            }
         }
     </style>
 
@@ -317,8 +443,21 @@
                                 <div><span class="dot total-load"></span>Total Load</div>
                                 <div><span class="dot total-dispatch"></span>Total Dispatch</div>
                             </div>
-                            <div id="chartContainer" style="height: 250px; overflow-y: auto;">
-                                <asp:Literal ID="litSkuRows" runat="server"></asp:Literal>
+                            <%-- Modified-by MUKESH BHAGAT on 14-09-2026 : card split in half - the SKU
+                                 list on the left, an overall Total Load vs Total Dispatch donut with the
+                                 serviceability % in the centre on the right. Donut markup and its Chart.js
+                                 script are built server-side in BindLoadDispatchChart() (litSkuSummary),
+                                 same pattern as the SKU rows (litSkuRows), so both refresh together on
+                                 every vendor/year/month search postback. --%>
+                            <div class="sku-panel-row">
+                                <div class="sku-list-col">
+                                    <div id="chartContainer" style="height: 250px; overflow-y: auto;">
+                                        <asp:Literal ID="litSkuRows" runat="server"></asp:Literal>
+                                    </div>
+                                </div>
+                                <div class="sku-summary-col">
+                                    <asp:Literal ID="litSkuSummary" runat="server"></asp:Literal>
+                                </div>
                             </div>
                         </div>
                     </div>
