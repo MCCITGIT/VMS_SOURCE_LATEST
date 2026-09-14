@@ -372,6 +372,141 @@
                         </div>
                     </div>
                 </div>
+                <div id="divSumData" class="card" runat="server">
+                    <div class="card-body">
+                        <div class="row" runat="server">
+                            <div class="col-md-6">
+                                <div class="newCard w100 home-card-action">
+                                    <div class="newCardHead">
+                                        <h3 class="newHeadTitle">Brand Wise</h3>
+                                    </div>
+                                    <div class="newCardBody">
+                                        <div class="table-responsive rm-grid-scroll">
+                                            <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0"
+                                                ID="gvBrandList" runat="server" AutoGenerateColumns="false" PageSize="10" Visible="true" OnRowCommand="gvBrandList_RowCommand"
+                                                ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
+                                                PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
+                                                <RowStyle CssClass="tlrowlight" />
+                                                <PagerStyle CssClass="PagerGrid" HorizontalAlign="Left" />
+                                                <HeaderStyle CssClass="headerGrid" />
+                                                <FooterStyle CssClass="footerGrid" />
+                                                <Columns>
+                                                    <asp:TemplateField HeaderText="Sl No">
+                                                        <ItemTemplate>
+                                                            <asp:Label ID="lblbrandid" runat="server" Text='<%# (gvBrandList.PageIndex * gvBrandList.PageSize) + Container.DataItemIndex + 1 %>'></asp:Label>
+                                                        </ItemTemplate>
+                                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
+                                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
+                                                    </asp:TemplateField>
+                                                    <asp:TemplateField HeaderText="Brand Name">
+                                                        <ItemTemplate>
+                                                            <asp:Label ID="lblBrandName" runat="server" Text='<%# Bind("brand_name") %>'></asp:Label>
+                                                        </ItemTemplate>
+                                                        <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
+                                                        <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
+                                                    </asp:TemplateField>
+                                                    <asp:TemplateField HeaderText="Total">
+                                                        <ItemTemplate>
+                                                            <asp:Label ID="lblTotalLoad" runat="server" Text='<%# Bind("total_load") %>'></asp:Label>
+                                                        </ItemTemplate>
+                                                    </asp:TemplateField>
+                                                    <asp:TemplateField HeaderText="Despatched">
+                                                        <ItemTemplate>
+                                                            <asp:Label ID="lblTotalDes" runat="server" Text='<%# Bind("total_despatched") %>'></asp:Label>
+                                                        </ItemTemplate>
+                                                    </asp:TemplateField>
+                                                    <asp:TemplateField HeaderText="Serviceability(%)">
+                                                        <ItemTemplate>
+                                                            <asp:Label ID="lblKg" runat="server" Text='<%# Bind("serviceability_percentage") %>'></asp:Label>
+                                                        </ItemTemplate>
+                                                    </asp:TemplateField>
+                                                    <asp:TemplateField HeaderText="Action">
+                                                        <ItemTemplate>
+                                                            <asp:LinkButton ID="lbView"
+                                                                runat="server"
+                                                                Text="View"
+                                                                CssClass="btn btn-sm btn-primary"
+                                                                CommandName="ViewBrand">
+                                                                <i class="fa fa-arrow-right"></i>
+                                                            </asp:LinkButton>
+                                                        </ItemTemplate>
+                                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
+                                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
+                                                    </asp:TemplateField>
+                                                </Columns>
+                                            </asp:GridView>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="newCard w100 home-card-stock">
+                                    <div class="newCardHead">
+                                        <h3 class="newHeadTitle">Vendor Wise</h3>
+                                    </div>
+                                    <div class="newCardBody">
+                                        <div class="table-responsive rm-grid-scroll">
+                                            <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0"
+                                                ID="gvVendorList" runat="server" AutoGenerateColumns="false" PageSize="10" Visible="true" OnRowCommand="gvVendorList_RowCommand"
+                                                ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
+                                                PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
+                                                <RowStyle CssClass="tlrowlight" />
+                                                <PagerStyle CssClass="PagerGrid" HorizontalAlign="Left" />
+                                                <HeaderStyle CssClass="headerGrid" />
+                                                <FooterStyle CssClass="footerGrid" />
+                                                <Columns>
+                                                    <asp:TemplateField HeaderText="Sl No">
+                                                        <ItemTemplate>
+                                                            <asp:Label ID="lblbrandid" runat="server" Text='<%# (gvVendorList.PageIndex * gvVendorList.PageSize) + Container.DataItemIndex + 1 %>'></asp:Label>
+                                                        </ItemTemplate>
+                                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
+                                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
+                                                    </asp:TemplateField>
+                                                    <asp:TemplateField HeaderText="Vendor Name">
+                                                        <ItemTemplate>
+                                                            <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vendor_name") %>'></asp:Label>
+                                                            <asp:HiddenField ID="hdnVednorCode" runat="server" Value='<%# Bind("vendor_unit")%>' />
+                                                        </ItemTemplate>
+                                                        <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
+                                                        <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
+                                                    </asp:TemplateField>
+                                                    <asp:TemplateField HeaderText="Total">
+                                                        <ItemTemplate>
+                                                            <asp:Label ID="lblTotalLoad" runat="server" Text='<%# Bind("Total_Load_NOP") %>'></asp:Label>
+                                                        </ItemTemplate>
+                                                    </asp:TemplateField>
+                                                    <asp:TemplateField HeaderText="Despatched">
+                                                        <ItemTemplate>
+                                                            <asp:Label ID="lblTotalDes" runat="server" Text='<%# Bind("Total_Despatched_NOP") %>'></asp:Label>
+                                                        </ItemTemplate>
+                                                    </asp:TemplateField>
+                                                    <asp:TemplateField HeaderText="Serviceability(%)">
+                                                        <ItemTemplate>
+                                                            <asp:Label ID="lblKg" runat="server" Text='<%# Bind("Dispatch_Percentage") %>'></asp:Label>
+                                                        </ItemTemplate>
+                                                    </asp:TemplateField>
+                                                    <asp:TemplateField HeaderText="Action">
+                                                        <ItemTemplate>
+                                                            <asp:LinkButton ID="lbViewVendor"
+                                                                runat="server"
+                                                                Text="View"
+                                                                CssClass="btn btn-sm btn-primary"
+                                                                CommandName="ViewVendor">
+                                                                <i class="fa fa-arrow-right"></i>
+                                                            </asp:LinkButton>
+                                                        </ItemTemplate>
+                                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
+                                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
+                                                    </asp:TemplateField>
+                                                </Columns>
+                                            </asp:GridView>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <%--<div id="divData" runat="server">
                     <div class="mst-panel-header">
                         <div class="mst-panel-header-left">
