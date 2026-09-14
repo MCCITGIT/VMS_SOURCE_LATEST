@@ -9,6 +9,45 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="includes/home-dashboard.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />
 
+    <%-- Modified-by MUKESH BHAGAT on 14-09-2026 : draws the "Overall Serviceability" donut from
+         data-dispatch/data-pending on #skuOverallChart (set server-side in Home.aspx.vb
+         BuildSkuSummaryPanel - see its comment for why this moved out of a per-render inline
+         script). Registered ONCE here, not regenerated per postback: runs on first page load
+         (DOMContentLoad) and on every async postback after that via
+         Sys.WebForms.PageRequestManager's add_endRequest - the same pattern already used on
+         UnitDespatchPlanAddUpdateVr1.aspx for "re-run this after every partial postback". --%>
+    <script type="text/javascript">
+        function renderSkuDonut() {
+            var el = document.getElementById('skuOverallChart');
+            if (!el || typeof Chart === 'undefined') { return; }
+            var dispatch = parseFloat(el.getAttribute('data-dispatch')) || 0;
+            var pending = parseFloat(el.getAttribute('data-pending')) || 0;
+            var existing = Chart.getChart ? Chart.getChart(el) : null;
+            if (existing) { existing.destroy(); }
+            new Chart(el, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Dispatched', 'Pending'],
+                    datasets: [{
+                        data: [dispatch, pending],
+                        backgroundColor: ['#0ca30c', '#e9ecef'],
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    cutout: '68%',
+                    plugins: { legend: { display: false }, tooltip: { enabled: (dispatch + pending) > 0 } }
+                }
+            });
+        }
+        document.addEventListener('DOMContentLoaded', renderSkuDonut);
+        if (typeof Sys !== 'undefined' && Sys.WebForms) {
+            Sys.WebForms.PageRequestManager.getInstance().add_endRequest(renderSkuDonut);
+        }
+    </script>
+
     <style>
         .legend {
             display: flex;
@@ -40,13 +79,11 @@
                 background: #2ecc71; /* same green as bar-fill.total-dispatch */
             }
 
-        /* Modified-by MUKESH BHAGAT on 14-09-2026 : kept on one line, as before - splitting the
-           card in half (see .sku-panel-row) halved the width available, so the fixed-width label
-           (was 160px, flex-shrink:0) plus dots (205px) plus fixed-width stats (was 300px) no
-           longer fit and forced a scrolled, left-clipped horizontal scrollbar inside
-           #chartContainer. Fixed by making the LABEL the one thing that gives: it now shrinks and
-           truncates with an ellipsis (full name on hover via title=) instead of the row wrapping
-           to two lines or silently scrolling. Dots and stats stay their normal size/position. */
+        /* Modified-by MUKESH BHAGAT on 14-09-2026 : chart and list back on the same row (per
+           explicit confirmation) - the donut column takes some width from the list again, so the
+           label is the part that gives: it shrinks and truncates with an ellipsis (full name on
+           hover via title=) rather than the row wrapping to two lines or overflowing into a
+           clipped horizontal scroll. */
         .sku-row {
             display: flex;
             align-items: center;
@@ -138,8 +175,8 @@
             background: #27ae60;
         }
 
-        /* Modified-by MUKESH BHAGAT on 14-09-2026 : SKU List card split in half - list on the
-           left, overall serviceability donut on the right. */
+        /* Modified-by MUKESH BHAGAT on 14-09-2026 : side-by-side again - list on the left, overall
+           serviceability donut on the right, per explicit confirmation after trying both. */
         .sku-panel-row {
             display: flex;
             align-items: stretch;
@@ -147,9 +184,6 @@
         }
 
         .sku-list-col {
-            /* Modified-by MUKESH BHAGAT on 14-09-2026 : widened from 55% to keep the SKU rows
-               comfortably on one line (see .sku-row above) - the donut column shrank to match
-               (170px ring -> 130px). */
             flex: 1 1 68%;
             min-width: 0; /* lets the row shrink instead of overflowing when the card narrows */
         }
@@ -186,11 +220,10 @@
                blank space. Switched to the same gray the old bar-track used (proven visible on
                this card elsewhere) and added a faint outline here so the ring reads even when the
                dispatched share is tiny (a few % green sliver against a near-white remainder).
-               Shrunk 170px -> 130px so .sku-list-col could get its width back (see above) without
-               the card growing taller. Chart is drawn non-responsive at this exact pixel size (set
-               in BuildSkuSummaryPanel) so there's no resize-observer timing to race against on the
-               next async postback (vendor/year/month search) that was the likely cause of the
-               chart occasionally not appearing after switching the month. */
+               Shrunk to 130px so the side column stays a reasonable width next to the list.
+               Chart is drawn non-responsive at this exact pixel size (set in
+               BuildSkuSummaryPanel) so there's no resize-observer timing to race against on the
+               next async postback (vendor/year/month search). */
             position: relative;
             width: 130px;
             height: 130px;
