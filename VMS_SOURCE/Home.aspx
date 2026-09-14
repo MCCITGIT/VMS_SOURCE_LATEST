@@ -102,11 +102,6 @@
             white-space: nowrap;
             font-size: 12px;
             color: #444;
-<<<<<<< HEAD
-            flex-shrink: 0;
-            text-align: left;
-=======
->>>>>>> upstream/dev
         }
 
         .pending-value {
