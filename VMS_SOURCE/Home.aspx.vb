@@ -1146,12 +1146,23 @@ Partial Class Home
     End Sub
 
     ''' <summary>
-    ''' Modified-by MUKESH BHAGAT on 14-09-2026 : right half of the SKU List card - a donut
+    ''' Modified-by MUKESH BHAGAT on 14-09-2026 : right side of the SKU List card - a donut
     ''' showing overall Total Load vs Total Dispatch, with the serviceability % centred inside
     ''' the ring (drawn as an absolutely-positioned label over the canvas, not a Chart.js plugin,
-    ''' so it needs no extra script beyond Chart.js which the page already loads). Uses
-    ''' Chart.getChart(...) to destroy any previous instance on the same canvas id before drawing
-    ''' again, since this panel is rebuilt on every vendor/year/month search (async postback).
+    ''' so it needs no extra script beyond Chart.js which the page already loads).
+    ''' The canvas id is generated fresh (GUID) on every call rather than reused, so a new Chart
+    ''' instance can never be confused with the previous vendor/year/month search's instance or
+    ''' its now-detached canvas - that id reuse was the suspected cause of the donut occasionally
+    ''' not updating (or not appearing) after switching the month and searching again.
+    ''' Modified-by MUKESH BHAGAT on 14-09-2026 : dropped the per-render inline &lt;script&gt; tag
+    ''' entirely (the GUID-id approach above assumed it always ran, but an inline &lt;script&gt;
+    ''' block inside content injected by an async UpdatePanel postback is not guaranteed to
+    ''' execute as reliably as a real client lifecycle event). The values now go out as data-*
+    ''' attributes on the canvas, and a SINGLE static script block (added once, in the .aspx
+    ''' markup, not regenerated here) draws the chart from those attributes - it runs on
+    ''' DOMContentLoad for the first load AND on Sys.WebForms.PageRequestManager's add_endRequest
+    ''' for every async postback after that, which is the same proven pattern already used on
+    ''' UnitDespatchPlanAddUpdateVr1.aspx for "re-run this after every partial postback".
     ''' </summary>
     Private Function BuildSkuSummaryPanel(totalLoad As Decimal, totalDispatch As Decimal) As String
         Dim pct As Decimal = If(totalLoad > 0, Math.Round(totalDispatch / totalLoad * 100, 1), 0D)
@@ -1172,12 +1183,10 @@ Partial Class Home
         html.Append("<div class='sku-summary-inner'>")
         html.Append("  <div class='sku-summary-title'>Overall Serviceability</div>")
         html.Append("  <div class='sku-donut-wrap'>")
-        ' 14-09-2026: 170 -> 130 to match the shrunk .sku-donut-wrap (gave the width back to the
-        ' SKU list). width/height attributes here match the CSS size exactly and, paired with
-        ' responsive:false below, are what Chart.js actually draws at - no resize-observer/timing
-        ' involved, which is the likely reason the ring occasionally failed to appear after
-        ' switching the month (a fresh async-postback canvas racing Chart.js's own resize pass).
-        html.Append("    <canvas id='skuOverallChart' width='130' height='130'></canvas>")
+        ' data-dispatch/data-pending read by renderSkuDonut() (static script in Home.aspx) - fixed
+        ' id is fine here since that function always looks up the CURRENT canvas at the moment it
+        ' runs (after the DOM has already been updated, by definition of add_endRequest/DOMContentLoad)
+        html.Append("    <canvas id='skuOverallChart' width='130' height='130' data-dispatch='" & totalDispatch.ToString(System.Globalization.CultureInfo.InvariantCulture) & "' data-pending='" & pending.ToString(System.Globalization.CultureInfo.InvariantCulture) & "'></canvas>")
         html.Append("    <div class='sku-donut-center'>")
         html.Append("      <div class='sku-donut-pct' style='color:" & pctColor & "'>" & pct.ToString("0.0") & "%</div>")
         html.Append("      <div class='sku-donut-caption'>" & If(totalLoad > 0, "Dispatched", "No data") & "</div>")
@@ -1189,29 +1198,6 @@ Partial Class Home
         html.Append("    <div><span>Pending</span><b class='" & If(pending > 0, "pending-value pending-active", "pending-value") & "'>" & pending.ToString("N0") & "</b></div>")
         html.Append("  </div>")
         html.Append("</div>")
-
-        html.Append("<script type='text/javascript'>")
-        html.Append("(function(){")
-        html.Append("  var el = document.getElementById('skuOverallChart'); if (!el) { return; }")
-        html.Append("  var existing = (window.Chart && Chart.getChart) ? Chart.getChart(el) : null; if (existing) { existing.destroy(); }")
-        html.Append("  new Chart(el, {")
-        html.Append("    type: 'doughnut',")
-        html.Append("    data: { labels: ['Dispatched','Pending'], datasets: [{")
-        html.Append("      data: [" & totalDispatch.ToString(System.Globalization.CultureInfo.InvariantCulture) & ", " & pending.ToString(System.Globalization.CultureInfo.InvariantCulture) & "],")
-        ' Modified-by MUKESH BHAGAT on 14-09-2026 : '#dce6f0' for the pending slice was nearly
-        ' invisible against the white card - switched to '#e9ecef', the same gray the old
-        ' bar-track used elsewhere on this page (proven to read clearly there). borderColor/Width
-        ' adds a thin white separator between the two slices, and cutout dropped from 72% to 68%
-        ' for a slightly thicker ring so a small dispatched share is still visible as more than a hairline.
-        html.Append("      backgroundColor: ['#0ca30c', '#e9ecef'], borderColor: '#ffffff', borderWidth: 2")
-        html.Append("    }] },")
-        html.Append("    options: {")
-        html.Append("      responsive: false, cutout: '68%',") ' 14-09-2026: fixed pixel size, no resize observer - see canvas comment above
-        html.Append("      plugins: { legend: { display: false }, tooltip: { enabled: " & If(totalLoad > 0, "true", "false") & " } }")
-        html.Append("    }")
-        html.Append("  });")
-        html.Append("})();")
-        html.Append("</script>")
 
         Return html.ToString()
     End Function
