@@ -59,7 +59,7 @@
     </div>
 
     <div class="card">
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px 0 0">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
             <div class="mst-panel-header" style="padding-top: 0;">
                 <div class="mst-panel-header-left">
                     <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
@@ -69,7 +69,7 @@
                     </div>
                 </div>
             </div>
-            <div class="form-group ddlPageSize" style="display: flex; align-items: center; padding: 0 15px;">
+            <div class="form-group ddlPageSize" style="display: flex; align-items: center;">
                 <label for="ddlPageSize" class="col-auto form-control-label">
                     <asp:Label ID="lblResultspPage" runat="server" Text="Results Per Page:"></asp:Label>
                 </label>

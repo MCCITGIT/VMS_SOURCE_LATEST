@@ -924,8 +924,13 @@ Partial Class Home
         If (Not (Session(Constant.SessionKeys.UserInfo) Is Nothing)) Then
             userInfo = CType(Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
 
+            Dim unitCode = ddlvendor.SelectedValue
+            Dim year = ddlProcessYr.SelectedValue
+            Dim month = ddlProcessMnth.SelectedValue
+
             Dim userDetailsObject As New UserLogin()
             Dim ds As DataSet = userDetailsObject.GetDashBoardInfo(userInfo.userIDEntity, userInfo.userBranchEntity)
+            Dim sumDs As DataSet = userDetailsObject.GetDashboardLoadDespatchSummary(unitCode, year, month)
             If userInfo.userGroupCodeEntity.Equals("HO", StringComparison.InvariantCultureIgnoreCase) Or userInfo.userGroupCodeEntity.Equals("SYSADMIN", StringComparison.InvariantCultureIgnoreCase) Then
                 divHo.Visible = True
                 divNewsCard.Visible = True
@@ -935,7 +940,23 @@ Partial Class Home
                 'divData.Visible = False
                 divDespatch.Visible = False
                 divSkuChart.Visible = False
-                divSearch.Visible = False
+                divSearch.Visible = True
+                divVendor.Visible = False
+                divSumData.Visible = True
+
+                If (sumDs IsNot Nothing AndAlso sumDs.Tables.Count > 0) Then
+                    gvBrandList.DataSource = sumDs.Tables(0)
+                    gvBrandList.DataBind()
+
+                    gvVendorList.DataSource = sumDs.Tables(1)
+                    gvVendorList.DataBind()
+                Else
+                    gvBrandList.DataSource = Nothing
+                    gvBrandList.DataBind()
+
+                    gvVendorList.DataSource = Nothing
+                    gvVendorList.DataBind()
+                End If
 
                 If (ds IsNot Nothing AndAlso ds.Tables.Count > 0) Then
                     If (ds.Tables(0).Rows.Count > 0) Then
@@ -987,9 +1008,9 @@ Partial Class Home
                 divSkuChart.Visible = True
                 divSearch.Visible = True
 
-                Dim unitCode = ddlvendor.SelectedValue
-                Dim year = ddlProcessYr.SelectedValue
-                Dim month = ddlProcessMnth.SelectedValue
+                'Dim unitCode = ddlvendor.SelectedValue
+                'Dim year = ddlProcessYr.SelectedValue
+                'Dim month = ddlProcessMnth.SelectedValue
                 Dim active = "Y"
                 Dim SkuDs As DataSet = userDetailsObject.GetPendingDespatchData(unitCode, year, month, active)
                 If (SkuDs IsNot Nothing AndAlso SkuDs.Tables(0).Rows.Count > 0) Then
@@ -1029,24 +1050,27 @@ Partial Class Home
         Dim year = ddlProcessYr.SelectedValue
         Dim month = ddlProcessMnth.SelectedValue
 
-        ds = userDetailsObject.GetLoadDespatchSummary(unitCode, year, month)
+        ds = userDetailsObject.GetLoadDespatchSummary(unitCode, year, month, "")
         If ds Is Nothing OrElse ds.Tables.Count = 0 OrElse ds.Tables(0).Rows.Count = 0 Then
             litSkuRows.Text = "<div class='mst-empty-state'>No data found for this selection.</div>"
+            litSkuSummary.Text = BuildSkuSummaryPanel(0, 0) ' 14-09-2026: donut still renders (empty state) so the right half isn't blank
             Return
         End If
 
         Dim dt As DataTable = ds.Tables(0)
-        ' Find the max Total_Load_NOP across all rows so bar widths are relative,
-        ' exactly like the reference image (the biggest load = 100% width).
-        Dim maxLoad As Decimal = 0
-        For Each row As DataRow In dt.Rows
-            Dim loadVal As Decimal = Convert.ToDecimal(row("Total_Load_NOP"))
-            If loadVal > maxLoad Then maxLoad = loadVal
-        Next
-        If maxLoad = 0 Then maxLoad = 1 ' avoid divide-by-zero
 
         Dim sb As New StringBuilder()
+        ' Modified-by MUKESH BHAGAT on 14-09-2026 : running totals across every SKU row, used to
+        ' draw the overall Total Load vs Total Dispatch donut in the right half of the card.
+        Dim grandTotalLoad As Decimal = 0
+        Dim grandTotalDispatch As Decimal = 0
 
+        ' Modified-by MUKESH BHAGAT on 14-09-2026 : replaced the two overlapping progress bars
+        ' with a 10-dot pictogram per row. Each dot represents Total_Load_NOP / 10 units, so the
+        ' dot value is relative to that SKU's own load (not the row with the biggest load, as the
+        ' old bar-width calc was). Dispatch fills dots left to right; a dispatch that doesn't reach
+        ' a full dot still shows a partial (conic-fill) dot instead of looking like zero, and any
+        ' nonzero dispatch shows at least a half dot so a small dispatch is never invisible.
         For Each row As DataRow In dt.Rows
             Dim sku As String = row("SKU_Name").ToString()
             Dim totalLoad As Decimal = Convert.ToDecimal(row("Total_Load_NOP"))
@@ -1054,9 +1078,8 @@ Partial Class Home
             Dim pct As Decimal = Convert.ToDecimal(row("Dispatch_Percentage"))
             Dim pendingLoad As Decimal = Convert.ToDecimal(row("Pending_Load_NOP"))
 
-            ' Bar widths as % of the row with the largest load
-            Dim loadWidthPct As Decimal = Math.Round((totalLoad / maxLoad) * 100, 2)
-            Dim dispatchWidthPct As Decimal = Math.Round((totalDispatch / maxLoad) * 100, 2)
+            grandTotalLoad += totalLoad
+            grandTotalDispatch += totalDispatch
 
             ' Badge color tiers — adjust thresholds to whatever your business considers good/bad
             Dim badgeClass As String
@@ -1073,11 +1096,45 @@ Partial Class Home
             ' Highlight pending in red-ish text if there's a meaningful backlog
             Dim pendingClass As String = If(pendingLoad > 0, "pending-value pending-active", "pending-value")
 
+            ' ---- 10-dot pictogram : 1 dot = totalLoad / 10 ----
+            Dim dotValue As Decimal = If(totalLoad > 0, totalLoad / 10D, 0D)
+            Dim filledUnits As Decimal = If(totalLoad > 0, (totalDispatch / totalLoad) * 10D, 0D)
+            Dim fullDots As Integer = Math.Floor(filledUnits)
+            Dim fracDot As Decimal = filledUnits - fullDots
+            If totalDispatch > 0 AndAlso filledUnits < 0.5D Then
+                fullDots = 0
+                fracDot = 0.5D
+            End If
+            If fullDots >= 10 Then
+                fullDots = 10
+                fracDot = 0
+            End If
+
+            Dim dotsHtml As New StringBuilder()
+            For i As Integer = 0 To 9
+                If i < fullDots Then
+                    dotsHtml.Append("<div class='sku-dot sku-dot-full'></div>")
+                ElseIf i = fullDots AndAlso fracDot > 0 Then
+                    ' Modified-by MUKESH BHAGAT on 14-09-2026 : var(--border) is not defined anywhere
+                    ' in this project's CSS - an invalid var() makes the whole background declaration
+                    ' invalid, so the browser drops it entirely and the dot rendered fully transparent
+                    ' (that's why small dispatch values showed no dot at all). Uses a real hex now,
+                    ' same light gray the old bar-track background used.
+                    Dim fracDeg As Integer = CInt(Math.Round(fracDot * 360, 0))
+                    dotsHtml.Append("<div class='sku-dot sku-dot-partial' style='background:conic-gradient(#0ca30c " & fracDeg.ToString() & "deg, #e9ecef 0deg)'></div>")
+                Else
+                    dotsHtml.Append("<div class='sku-dot sku-dot-empty'></div>")
+                End If
+            Next
+
+            ' Modified-by MUKESH BHAGAT on 14-09-2026 : back to one line per row (was briefly two
+            ' lines - reverted per feedback). The label absorbs the width squeeze from the donut
+            ' column via ellipsis (full name in title="" on hover) instead of wrapping to a second
+            ' line or overflowing into a clipped horizontal scroll.
             sb.Append("<div class='sku-row'>")
-            sb.Append("  <div class='sku-label'>" & Server.HtmlEncode(sku) & "</div>")
-            sb.Append("  <div class='sku-bars'>")
-            sb.Append("    <div class='bar-track'><div class='bar-fill total-load' style='width:" & loadWidthPct.ToString("0.##") & "%'></div></div>")
-            sb.Append("    <div class='bar-track dispatch-track'><div class='bar-fill total-dispatch' style='width:" & dispatchWidthPct.ToString("0.##") & "%'></div></div>")
+            sb.Append("  <div class='sku-label' title='" & Server.HtmlEncode(sku) & "'>" & Server.HtmlEncode(sku) & "</div>")
+            sb.Append("  <div class='sku-dots' title='1 dot ~ " & dotValue.ToString("N0") & " units'>")
+            sb.Append(dotsHtml.ToString())
             sb.Append("  </div>")
             sb.Append("  <div class='sku-stats'>Load: <b>" & totalLoad.ToString("N0") & "</b> | Dispatch: <b>" & totalDispatch.ToString("N0") & "</b> | Pending: <b class='" & pendingClass & "'>" & pendingLoad.ToString("N0") & "</b></div>")
             sb.Append("  <div class='sku-badge " & badgeClass & "'>" & pct.ToString("0.0") & "%</div>")
@@ -1085,7 +1142,79 @@ Partial Class Home
         Next
 
         litSkuRows.Text = sb.ToString()
+        litSkuSummary.Text = BuildSkuSummaryPanel(grandTotalLoad, grandTotalDispatch)
     End Sub
+
+    ''' <summary>
+    ''' Modified-by MUKESH BHAGAT on 14-09-2026 : right half of the SKU List card - a donut
+    ''' showing overall Total Load vs Total Dispatch, with the serviceability % centred inside
+    ''' the ring (drawn as an absolutely-positioned label over the canvas, not a Chart.js plugin,
+    ''' so it needs no extra script beyond Chart.js which the page already loads). Uses
+    ''' Chart.getChart(...) to destroy any previous instance on the same canvas id before drawing
+    ''' again, since this panel is rebuilt on every vendor/year/month search (async postback).
+    ''' </summary>
+    Private Function BuildSkuSummaryPanel(totalLoad As Decimal, totalDispatch As Decimal) As String
+        Dim pct As Decimal = If(totalLoad > 0, Math.Round(totalDispatch / totalLoad * 100, 1), 0D)
+        Dim pending As Decimal = Math.Max(totalLoad - totalDispatch, 0)
+
+        Dim pctColor As String
+        If pct = 0 Then
+            pctColor = "#e74c3c"
+        ElseIf pct < 50 Then
+            pctColor = "#f39c12"
+        ElseIf pct < 80 Then
+            pctColor = "#d4ac0d" ' darker than the badge yellow - #f1c40f reads poorly as text
+        Else
+            pctColor = "#27ae60"
+        End If
+
+        Dim html As New StringBuilder()
+        html.Append("<div class='sku-summary-inner'>")
+        html.Append("  <div class='sku-summary-title'>Overall Serviceability</div>")
+        html.Append("  <div class='sku-donut-wrap'>")
+        ' 14-09-2026: 170 -> 130 to match the shrunk .sku-donut-wrap (gave the width back to the
+        ' SKU list). width/height attributes here match the CSS size exactly and, paired with
+        ' responsive:false below, are what Chart.js actually draws at - no resize-observer/timing
+        ' involved, which is the likely reason the ring occasionally failed to appear after
+        ' switching the month (a fresh async-postback canvas racing Chart.js's own resize pass).
+        html.Append("    <canvas id='skuOverallChart' width='130' height='130'></canvas>")
+        html.Append("    <div class='sku-donut-center'>")
+        html.Append("      <div class='sku-donut-pct' style='color:" & pctColor & "'>" & pct.ToString("0.0") & "%</div>")
+        html.Append("      <div class='sku-donut-caption'>" & If(totalLoad > 0, "Dispatched", "No data") & "</div>")
+        html.Append("    </div>")
+        html.Append("  </div>")
+        html.Append("  <div class='sku-summary-stats'>")
+        html.Append("    <div><span><span class='dot total-load'></span>Total Load</span><b>" & totalLoad.ToString("N0") & "</b></div>")
+        html.Append("    <div><span><span class='dot total-dispatch'></span>Total Dispatch</span><b>" & totalDispatch.ToString("N0") & "</b></div>")
+        html.Append("    <div><span>Pending</span><b class='" & If(pending > 0, "pending-value pending-active", "pending-value") & "'>" & pending.ToString("N0") & "</b></div>")
+        html.Append("  </div>")
+        html.Append("</div>")
+
+        html.Append("<script type='text/javascript'>")
+        html.Append("(function(){")
+        html.Append("  var el = document.getElementById('skuOverallChart'); if (!el) { return; }")
+        html.Append("  var existing = (window.Chart && Chart.getChart) ? Chart.getChart(el) : null; if (existing) { existing.destroy(); }")
+        html.Append("  new Chart(el, {")
+        html.Append("    type: 'doughnut',")
+        html.Append("    data: { labels: ['Dispatched','Pending'], datasets: [{")
+        html.Append("      data: [" & totalDispatch.ToString(System.Globalization.CultureInfo.InvariantCulture) & ", " & pending.ToString(System.Globalization.CultureInfo.InvariantCulture) & "],")
+        ' Modified-by MUKESH BHAGAT on 14-09-2026 : '#dce6f0' for the pending slice was nearly
+        ' invisible against the white card - switched to '#e9ecef', the same gray the old
+        ' bar-track used elsewhere on this page (proven to read clearly there). borderColor/Width
+        ' adds a thin white separator between the two slices, and cutout dropped from 72% to 68%
+        ' for a slightly thicker ring so a small dispatched share is still visible as more than a hairline.
+        html.Append("      backgroundColor: ['#0ca30c', '#e9ecef'], borderColor: '#ffffff', borderWidth: 2")
+        html.Append("    }] },")
+        html.Append("    options: {")
+        html.Append("      responsive: false, cutout: '68%',") ' 14-09-2026: fixed pixel size, no resize observer - see canvas comment above
+        html.Append("      plugins: { legend: { display: false }, tooltip: { enabled: " & If(totalLoad > 0, "true", "false") & " } }")
+        html.Append("    }")
+        html.Append("  });")
+        html.Append("})();")
+        html.Append("</script>")
+
+        Return html.ToString()
+    End Function
 
 #End Region
     Protected Sub lnkViewDetails_Click(ByVal sender As Object, ByVal e As EventArgs)
@@ -1267,5 +1396,67 @@ Partial Class Home
 
     Protected Sub gvVendorDispatch_RowCommand(sender As Object, e As GridViewCommandEventArgs)
 
+    End Sub
+
+    Protected Sub gvBrandList_RowCommand(sender As Object, e As GridViewCommandEventArgs)
+        Try
+
+            If e.CommandName = "ViewBrand" Then
+                Dim row As GridViewRow = CType(CType(e.CommandSource, LinkButton).NamingContainer, GridViewRow)
+
+                'Get Brand Name from Label
+                Dim lblBrandName As Label = CType(row.FindControl("lblBrandName"), Label)
+
+                Dim brandName As String = ""
+                If lblBrandName IsNot Nothing Then
+                    brandName = lblBrandName.Text
+                End If
+
+                'Get Year & Month from dropdown
+                Dim processYear As String = ddlProcessYr.SelectedValue
+                Dim processMonth As String = ddlProcessMnth.SelectedValue
+
+                'Redirect to BrandWiseLoadSummary.aspx
+                Response.Redirect("VendorWiseBrandLoadSummary.aspx?year=" & processYear &
+                              "&month=" & processMonth &
+                              "&brand_name=" & Server.UrlEncode(brandName))
+            End If
+        Catch ex As Exception
+            Throw
+        End Try
+    End Sub
+
+    Protected Sub gvVendorList_RowCommand(sender As Object, e As GridViewCommandEventArgs)
+        Try
+
+            If e.CommandName = "ViewVendor" Then
+                Dim row As GridViewRow = CType(CType(e.CommandSource, LinkButton).NamingContainer, GridViewRow)
+                'Get Vendor Code from HiddenField
+                Dim hdnVendorCode As HiddenField = CType(row.FindControl("hdnVednorCode"), HiddenField)
+
+                Dim vendorCode As String = ""
+                If hdnVendorCode IsNot Nothing Then
+                    vendorCode = hdnVendorCode.Value
+                End If
+
+                Dim lblVendorName As Label = CType(row.FindControl("lblVendorName"), Label)
+                Dim vendorName As String = ""
+                If lblVendorName IsNot Nothing Then
+                    vendorName = lblVendorName.Text
+                End If
+
+                'Get Year & Month from dropdown
+                Dim processYear As String = ddlProcessYr.SelectedValue
+                Dim processMonth As String = ddlProcessMnth.SelectedValue
+
+                'Redirect to VendorWiseLoadSummary.aspx
+                Response.Redirect("VendorWiseLoadSummary.aspx?year=" & processYear &
+                              "&month=" & processMonth &
+                              "&vendor_code=" & Server.UrlEncode(vendorCode) &
+                              "&vendor_name=" & Server.UrlEncode(vendorName))
+            End If
+        Catch ex As Exception
+            Throw
+        End Try
     End Sub
 End Class
