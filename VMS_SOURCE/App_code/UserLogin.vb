@@ -450,9 +450,9 @@ Namespace VMS.Web
             Return DS
         End Function
 
-        Public Function GetLoadDespatchSummary(ByVal unitCode As String, ByVal year As String, ByVal month As String) As DataSet
+        Public Function GetLoadDespatchSummary(ByVal unitCode As String, ByVal year As String, ByVal month As String, ByVal searchSku As String) As DataSet
             Dim DS As DataSet
-            Dim sqlParams(2) As SqlParameter
+            Dim sqlParams(3) As SqlParameter
 
             sqlParams(0) = New SqlParameter()
             sqlParams(0).ParameterName = "@vendor_unit"
@@ -472,9 +472,74 @@ Namespace VMS.Web
             sqlParams(2).Direction = Data.ParameterDirection.Input
             sqlParams(2).Value = month
 
+            sqlParams(3) = New SqlParameter()
+            sqlParams(3).ParameterName = "@search_sku"
+            sqlParams(3).DbType = DbType.String
+            sqlParams(3).Direction = Data.ParameterDirection.Input
+            sqlParams(3).Value = searchSku
+
             DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[Get_Total_Load_Dispatch_Summary]", Data.CommandType.StoredProcedure, sqlParams)
             Return DS
         End Function
+
+        Public Function GetDashboardLoadDespatchSummary(ByVal unitCode As String, ByVal year As String, ByVal month As String) As DataSet
+            Dim DS As DataSet
+            Dim sqlParams(2) As SqlParameter
+
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@vendor_unit"
+            sqlParams(0).DbType = DbType.String
+            sqlParams(0).Direction = Data.ParameterDirection.Input
+            sqlParams(0).Value = If(unitCode = "", DBNull.Value, CObj(unitCode))
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@ProcessYr"
+            sqlParams(1).DbType = DbType.String
+            sqlParams(1).Direction = Data.ParameterDirection.Input
+            sqlParams(1).Value = year
+
+            sqlParams(2) = New SqlParameter()
+            sqlParams(2).ParameterName = "@ProcessMnth"
+            sqlParams(2).DbType = DbType.String
+            sqlParams(2).Direction = Data.ParameterDirection.Input
+            sqlParams(2).Value = month
+
+            DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[Get_Dashboard_Load_Dispatch_Summary]", Data.CommandType.StoredProcedure, sqlParams)
+            Return DS
+        End Function
+
+        Public Function GetVendorWiseBrandLoadSummary(ByVal brandName As String, ByVal year As String, ByVal month As String, ByVal searchVendor As String) As DataSet
+            Dim DS As DataSet
+            Dim sqlParams(3) As SqlParameter
+
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@brand_name"
+            sqlParams(0).DbType = DbType.String
+            sqlParams(0).Direction = Data.ParameterDirection.Input
+            sqlParams(0).Value = brandName
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@ProcessYr"
+            sqlParams(1).DbType = DbType.String
+            sqlParams(1).Direction = Data.ParameterDirection.Input
+            sqlParams(1).Value = year
+
+            sqlParams(2) = New SqlParameter()
+            sqlParams(2).ParameterName = "@ProcessMnth"
+            sqlParams(2).DbType = DbType.String
+            sqlParams(2).Direction = Data.ParameterDirection.Input
+            sqlParams(2).Value = month
+
+            sqlParams(3) = New SqlParameter()
+            sqlParams(3).ParameterName = "@vendor_name"
+            sqlParams(3).DbType = DbType.String
+            sqlParams(3).Direction = Data.ParameterDirection.Input
+            sqlParams(3).Value = searchVendor
+
+            DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[Get_Vendor_Wise_Distribution_For_Brand]", Data.CommandType.StoredProcedure, sqlParams)
+            Return DS
+        End Function
+
 #End Region
 
     End Class

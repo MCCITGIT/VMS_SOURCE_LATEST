@@ -924,8 +924,13 @@ Partial Class Home
         If (Not (Session(Constant.SessionKeys.UserInfo) Is Nothing)) Then
             userInfo = CType(Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
 
+            Dim unitCode = ddlvendor.SelectedValue
+            Dim year = ddlProcessYr.SelectedValue
+            Dim month = ddlProcessMnth.SelectedValue
+
             Dim userDetailsObject As New UserLogin()
             Dim ds As DataSet = userDetailsObject.GetDashBoardInfo(userInfo.userIDEntity, userInfo.userBranchEntity)
+            Dim sumDs As DataSet = userDetailsObject.GetDashboardLoadDespatchSummary(unitCode, year, month)
             If userInfo.userGroupCodeEntity.Equals("HO", StringComparison.InvariantCultureIgnoreCase) Or userInfo.userGroupCodeEntity.Equals("SYSADMIN", StringComparison.InvariantCultureIgnoreCase) Then
                 divHo.Visible = True
                 divNewsCard.Visible = True
@@ -935,7 +940,23 @@ Partial Class Home
                 'divData.Visible = False
                 divDespatch.Visible = False
                 divSkuChart.Visible = False
-                divSearch.Visible = False
+                divSearch.Visible = True
+                divVendor.Visible = False
+                divSumData.Visible = True
+
+                If (sumDs IsNot Nothing AndAlso sumDs.Tables.Count > 0) Then
+                    gvBrandList.DataSource = sumDs.Tables(0)
+                    gvBrandList.DataBind()
+
+                    gvVendorList.DataSource = sumDs.Tables(1)
+                    gvVendorList.DataBind()
+                Else
+                    gvBrandList.DataSource = Nothing
+                    gvBrandList.DataBind()
+
+                    gvVendorList.DataSource = Nothing
+                    gvVendorList.DataBind()
+                End If
 
                 If (ds IsNot Nothing AndAlso ds.Tables.Count > 0) Then
                     If (ds.Tables(0).Rows.Count > 0) Then
@@ -987,9 +1008,9 @@ Partial Class Home
                 divSkuChart.Visible = True
                 divSearch.Visible = True
 
-                Dim unitCode = ddlvendor.SelectedValue
-                Dim year = ddlProcessYr.SelectedValue
-                Dim month = ddlProcessMnth.SelectedValue
+                'Dim unitCode = ddlvendor.SelectedValue
+                'Dim year = ddlProcessYr.SelectedValue
+                'Dim month = ddlProcessMnth.SelectedValue
                 Dim active = "Y"
                 Dim SkuDs As DataSet = userDetailsObject.GetPendingDespatchData(unitCode, year, month, active)
                 If (SkuDs IsNot Nothing AndAlso SkuDs.Tables(0).Rows.Count > 0) Then
@@ -1029,7 +1050,7 @@ Partial Class Home
         Dim year = ddlProcessYr.SelectedValue
         Dim month = ddlProcessMnth.SelectedValue
 
-        ds = userDetailsObject.GetLoadDespatchSummary(unitCode, year, month)
+        ds = userDetailsObject.GetLoadDespatchSummary(unitCode, year, month, "")
         If ds Is Nothing OrElse ds.Tables.Count = 0 OrElse ds.Tables(0).Rows.Count = 0 Then
             litSkuRows.Text = "<div class='mst-empty-state'>No data found for this selection.</div>"
             Return
@@ -1267,5 +1288,67 @@ Partial Class Home
 
     Protected Sub gvVendorDispatch_RowCommand(sender As Object, e As GridViewCommandEventArgs)
 
+    End Sub
+
+    Protected Sub gvBrandList_RowCommand(sender As Object, e As GridViewCommandEventArgs)
+        Try
+
+            If e.CommandName = "ViewBrand" Then
+                Dim row As GridViewRow = CType(CType(e.CommandSource, LinkButton).NamingContainer, GridViewRow)
+
+                'Get Brand Name from Label
+                Dim lblBrandName As Label = CType(row.FindControl("lblBrandName"), Label)
+
+                Dim brandName As String = ""
+                If lblBrandName IsNot Nothing Then
+                    brandName = lblBrandName.Text
+                End If
+
+                'Get Year & Month from dropdown
+                Dim processYear As String = ddlProcessYr.SelectedValue
+                Dim processMonth As String = ddlProcessMnth.SelectedValue
+
+                'Redirect to BrandWiseLoadSummary.aspx
+                Response.Redirect("VendorWiseBrandLoadSummary.aspx?year=" & processYear &
+                              "&month=" & processMonth &
+                              "&brand_name=" & Server.UrlEncode(brandName))
+            End If
+        Catch ex As Exception
+            Throw
+        End Try
+    End Sub
+
+    Protected Sub gvVendorList_RowCommand(sender As Object, e As GridViewCommandEventArgs)
+        Try
+
+            If e.CommandName = "ViewVendor" Then
+                Dim row As GridViewRow = CType(CType(e.CommandSource, LinkButton).NamingContainer, GridViewRow)
+                'Get Vendor Code from HiddenField
+                Dim hdnVendorCode As HiddenField = CType(row.FindControl("hdnVednorCode"), HiddenField)
+
+                Dim vendorCode As String = ""
+                If hdnVendorCode IsNot Nothing Then
+                    vendorCode = hdnVendorCode.Value
+                End If
+
+                Dim lblVendorName As Label = CType(row.FindControl("lblVendorName"), Label)
+                Dim vendorName As String = ""
+                If lblVendorName IsNot Nothing Then
+                    vendorName = lblVendorName.Text
+                End If
+
+                'Get Year & Month from dropdown
+                Dim processYear As String = ddlProcessYr.SelectedValue
+                Dim processMonth As String = ddlProcessMnth.SelectedValue
+
+                'Redirect to VendorWiseLoadSummary.aspx
+                Response.Redirect("VendorWiseLoadSummary.aspx?year=" & processYear &
+                              "&month=" & processMonth &
+                              "&vendor_code=" & Server.UrlEncode(vendorCode) &
+                              "&vendor_name=" & Server.UrlEncode(vendorName))
+            End If
+        Catch ex As Exception
+            Throw
+        End Try
     End Sub
 End Class
