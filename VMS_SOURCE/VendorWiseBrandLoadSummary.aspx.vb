@@ -184,4 +184,8 @@ Partial Class VendorWiseBrandLoadSummary
         gvFgVendorlist.PageIndex = 0
         LoadData()
     End Sub
+
+    Protected Sub btnBack_Click(sender As Object, e As EventArgs)
+        Response.Redirect("Home.aspx")
+    End Sub
 End Class
