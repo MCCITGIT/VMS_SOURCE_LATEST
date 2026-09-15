@@ -130,9 +130,17 @@
             background: #27ae60;
         }
 
+        /* Modified-by MUKESH BHAGAT on 15-09-2026 : align-items was 'stretch', which made
+           .sku-summary-col match the height of #chartContainer's fixed 400px box regardless of
+           how many SKU rows a vendor actually has - with only a handful of rows (well under
+           400px of content) the donut then centred itself inside that oversized box and ended
+           up sitting far below the top of the list instead of next to it. 'flex-start' keeps
+           both columns pinned to the top; #chartContainer itself switched from a fixed height to
+           a max-height (see below) so it only grows/scrolls when a vendor genuinely has enough
+           SKUs to need it. */
         .sku-panel-row {
             display: flex;
-            align-items: stretch;
+            align-items: flex-start;
             gap: 24px;
         }
 
@@ -146,7 +154,7 @@
             min-width: 150px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             border-left: 1px solid #f0f0f0;
             padding-left: 20px;
         }
@@ -328,7 +336,7 @@
                         </div>
                         <div class="sku-panel-row">
                             <div class="sku-list-col">
-                                <div id="chartContainer" style="height: 400px; overflow-y: auto;">
+                                <div id="chartContainer" style="max-height: 400px; overflow-y: auto;">
                                     <asp:Literal ID="litSkuRows" runat="server"></asp:Literal>
                                 </div>
                             </div>

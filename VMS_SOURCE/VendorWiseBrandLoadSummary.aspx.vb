@@ -171,6 +171,32 @@ Partial Class VendorWiseBrandLoadSummary
 
     End Function
 
+    ' Modified-by MUKESH BHAGAT on 15-09-2026 : Serviceability (%) as a colored status pill -
+    ' same 4-tier thresholds/colors as the Dispatch % badge on Home.aspx / VendorWiseLoadSummary.aspx.
+    Protected Sub gvFgVendorlist_RowDataBound(sender As Object, e As GridViewRowEventArgs)
+        If e.Row.RowType <> DataControlRowType.DataRow Then Exit Sub
+
+        Dim lblServiceability As Label = CType(e.Row.FindControl("lblServiceability"), Label)
+        If lblServiceability Is Nothing Then Exit Sub
+
+        Dim pct As Decimal
+        If Not Decimal.TryParse(lblServiceability.Text, pct) Then Exit Sub
+
+        Dim pillClass As String
+        If pct = 0 Then
+            pillClass = "pct-pill-danger"
+        ElseIf pct < 50 Then
+            pillClass = "pct-pill-warning"
+        ElseIf pct < 80 Then
+            pillClass = "pct-pill-info"
+        Else
+            pillClass = "pct-pill-success"
+        End If
+
+        lblServiceability.CssClass = "pct-pill " & pillClass
+        lblServiceability.Text = pct.ToString("0.00") & "%"
+    End Sub
+
     Protected Sub btnSubmit_Click(sender As Object, e As EventArgs)
         gvFgVendorlist.PageIndex = 0
         'SaveSearchCriteria()

@@ -8,6 +8,39 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/js/bootstrap-select.min.js"></script>
 
+    <%-- Modified-by MUKESH BHAGAT on 15-09-2026 : Serviceability (%) shown as a colored status
+         pill instead of plain text - same 4-tier thresholds/colors already used for the Dispatch %
+         badge on Home.aspx / VendorWiseLoadSummary.aspx, so "orange" and "red" mean the same
+         severity everywhere in the app. Colored in code-behind (gvFgVendorlist_RowDataBound). --%>
+    <style>
+        .pct-pill {
+            display: inline-block;
+            min-width: 52px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .pct-pill-danger {
+            background: #e74c3c;
+        }
+
+        .pct-pill-warning {
+            background: #f39c12;
+        }
+
+        .pct-pill-info {
+            background: #f1c40f;
+        }
+
+        .pct-pill-success {
+            background: #27ae60;
+        }
+    </style>
+
     <div class="rm-module rm-compact rm-brand-master">
         <div class="breadcrumbs">
             <div class="leftFung">
@@ -71,7 +104,8 @@
                             <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0"
                                 ID="gvFgVendorlist" runat="server" AutoGenerateColumns="false" Visible="true"
                                 ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
-                                PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
+                                PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last"
+                                OnRowDataBound="gvFgVendorlist_RowDataBound">
                                 <RowStyle CssClass="tlrowlight" />
                                 <PagerStyle CssClass="PagerGrid" HorizontalAlign="Left" />
                                 <HeaderStyle CssClass="headerGrid" />
