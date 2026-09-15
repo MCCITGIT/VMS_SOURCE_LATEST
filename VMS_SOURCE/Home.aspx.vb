@@ -3,6 +3,8 @@
 Imports System.Data
 Imports System.Data.SqlClient
 Imports System.Text
+Imports System.Web.UI.WebControls.Expressions
+
 'Imports Microsoft.Office.Interop.Excel
 Imports VMS.Web
 
@@ -16,6 +18,7 @@ Partial Class Home
     Dim arrayQuick(1000, 1) As String
     Public strA, strToDay, strRegDay, strProj As String
     Dim strscroller As String
+    Private Const DispatchPageSize As Integer = 20
 
     Private Sub checkSession()
         Dim userInfo As VMSUserEntity = New VMSUserEntity()
@@ -940,7 +943,8 @@ Partial Class Home
 
             Dim userDetailsObject As New UserLogin()
             Dim ds As DataSet = userDetailsObject.GetDashBoardInfo(userInfo.userIDEntity, userInfo.userBranchEntity)
-            Dim sumDs As DataSet = userDetailsObject.GetDashboardLoadDespatchSummary(unitCode, year, month)
+            Dim brandDs As DataSet = userDetailsObject.GetBrandDashboardLoadDespatchSummary(unitCode, year, month)
+            Dim vendorDs As DataSet = userDetailsObject.GetVendorDashboardLoadDespatchSummary(unitCode, year, month)
             'Dim venDs As DataSet = userDetailsObject.GetPendingDespatchData(unitCode, year, month, Constant.Common.ActiveStatus)
             If userInfo.userGroupCodeEntity.Equals("HO", StringComparison.InvariantCultureIgnoreCase) Or userInfo.userGroupCodeEntity.Equals("SYSADMIN", StringComparison.InvariantCultureIgnoreCase) Then
                 divHo.Visible = True
@@ -955,16 +959,19 @@ Partial Class Home
                 divVendor.Visible = False
                 divSumData.Visible = True
 
-                If (sumDs IsNot Nothing AndAlso sumDs.Tables.Count > 0) Then
-                    gvBrandList.DataSource = sumDs.Tables(0)
+                If (brandDs IsNot Nothing AndAlso brandDs.Tables.Count > 0) Then
+                    gvBrandList.DataSource = brandDs.Tables(0)
                     gvBrandList.DataBind()
 
-                    gvVendorList.DataSource = sumDs.Tables(1)
-                    gvVendorList.DataBind()
                 Else
                     gvBrandList.DataSource = Nothing
                     gvBrandList.DataBind()
+                End If
 
+                If (vendorDs IsNot Nothing AndAlso vendorDs.Tables.Count > 0) Then
+                    gvVendorList.DataSource = vendorDs.Tables(0)
+                    gvVendorList.DataBind()
+                Else
                     gvVendorList.DataSource = Nothing
                     gvVendorList.DataBind()
                 End If
@@ -1032,7 +1039,7 @@ Partial Class Home
                 'Dim unitCode = ddlvendor.SelectedValue
                 'Dim year = ddlProcessYr.SelectedValue
                 'Dim month = ddlProcessMnth.SelectedValue
-                Dim SkuDs As DataSet = userDetailsObject.GetPendingDespatchData(unitCode, year, month, Constant.Common.ActiveStatus)
+                Dim SkuDs As DataSet = userDetailsObject.GetPendingDespatchData(unitCode, year, month, Constant.Common.ActiveStatus, 0, DispatchPageSize)
                 If (SkuDs IsNot Nothing AndAlso SkuDs.Tables(0).Rows.Count > 0) Then
                     gvVendorDispatch.DataSource = SkuDs.Tables(0)
                     gvVendorDispatch.DataBind()
@@ -1064,7 +1071,7 @@ Partial Class Home
 
             Dim userDetailsObject As New UserLogin()
 
-            Dim venDs As DataSet = userDetailsObject.GetPendingDespatchData(unitCode, year, month, Constant.Common.ActiveStatus)
+            Dim venDs As DataSet = userDetailsObject.GetPendingDespatchData(unitCode, year, month, Constant.Common.ActiveStatus, 0, DispatchPageSize)
 
             If venDs IsNot Nothing AndAlso venDs.Tables.Count > 0 Then
                 gvVendorDispatch.DataSource = venDs.Tables(0)
@@ -1080,6 +1087,34 @@ Partial Class Home
             'Log exception if required
         End Try
     End Sub
+
+    <System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreDispatch(pageIndex As Integer, vendorUnit As String, year As String, month As String) As Object
+        Dim dal As New UserLogin()
+        Dim uc As String = If(String.IsNullOrEmpty(vendorUnit), Nothing, vendorUnit)
+        Dim ds As DataSet = dal.GetPendingDespatchData(uc, year, month, Constant.Common.ActiveStatus, pageIndex, 20)
+
+        Dim rows As New List(Of Object)
+        Dim total As Integer = 0
+
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 Then
+            Dim dt As DataTable = ds.Tables(0)
+            For Each r As DataRow In dt.Rows
+                rows.Add(New With {
+                .vm_vendor_name = r("vm_vendor_name").ToString(),
+                .depot_name = r("depot_name").ToString(),
+                .ddrh_order_sl_no = r("ddrh_order_sl_no").ToString(),
+                .ddrh_hdr_req_id = r("ddrh_hdr_req_id").ToString(),
+                .ReqDate = r("ReqDate").ToString(),
+                .vom_org_name = r("vom_org_name").ToString(),
+                .lm_desc = r("lm_desc").ToString()
+            })
+            Next
+            If dt.Rows.Count > 0 Then total = Convert.ToInt32(dt.Rows(0)("TotalRecords"))
+        End If
+
+        Return New With {.rows = rows, .total = total}
+    End Function
 
     Private Sub BindLoadDispatchChart()
         Dim userInfo As VMSUserEntity = New VMSUserEntity()

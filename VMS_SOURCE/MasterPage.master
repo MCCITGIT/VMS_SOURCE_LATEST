@@ -277,7 +277,7 @@
 </head>
 <body>
     <form id="form1" runat="server">
-        <asp:ToolkitScriptManager runat="server"></asp:ToolkitScriptManager>
+        <asp:ToolkitScriptManager runat="server" EnablePageMethods="true"></asp:ToolkitScriptManager>
         <!-- Navbar -->
         <nav class="navbar navbar-light custBgLight">
             <div class="headSection">
