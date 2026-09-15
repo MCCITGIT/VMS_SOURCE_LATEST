@@ -285,6 +285,12 @@
                 padding-top: 20px;
             }
         }
+        .p-pdl-select-box > span{
+            min-width: 200px !important;
+        }
+        .p-pdl-select-box span ul li.select2-results__option {
+            text-align: center;
+        }
     </style>
 
     <div class="vms-home">
@@ -639,12 +645,12 @@
                                     <div>
                                         <h5 id="DespatchTitle" class="mst-panel-title">Pending Despatch List</h5>
                                     </div>
-                                    <div>
-                                        <asp:DropDownList ID="ddlVendorList" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server"></asp:DropDownList>
-                                        <asp:Button ID="btnResetVendorFilter" runat="server"
-                                            Text="Reset"
-                                            CssClass="btn btn-sm btn-outline-secondary" />
-                                    </div>
+                                </div>
+                                <div class="p-pdl-select-box" style="display: flex; align-items: center; column-gap: 5px;">
+                                    <asp:DropDownList ID="ddlVendorList" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server"></asp:DropDownList>
+                                    <asp:Button ID="btnResetVendorFilter" runat="server"
+                                        Text="Reset"
+                                        CssClass="btn btn-sm btn-outline-secondary" />
                                 </div>
                             </div>
                             <div class="table-responsive rm-grid-scroll">
