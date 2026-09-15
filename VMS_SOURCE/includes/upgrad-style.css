@@ -297,6 +297,7 @@ body {
     /*background-color: #f8f9fb;*/
     background-color: #fcfcfd;
     border-left: 3px solid #375973;
+    padding: 10px;
 }
 
 .card-body {
@@ -3076,6 +3077,7 @@ body {
     justify-content: space-between;
     gap: 12px;
     padding: 0;
+    margin-bottom: 10px;
 }
 
 .mst-panel-header-left {

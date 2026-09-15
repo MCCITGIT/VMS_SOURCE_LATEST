@@ -641,63 +641,62 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="card-body">
-                                <div class="table-responsive rm-grid-scroll">
-                                    <asp:GridView ID="gvVendorDispatch" runat="server" AutoGenerateColumns="false" OnRowCommand="gvVendorDispatch_RowCommand"
-                                        Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
-                                        <RowStyle CssClass="tlrowlight" />
-                                        <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
-                                        <HeaderStyle CssClass="headerGrid" />
-                                        <FooterStyle CssClass="footerGrid" />
-                                        <Columns>
-                                            <asp:TemplateField HeaderText="Order Sl No." HeaderStyle-HorizontalAlign="Center">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lblOrderId" runat="server" Text='<%# Bind("ddrh_order_sl_no") %>'></asp:Label>
-                                                    <asp:Label ID="lblRequestId" Visible="false" runat="server" Text='<%# Bind("ddrh_hdr_req_id") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                                <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                            </asp:TemplateField>
-                                            <asp:TemplateField HeaderText="Request Date" HeaderStyle-HorizontalAlign="Center">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lblRequestDate" runat="server" Text='<%# Bind("ReqDate") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                                <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                            </asp:TemplateField>
+                            <div class="table-responsive rm-grid-scroll">
+                                <asp:GridView ID="gvVendorDispatch" runat="server" AutoGenerateColumns="false" OnRowCommand="gvVendorDispatch_RowCommand"
+                                    Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
+                                    <RowStyle CssClass="tlrowlight" />
+                                    <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
+                                    <HeaderStyle CssClass="headerGrid" />
+                                    <FooterStyle CssClass="footerGrid" />
+                                    <Columns>
+                                        <asp:TemplateField HeaderText="Order Sl No." HeaderStyle-HorizontalAlign="Center">
+                                            <ItemTemplate>
+                                                <asp:Label ID="lblOrderId" runat="server" Text='<%# Bind("ddrh_order_sl_no") %>'></asp:Label>
+                                                <asp:Label ID="lblRequestId" Visible="false" runat="server" Text='<%# Bind("ddrh_hdr_req_id") %>'></asp:Label>
+                                            </ItemTemplate>
+                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                            <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                        </asp:TemplateField>
+                                        <asp:TemplateField HeaderText="Request Date" HeaderStyle-HorizontalAlign="Center">
+                                            <ItemTemplate>
+                                                <asp:Label ID="lblRequestDate" runat="server" Text='<%# Bind("ReqDate") %>'></asp:Label>
+                                            </ItemTemplate>
+                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                            <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                        </asp:TemplateField>
 
-                                            <asp:TemplateField HeaderText="Despatch To" HeaderStyle-HorizontalAlign="Center">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="Label1" runat="server" Text='<%# Bind("vom_org_name") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                                <ItemStyle HorizontalAlign="Center" Width="15%"></ItemStyle>
-                                            </asp:TemplateField>
-                                            <asp:TemplateField HeaderText="Transporter Name" HeaderStyle-HorizontalAlign="Center">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lblTransporter" runat="server" Text='<%# Bind("tm_transporter_name") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                                <ItemStyle HorizontalAlign="Center" Width="15%"></ItemStyle>
-                                            </asp:TemplateField>
+                                        <asp:TemplateField HeaderText="Despatch To" HeaderStyle-HorizontalAlign="Center">
+                                            <ItemTemplate>
+                                                <asp:Label ID="Label1" runat="server" Text='<%# Bind("vom_org_name") %>'></asp:Label>
+                                            </ItemTemplate>
+                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                            <ItemStyle HorizontalAlign="Center" Width="15%"></ItemStyle>
+                                        </asp:TemplateField>
+                                        <asp:TemplateField HeaderText="Transporter Name" HeaderStyle-HorizontalAlign="Center">
+                                            <ItemTemplate>
+                                                <asp:Label ID="lblTransporter" runat="server" Text='<%# Bind("tm_transporter_name") %>'></asp:Label>
+                                            </ItemTemplate>
+                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                            <ItemStyle HorizontalAlign="Center" Width="15%"></ItemStyle>
+                                        </asp:TemplateField>
 
 
-                                            <asp:TemplateField HeaderText="Truck" HeaderStyle-HorizontalAlign="Center">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lbllm_desc" runat="server" Text='<%# Bind("lm_desc") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                                <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                            </asp:TemplateField>
-                                            <asp:TemplateField HeaderText="Status" HeaderStyle-HorizontalAlign="Center">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lblStatus" runat="server" Text='<%# Bind("Status") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                                <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                            </asp:TemplateField>
+                                        <asp:TemplateField HeaderText="Truck" HeaderStyle-HorizontalAlign="Center">
+                                            <ItemTemplate>
+                                                <asp:Label ID="lbllm_desc" runat="server" Text='<%# Bind("lm_desc") %>'></asp:Label>
+                                            </ItemTemplate>
+                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                            <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                        </asp:TemplateField>
+                                        <asp:TemplateField HeaderText="Status" HeaderStyle-HorizontalAlign="Center">
+                                            <ItemTemplate>
+                                                <asp:Label ID="lblStatus" runat="server" Text='<%# Bind("Status") %>'></asp:Label>
+                                            </ItemTemplate>
+                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                            <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                        </asp:TemplateField>
 
-                                            <%--<asp:TemplateField HeaderText="View" HeaderStyle-HorizontalAlign="Center">
+                                        <%--<asp:TemplateField HeaderText="View" HeaderStyle-HorizontalAlign="Center">
                                 <ItemTemplate>
                                     <asp:Button ID="btnViewDetails" CommandName="ViewDetails" CssClass="btn btn-info btn-   sm"
                                         runat="server" CommandArgument='<%# Bind("ddrh_hdr_req_id") %>' Text="View" />
@@ -705,9 +704,8 @@
                                 <HeaderStyle HorizontalAlign="Center" Width="4%" />
                                 <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="4%" />
                             </asp:TemplateField>--%>
-                                        </Columns>
-                                    </asp:GridView>
-                                </div>
+                                    </Columns>
+                                </asp:GridView>
                             </div>
                         </div>
                     </div>
@@ -1018,8 +1016,6 @@
                         </div>
                     </div>
                 </div>
-
-
 
 
                 <%--<div class="row">
