@@ -1,8 +1,9 @@
 'Imports VMS.Common
 'Imports VMS.BusinessFacade
-Imports System.Data.SqlClient
 Imports System.Data
+Imports System.Data.SqlClient
 Imports System.Text
+Imports Microsoft.Office.Interop.Excel
 Imports VMS.Web
 
 
@@ -931,6 +932,7 @@ Partial Class Home
             Dim userDetailsObject As New UserLogin()
             Dim ds As DataSet = userDetailsObject.GetDashBoardInfo(userInfo.userIDEntity, userInfo.userBranchEntity)
             Dim sumDs As DataSet = userDetailsObject.GetDashboardLoadDespatchSummary(unitCode, year, month)
+            Dim venDs As DataSet = userDetailsObject.GetPendingDespatchData(unitCode, year, month, Constant.Common.ActiveStatus)
             If userInfo.userGroupCodeEntity.Equals("HO", StringComparison.InvariantCultureIgnoreCase) Or userInfo.userGroupCodeEntity.Equals("SYSADMIN", StringComparison.InvariantCultureIgnoreCase) Then
                 divHo.Visible = True
                 divNewsCard.Visible = True
@@ -938,7 +940,7 @@ Partial Class Home
                 divUnit.Visible = False
                 divDepot.Visible = False
                 'divData.Visible = False
-                divDespatch.Visible = False
+                divDespatch.Visible = True
                 divSkuChart.Visible = False
                 divSearch.Visible = True
                 divVendor.Visible = False
@@ -956,6 +958,14 @@ Partial Class Home
 
                     gvVendorList.DataSource = Nothing
                     gvVendorList.DataBind()
+                End If
+
+                If (venDs IsNot Nothing AndAlso venDs.Tables.Count > 0) Then
+                    gvVendorDispatch.DataSource = venDs.Tables(0)
+                    gvVendorDispatch.DataBind()
+                Else
+                    gvVendorDispatch.DataSource = Nothing
+                    gvVendorDispatch.DataBind()
                 End If
 
                 If (ds IsNot Nothing AndAlso ds.Tables.Count > 0) Then
@@ -1012,8 +1022,7 @@ Partial Class Home
                 'Dim unitCode = ddlvendor.SelectedValue
                 'Dim year = ddlProcessYr.SelectedValue
                 'Dim month = ddlProcessMnth.SelectedValue
-                Dim active = "Y"
-                Dim SkuDs As DataSet = userDetailsObject.GetPendingDespatchData(unitCode, year, month, active)
+                Dim SkuDs As DataSet = userDetailsObject.GetPendingDespatchData(unitCode, year, month, Constant.Common.ActiveStatus)
                 If (SkuDs IsNot Nothing AndAlso SkuDs.Tables(0).Rows.Count > 0) Then
                     gvVendorDispatch.DataSource = SkuDs.Tables(0)
                     gvVendorDispatch.DataBind()
@@ -1058,7 +1067,7 @@ Partial Class Home
             Return
         End If
 
-        Dim dt As DataTable = ds.Tables(0)
+        Dim dt As Data.DataTable = ds.Tables(0)
 
         Dim sb As New StringBuilder()
         ' Modified-by MUKESH BHAGAT on 14-09-2026 : running totals across every SKU row, used to
