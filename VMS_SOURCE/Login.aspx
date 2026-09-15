@@ -62,7 +62,7 @@
                     <div class="col-md-7 mobDisplyNan">
                         <div class="leftSubBg">
                             <div class="compyDtls">
-                                <img id="logo" class="bLogo" src="images/h-b-logo.png" alt="Best Wall Paint Colors, House Painting Colors" title="Lewis Berger Paints" />
+                                <img id="logo" class="bLogo" src="images/logo-new.jpg" alt="Best Wall Paint Colors, House Painting Colors" title="Lewis Berger Paints" />
                                 <h3 class="bTitle" id="since">Berger Paints India Limited</h3>
                             </div>
                         </div>

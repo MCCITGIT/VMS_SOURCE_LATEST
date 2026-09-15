@@ -93,7 +93,7 @@ body {
     gap: 6px;*/
     padding: 8px 16px !important;
     min-height: 50px;
-    margin-bottom: 10px !important;
+    margin-bottom: 1rem !important;
     border-radius: 14px !important;
     position: relative;
     z-index: 1;
@@ -290,16 +290,20 @@ body {
 }
 
 .card {
-    box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.15);
-    margin-bottom: 0.8rem;
+    box-shadow: 0px 2px 6px rgb(0 0 0 / 25%);
+    margin-bottom: 1rem;
     border-radius: 16px;
     /*background-color: #fbfbfb;*/
     /*background-color: #f8f9fb;*/
     background-color: #fcfcfd;
+    border-left: 3px solid #375973;
+    padding: 10px;
 }
 
 .card-body {
-    padding: 0.6rem 1rem;
+    padding: 10px;
+    background: #F5F9FD;
+    border-radius: 15px;
 }
 
 .p-0 {
@@ -323,7 +327,8 @@ body {
 .form-control {
     font-size: 13px;
     line-height: 15px;
-    border: 1px solid #bfc9d3;
+    /*border: 1px solid #bfc9d3;*/
+    border: 1px solid #b0b8c1;
     border-radius: 8px;
 }
 
@@ -415,14 +420,14 @@ body {
         position: sticky;
         top: 0;
         z-index: 2;
-        background-color: #fcfcfd;
+        background-color: #375973;
     }
 
         .upgradDataGrid tr.headerGrid:hover {
             /*background: #eff2f5;*/
             /*background: transparent;*/
             color: unset;
-            background-color: unset;
+            background: #346a9b;
         }
 
     /*.upgradDataGrid tr.headerGrid th {
@@ -503,12 +508,12 @@ body {
     }
 
     .upgradDataGrid th {
-        color: #838ea1 !important;
+        color: #ffffff !important;
         font-size: 10px !important;
         font-weight: 700 !important;
         letter-spacing: 0.04em;
         text-transform: uppercase !important;
-        padding: 6px 8px !important;
+        padding: 11px 8px !important;
         line-height: 13px !important;
         white-space: nowrap;
     }
@@ -671,7 +676,7 @@ body {
     /*background-color: #dfe7ef;*/
     background-color: rgb(253, 254, 254);
     padding: 20px 12px;
-    opacity: 0.65;
+    opacity: 0.75;
 }
 
 .loginFullBody {
@@ -2050,7 +2055,8 @@ body {
 
 .modal-header {
     padding: 0.5rem 0.75rem;
-    background: #123B5B;
+    /*background: #123B5B;*/
+    background: #253e50;
 }
 
 .modal-title {
@@ -3070,7 +3076,8 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 1rem 1rem 0 1rem;
+    padding: 0;
+    margin-bottom: 10px;
 }
 
 .mst-panel-header-left {
@@ -3769,6 +3776,7 @@ body {
 .p-upgradDataGrid {
     margin-bottom: 0;
 }
+
 .select2-container {
     width: 100% !important;
 }
@@ -3777,9 +3785,11 @@ body {
     max-height: 260px;
     overflow-y: auto;
 }
+
 .table-responsive {
     max-height: 440px;
     overflow-y: auto;
+    border-radius: 10px;
 }
 
 
@@ -3852,25 +3862,27 @@ body {
 }
 
 
-/* Dropdown items */
-.bootstrap-select .dropdown-menu li a {
-    font-size: 14px;
-    padding: 8px 12px;
-}
+    /* Dropdown items */
+    .bootstrap-select .dropdown-menu li a {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
 
 
 
-.bootstrap-select .dropdown-menu li a:hover {
-    background: #eff6ff;
-    color: #2563eb;
-}
+        .bootstrap-select .dropdown-menu li a:hover {
+            background: #eff6ff;
+            color: #2563eb;
+        }
 
 .ajax__calendar_container TABLE {
     width: 100% !important;
 }
+
 .ajax__calendar_dayname {
     white-space: nowrap;
 }
+
 .ajax__calendar_container {
     width: 175px !important;
 }
@@ -3885,5 +3897,3 @@ body {
     width: 100%;
     left: 0;
 }
-
-

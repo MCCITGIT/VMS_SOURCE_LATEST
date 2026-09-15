@@ -238,12 +238,6 @@ Partial Class UnitDespatchPlanAddUpdateVr1
                     TotalRate = TotalRate + (total + (total * Val(hdnSkuGST.Value / 100)))
                 End If
             Next
-            'If (TotalRate > Val(txtFinalInvoiceValue.Text)) Then
-            '    ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('Total Rate (Ind. GST) can not be greater than Final Invoice Value');", True)
-            '    txtFinalInvoiceValue.Focus()
-            '    ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
-            '    Exit Sub
-            'End If
             Dim FinalInvoiceValue As Decimal = 0
             If txtFinalInvoiceValue.Text = "" Then
                 FinalInvoiceValue = 0
@@ -251,6 +245,14 @@ Partial Class UnitDespatchPlanAddUpdateVr1
                 FinalInvoiceValue = Convert.ToDecimal(txtFinalInvoiceValue.Text)
             End If
 
+            'Modified-by MUKESH BHAGAT on 14-09-2026 : this whole check used to be three separate
+            'commented-out, unfinished attempts (dating back to SANTOSH KR, 08-03-2024, in the old
+            'UAT source) - none of them were ever enabled, and the one that came closest (the
+            'sign-based band check) had an off-by-boundary bug: it used Result > Value2 / Result <
+            'Value1 (strict), so a difference of EXACTLY the configured limit was allowed through
+            'instead of blocked. Rewritten as a single check using >= against the same
+            '[Get_Final_Invoice_Value] LOV band (Value1/Value2, e.g. -5/5) - a difference that
+            'reaches the limit is now blocked, not just one that exceeds it.
             Dim Result As Decimal = TotalRate - FinalInvoiceValue
             Dim Value1 As Decimal = 0
             Dim Value2 As Decimal = 0
@@ -261,32 +263,16 @@ Partial Class UnitDespatchPlanAddUpdateVr1
                 Value1 = Convert.ToDecimal(ds.Tables(0).Rows(0)("lov_value"))
                 Value2 = Convert.ToDecimal(ds.Tables(0).Rows(1)("lov_value"))
             End If
-            Dim sign As String = Result.ToString().Substring(0, 1)
-            'If sign = "-" Then
-            '    If (Value1 > Result AndAlso Result < Value2) Then
-            '        ''ModalPopupExtender2.Show()
-            '        lblErrorMessage.Text = "Total Rate Not matching With the Final Invoice Value."
-            '        lblErrorMessage.ForeColor = System.Drawing.Color.Red
-            '        ''ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('Total Rate not matching with the Final Invoice Value');", True)
-            '        '' txtfinalinvoicevalue.Focus()
-            '        ''ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
-            '        Exit Sub
-            '    End If
-            'Else
-            '    If (Value1 < Result AndAlso Result > Value2) Then
-            '        '' ModalPopupExtender2.Show()
-            '        lblErrorMessage.Text = "Total Rate not matching with the Final Invoice Value."
-            '        lblErrorMessage.ForeColor = System.Drawing.Color.Red
-            '        Exit Sub
-            '    End If
-            'End If
 
-            'If (Value1 < Result < Value2) Then
-            '    ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('Total Rate not matching with the Final Invoice Value');", True)
-            '    txtFinalInvoiceValue.Focus()
-            '    ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
-            '    Exit Sub
-            'End If
+            Dim lowerBound As Decimal = Math.Min(Value1, Value2)
+            Dim upperBound As Decimal = Math.Max(Value1, Value2)
+
+            If Result <= lowerBound OrElse Result >= upperBound Then
+                ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('Total Rate (Incl. GST) of " & TotalRate.ToString("N2") & " does not match the Final Invoice Value of " & FinalInvoiceValue.ToString("N2") & " (difference " & Result.ToString("N2") & "). The difference must be less than " & upperBound.ToString("N2") & ".');", True)
+                txtFinalInvoiceValue.Focus()
+                ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
+                Exit Sub
+            End If
 
             Dim invoiceExists As Integer = 0
             'Modified-by MUKESH BHAGAT on 31-08-2026 : in update mode the challan's own invoice
@@ -1321,8 +1307,17 @@ System.Web.Services.WebMethod()>
 
         'Dim DocsFileName As String = GetFileNameWithoutExtension(sch_fld.FileName) + "." + Extension
         'Dim DocsOrgFileName As String = GetFileNameWithoutExtension(sch_fld.FileName) + "." + Extension
-        Dim DocsFileName As String = sch_fld1.FileName
-        Dim DocsOrgFileName As String = sch_fld1.FileName
+        'Modified-by MUKESH BHAGAT on 09-09-2026 : the file was stored under the user's original
+        'name in a per-DAY folder shared by every vendor, so two uploads called e.g. "invoice.pdf"
+        'on the same day silently overwrote each other and one challan's download served the
+        'other vendor's bill. The stored name is now a GUID plus the original extension
+        '(same scheme as VMS_CORE) so every stored copy is unique. doc_org_filename carries the
+        'stored name because the download paths (list page, edit page, invoice_document_push)
+        'build the file name from it.
+        Dim originalName As String = System.IO.Path.GetFileName(sch_fld1.FileName)
+        Dim uniqueName As String = Guid.NewGuid().ToString("N") & System.IO.Path.GetExtension(originalName)
+        Dim DocsFileName As String = uniqueName
+        Dim DocsOrgFileName As String = uniqueName
         Dim DocPath As String = Format(Date.Now, "dd_MM_yyyy")
 
         If Not sch_fld1.PostedFile Is Nothing And sch_fld1.PostedFile.ContentLength > 0 Then
@@ -1340,9 +1335,9 @@ System.Web.Services.WebMethod()>
                         Dim projectPath As String = ConfigurationManager.AppSettings.Get("UPLOAD_DOCS_FOLDER_ABS_PATH") & userInfo.userCompanyEntity & "\" & "Challan_Docs" & "\" & DocPath
 
 
-                        Dim fn As String = System.IO.Path.GetFileName(sch_fld1.PostedFile.FileName)
-                        'fn = GetFileNameWithoutExtension(fn) + "." + Extension
-                        'fn = fn
+                        'Modified-by MUKESH BHAGAT on 09-09-2026 : save under the unique name
+                        'registered above, not the browser-supplied one
+                        Dim fn As String = uniqueName
                         Dim saveLocation As String = projectPath & "\" & fn
 
 

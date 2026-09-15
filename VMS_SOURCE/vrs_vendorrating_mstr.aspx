@@ -333,7 +333,7 @@
                             </ul>
                             <div class="row">
                                 <div class="col-md-8">
-                                    <asp:Chart ID="PerformanceChart" runat="server" Height="155" Width="420">
+                                    <asp:Chart ID="PerformanceChart" runat="server" Height="155" style="width: 100%;">
                                         <Series>
                                             <asp:Series Name="Performance" ChartType="Line" BorderWidth="4" Color="#007d9c"></asp:Series>
                                         </Series>
@@ -363,7 +363,7 @@
                         </div>
                         <div class="col-md-6">
                             <h4 class="gridTitleTx">Top 10 Unit List</h4>
-                            <div class="table-responsive tvlGridHt">
+                            <div class="table-responsive tvlGridHt" style="height:auto; max-height: 190px;">
                                 <asp:GridView ID="gvTopvendor" runat="server" AutoGenerateColumns="False" EmptyDataText="No records found" CssClass="upgradDataGrid m-0 custGvTopvendorGrid" CellSpacing="0" CellPadding="0">
                                     <RowStyle CssClass="tlrowlight" />
                                     <SelectedRowStyle />
@@ -1781,7 +1781,7 @@
     </asp:ModalPopupExtender>
     <asp:Panel ID="Panel5" runat="server" CssClass="modal-popup">
         <div class="modal-content-custom">
-            <div class="modal-header-custom">
+            <div class="modal-header">
                 <h5>
                     <asp:Label runat="server" ID="lblLtTyPopHdr"></asp:Label></h5>
                 <asp:Button ID="btnLyTyPop" runat="server" Text="×" CssClass="close-btn" OnClick="btnLyTyPop_Click" />

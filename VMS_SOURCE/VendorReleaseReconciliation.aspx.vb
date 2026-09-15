@@ -10,6 +10,7 @@ Imports NPOI.SS.UserModel
 Imports System.Globalization
 Imports System.IO
 Imports NPOI.SS.Util
+Imports System.Configuration
 Partial Class VendorReleaseReconciliation
     Inherits System.Web.UI.Page
     Dim userInfo As VMSUserEntity = New VMSUserEntity()
@@ -509,4 +510,264 @@ Partial Class VendorReleaseReconciliation
     Protected Sub btnBack_Click(sender As Object, e As EventArgs)
         Response.Redirect("VprDashboard.aspx")
     End Sub
+
+#Region "Cancelled by Vendor"
+    'Modified-by MUKESH BHAGAT on 11-09-2026 : Dispatch List > Status column. Admin / HO mark a
+    'release "Cancelled by Vendor" and attach the credit note (PDF). The flag is written on
+    'despatch_hdr and the file recorded in vpr_vendor_cancellation_doc; the list SPs then show
+    'the release under the Paid List with that status. Files are stored as <guid>.pdf under
+    '<UPLOAD_DOCS>\<company>\Vendor_Cancellation_Docs\<dd_MM_yyyy>\ - same scheme as the invoice copy.
+
+    Private Const CancelDocFolder As String = "Vendor_Cancellation_Docs"
+    Private Const CancelledStatusText As String = "Cancelled by Vendor"
+
+    Private Property CancelReleaseId As Integer
+        Get
+            Return If(ViewState("CancelReleaseId"), 0)
+        End Get
+        Set(value As Integer)
+            ViewState("CancelReleaseId") = value
+        End Set
+    End Property
+
+    Private Property CancelInvoiceNo As String
+        Get
+            Return If(ViewState("CancelInvoiceNo"), String.Empty)
+        End Get
+        Set(value As String)
+            ViewState("CancelInvoiceNo") = value
+        End Set
+    End Property
+
+    Private Property CancelInvoiceDate As String
+        Get
+            Return If(ViewState("CancelInvoiceDate"), String.Empty)
+        End Get
+        Set(value As String)
+            ViewState("CancelInvoiceDate") = value
+        End Set
+    End Property
+
+    Private Property CancelInvoiceValue As String
+        Get
+            Return If(ViewState("CancelInvoiceValue"), String.Empty)
+        End Get
+        Set(value As String)
+            ViewState("CancelInvoiceValue") = value
+        End Set
+    End Property
+
+    'Only Admin and HO users may mark / undo a cancellation. Everyone can see the status
+    'and download the documents.
+    Private Function CanManageCancellation() As Boolean
+        Dim g As String = Convert.ToString(userInfo.userGroupCodeEntity)
+        Return g = Constant.UserFormAccess.SYSADMIN OrElse
+               g = Constant.UserFormAccess.HO OrElse
+               g = Constant.UserFormAccess.HOMARKETING OrElse
+               g = Constant.UserFormAccess.HOACCOUNTS
+    End Function
+
+    'The vendor unit the list is showing. Opened from the dashboard ddlUnit is pre-selected and
+    'locked; a UNIT login is locked to its own code. Cancellation needs a definite vendor.
+    Private Function SelectedUnitCode() As String
+        Return Convert.ToString(ddlUnit.SelectedValue).Trim()
+    End Function
+
+    Protected Sub gvVendorInvoiceDtls_RowDataBound(sender As Object, e As GridViewRowEventArgs) Handles gvVendorInvoiceDtls.RowDataBound
+        If e.Row.RowType <> DataControlRowType.DataRow Then Exit Sub
+
+        Dim rowView As DataRowView = TryCast(e.Row.DataItem, DataRowView)
+        If rowView Is Nothing Then Exit Sub
+
+        Dim lblStatus As Label = TryCast(e.Row.FindControl("lblRowStatus"), Label)
+        Dim lnkMark As LinkButton = TryCast(e.Row.FindControl("lnkMarkCancelled"), LinkButton)
+        Dim lnkDocs As LinkButton = TryCast(e.Row.FindControl("lnkViewDocs"), LinkButton)
+        If lblStatus Is Nothing OrElse lnkMark Is Nothing OrElse lnkDocs Is Nothing Then Exit Sub
+
+        'status comes from the patched SPs; before the patch fall back to the list type
+        Dim status As String = String.Empty
+        If rowView.Row.Table.Columns.Contains("status") Then
+            status = Convert.ToString(rowView("status"))
+        End If
+        If String.IsNullOrEmpty(status) Then
+            status = If(SelectedFlag = "PAID", "Paid", If(SelectedFlag = "DISPATCHED", "Dispatched", String.Empty))
+        End If
+        lblStatus.Text = status
+        If String.Equals(status, CancelledStatusText, StringComparison.OrdinalIgnoreCase) Then
+            lblStatus.CssClass = "d-block text-danger font-weight-bold"
+        End If
+
+        Dim releaseOk As Boolean = Not String.IsNullOrEmpty(Convert.ToString(rowView("desph_release_id")))
+
+        lnkMark.Visible = SelectedFlag = "DISPATCHED" AndAlso releaseOk AndAlso CanManageCancellation() AndAlso
+                          Not String.Equals(status, CancelledStatusText, StringComparison.OrdinalIgnoreCase)
+        lnkDocs.Visible = String.Equals(status, CancelledStatusText, StringComparison.OrdinalIgnoreCase)
+    End Sub
+
+    Protected Sub gvVendorInvoiceDtls_RowCommand(sender As Object, e As GridViewCommandEventArgs) Handles gvVendorInvoiceDtls.RowCommand
+        If e.CommandName <> "MarkCancelled" AndAlso e.CommandName <> "ViewCancelDocs" Then Exit Sub
+
+        Dim row As GridViewRow = TryCast(CType(e.CommandSource, Control).NamingContainer, GridViewRow)
+        If row Is Nothing Then Exit Sub
+
+        Dim relId As Integer
+        Integer.TryParse(CType(row.FindControl("hdnReleaseId"), HiddenField).Value, relId)
+        If relId <= 0 Then Exit Sub
+
+        CancelReleaseId = relId
+        CancelInvoiceNo = CType(row.FindControl("hdnInvNo"), HiddenField).Value
+        CancelInvoiceDate = CType(row.FindControl("hdnInvDate"), HiddenField).Value
+        CancelInvoiceValue = CType(row.FindControl("hdnInvValue"), HiddenField).Value
+
+        If e.CommandName = "MarkCancelled" Then
+            If Not CanManageCancellation() Then Exit Sub
+            ShowCancelPopup()
+        Else
+            ShowDocsPopup()
+        End If
+    End Sub
+
+    Private Sub ShowCancelPopup()
+        lblCancelReleaseId.Text = CancelReleaseId.ToString()
+        lblCancelInvoiceNo.Text = CancelInvoiceNo
+        txtCancelRemarks.Text = String.Empty
+        lblCancelError.Text = String.Empty
+        mpCancel.Show()
+    End Sub
+
+    Private Sub ShowDocsPopup()
+        lblDocsReleaseId.Text = CancelReleaseId.ToString()
+        lblDocsInvoiceNo.Text = CancelInvoiceNo
+        lblDocsError.Text = String.Empty
+        btnAddCancelDoc.Visible = CanManageCancellation()
+        btnUndoCancel.Visible = CanManageCancellation()
+        BindCancelDocs()
+        mpDocs.Show()
+    End Sub
+
+    Private Sub BindCancelDocs()
+        Dim obj As New POLinkingRequestClass
+        Dim ds As DataSet = obj.GetVendorCancellationDocs(CancelReleaseId, SelectedUnitCode())
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 Then
+            gvCancelDocs.DataSource = ds.Tables(0)
+        Else
+            gvCancelDocs.DataSource = Nothing
+        End If
+        gvCancelDocs.DataBind()
+    End Sub
+
+    Protected Sub btnAddCancelDoc_Click(sender As Object, e As EventArgs)
+        If Not CanManageCancellation() Then Exit Sub
+        ShowCancelPopup()
+    End Sub
+
+    'Full postback (PostBackTrigger) - saves the PDF and records the cancellation.
+    Protected Sub btnSaveCancel_Click(sender As Object, e As EventArgs)
+        CheckLogin()
+        If Not CanManageCancellation() Then
+            lblErrorMessage.Text = "You are not authorised to mark a cancellation."
+            Exit Sub
+        End If
+
+        If CancelReleaseId <= 0 OrElse String.IsNullOrEmpty(SelectedUnitCode()) Then
+            lblErrorMessage.Text = "Release / vendor not identified. Please open the row again."
+            Exit Sub
+        End If
+
+        If Not fuCancelDoc.HasFile OrElse fuCancelDoc.PostedFile.ContentLength <= 0 Then
+            lblCancelError.Text = "Please attach the credit note / supporting document (PDF)."
+            ShowCancelPopup()
+            Exit Sub
+        End If
+
+        Dim originalName As String = Path.GetFileName(fuCancelDoc.FileName)
+        If Not String.Equals(Path.GetExtension(originalName), ".pdf", StringComparison.OrdinalIgnoreCase) Then
+            lblCancelError.Text = "Only PDF files are accepted."
+            ShowCancelPopup()
+            Exit Sub
+        End If
+
+        Try
+            'stored as <guid>.pdf so two vendors' files can never collide (same as the invoice copy)
+            Dim uniqueName As String = System.Guid.NewGuid().ToString("N") & ".pdf"   ' System. prefix: NPOI.HSSF.Util also defines GUID
+            Dim docPath As String = Format(Date.Now, "dd_MM_yyyy")
+            Dim folder As String = ConfigurationManager.AppSettings.Get("UPLOAD_DOCS_FOLDER_ABS_PATH") &
+                                   userInfo.userCompanyEntity & "\" & CancelDocFolder & "\" & docPath
+            If Not Directory.Exists(folder) Then Directory.CreateDirectory(folder)
+
+            Dim invDate As Object = Nothing
+            Dim parsedDate As DateTime
+            If DateTime.TryParse(CancelInvoiceDate, parsedDate) Then invDate = parsedDate
+
+            Dim invValue As Object = Nothing
+            Dim parsedValue As Decimal
+            If Decimal.TryParse(CancelInvoiceValue, parsedValue) Then invValue = parsedValue
+
+            Dim obj As New POLinkingRequestClass
+            obj.InsertVendorCancellationDoc(CancelReleaseId, SelectedUnitCode(), Nothing,
+                                            CancelInvoiceNo, invDate, invValue,
+                                            txtCancelRemarks.Text.Trim(), "CREDIT_NOTE",
+                                            uniqueName, originalName, docPath, userInfo.userIDEntity)
+
+            'file is written only after the database row is in - a failed insert leaves no orphan file
+            fuCancelDoc.PostedFile.SaveAs(Path.Combine(folder, uniqueName))
+
+            lblErrorMessage.ForeColor = Drawing.Color.Green
+            lblErrorMessage.Text = "Release " & CancelReleaseId & " (Invoice " & CancelInvoiceNo & ") marked '" & CancelledStatusText & "'. It is now listed under Paid."
+            gvVendorInvoiceDtls.PageIndex = 0
+            BindGrid()
+        Catch ex As Exception
+            lblCancelError.Text = "Could not save: " & ex.Message
+            ShowCancelPopup()
+        End Try
+    End Sub
+
+    Protected Sub btnUndoCancel_Click(sender As Object, e As EventArgs)
+        CheckLogin()
+        If Not CanManageCancellation() OrElse CancelReleaseId <= 0 Then Exit Sub
+        Try
+            Dim obj As New POLinkingRequestClass
+            obj.DeactivateVendorCancellation(CancelReleaseId, SelectedUnitCode(), userInfo.userIDEntity)
+            lblErrorMessage.ForeColor = Drawing.Color.Green
+            lblErrorMessage.Text = "Cancellation of release " & CancelReleaseId & " undone. It is back in the Dispatch List."
+            gvVendorInvoiceDtls.PageIndex = 0
+            BindGrid()
+        Catch ex As Exception
+            lblDocsError.Text = "Could not undo: " & ex.Message
+            ShowDocsPopup()
+        End Try
+    End Sub
+
+    'Full postback (gvCancelDocs is a PostBackTrigger) - streams one attached PDF.
+    Protected Sub gvCancelDocs_RowCommand(sender As Object, e As GridViewCommandEventArgs) Handles gvCancelDocs.RowCommand
+        If e.CommandName <> "DownloadCancelDoc" Then Exit Sub
+        CheckLogin()
+
+        Dim docId As Integer
+        Integer.TryParse(Convert.ToString(e.CommandArgument), docId)
+        If docId <= 0 Then Exit Sub
+
+        Dim obj As New POLinkingRequestClass
+        Dim ds As DataSet = obj.GetVendorCancellationDocs(CancelReleaseId, SelectedUnitCode())
+        If ds Is Nothing OrElse ds.Tables.Count = 0 Then Exit Sub
+
+        Dim rows() As DataRow = ds.Tables(0).Select("vcd_id = " & docId)
+        If rows.Length = 0 Then Exit Sub
+
+        Dim fullPath As String = ConfigurationManager.AppSettings.Get("UPLOAD_DOCS_FOLDER_ABS_PATH") &
+                                 userInfo.userCompanyEntity & "\" & CancelDocFolder & "\" &
+                                 Convert.ToString(rows(0)("vcd_doc_path")) & "\" & Convert.ToString(rows(0)("vcd_doc_file_name"))
+        If Not File.Exists(fullPath) Then
+            lblErrorMessage.Text = "Document not found on the server: " & Convert.ToString(rows(0)("vcd_doc_org_filename"))
+            Exit Sub
+        End If
+
+        Response.Clear()
+        Response.ContentType = "application/pdf"
+        Response.AppendHeader("content-disposition", "attachment; filename=""" & Convert.ToString(rows(0)("vcd_doc_org_filename")) & """")
+        Response.TransmitFile(fullPath)
+        Response.Flush()
+        HttpContext.Current.ApplicationInstance.CompleteRequest()
+    End Sub
+#End Region
 End Class

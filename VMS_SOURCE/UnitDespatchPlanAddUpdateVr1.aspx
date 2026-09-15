@@ -100,6 +100,350 @@
             border-radius: 5px;
             padding: 4px 5px;
         }
+
+        .loader-wrapper {
+            position: fixed;
+            z-index: 999999999;
+            background: rgba(41, 43, 55, 0.85);
+            width: 100%;
+            height: 100vh;
+            top: 0;
+            left: 0;
+        }
+
+        .loading-div {
+            position: relative;
+            width: 70px;
+            height: 34px;
+            margin: 50px auto;
+            transform: scale(1.6);
+            top: 35%;
+        }
+
+            .loading-div span, .loading-div p {
+                offset-path: path("M67.3,17.8c0-9.3-4.8-14.5-13.8-14.5C41.9,3.2,35.7,17,35.7,17s-6.2,13.8-17.8,13.8C10,30.8,4,25.5,4,17.7 C4, 9.6, 10, 3.2, 17.8, 3.2C29.4, 3.2, 35.7, 17, 35.7, 17s6.2, 13.8, 17.8, 13.8C61.4, 30.8, 67.3, 24.8, 67.3, 17.8z");
+                position: absolute;
+            }
+
+            .loading-div span {
+                color: #fff;
+                font-size: 12px;
+                animation: path 1.4s linear infinite;
+            }
+
+            .loading-div p {
+                width: 5px;
+                height: 5px;
+                border-radius: 50%;
+                opacity: 0;
+                motion-rotation: auto 45deg;
+                background: #fff;
+                animation: path 1.4s linear infinite, dot linear forwards;
+            }
+
+                .loading-div p:nth-of-type(1) {
+                    background: #bf4040;
+                    animation-delay: 0.015s;
+                }
+
+                .loading-div p:nth-of-type(2) {
+                    background: #bf5540;
+                    animation-delay: 0.03s;
+                }
+
+                .loading-div p:nth-of-type(3) {
+                    background: #bf6a40;
+                    animation-delay: 0.045s;
+                }
+
+                .loading-div p:nth-of-type(4) {
+                    background: #bf8040;
+                    animation-delay: 0.06s;
+                }
+
+                .loading-div p:nth-of-type(5) {
+                    background: #bf9540;
+                    animation-delay: 0.075s;
+                }
+
+                .loading-div p:nth-of-type(6) {
+                    background: #bfaa40;
+                    animation-delay: 0.09s;
+                }
+
+                .loading-div p:nth-of-type(7) {
+                    background: #bfbf40;
+                    animation-delay: 0.105s;
+                }
+
+                .loading-div p:nth-of-type(8) {
+                    background: #aabf40;
+                    animation-delay: 0.12s;
+                }
+
+                .loading-div p:nth-of-type(9) {
+                    background: #95bf40;
+                    animation-delay: 0.135s;
+                }
+
+                .loading-div p:nth-of-type(10) {
+                    background: #80bf40;
+                    animation-delay: 0.15s;
+                }
+
+                .loading-div p:nth-of-type(11) {
+                    background: #6abf40;
+                    animation-delay: 0.165s;
+                }
+
+                .loading-div p:nth-of-type(12) {
+                    background: #55bf40;
+                    animation-delay: 0.18s;
+                }
+
+                .loading-div p:nth-of-type(13) {
+                    background: #40bf40;
+                    animation-delay: 0.195s;
+                }
+
+                .loading-div p:nth-of-type(14) {
+                    background: #40bf55;
+                    animation-delay: 0.21s;
+                }
+
+                .loading-div p:nth-of-type(15) {
+                    background: #40bf6a;
+                    animation-delay: 0.225s;
+                }
+
+                .loading-div p:nth-of-type(16) {
+                    background: #40bf80;
+                    animation-delay: 0.24s;
+                }
+
+                .loading-div p:nth-of-type(17) {
+                    background: #40bf95;
+                    animation-delay: 0.255s;
+                }
+
+                .loading-div p:nth-of-type(18) {
+                    background: #40bfaa;
+                    animation-delay: 0.27s;
+                }
+
+                .loading-div p:nth-of-type(19) {
+                    background: #40bfbf;
+                    animation-delay: 0.285s;
+                }
+
+                .loading-div p:nth-of-type(20) {
+                    background: #40aabf;
+                    animation-delay: 0.3s;
+                }
+
+                .loading-div p:nth-of-type(21) {
+                    background: #4095bf;
+                    animation-delay: 0.315s;
+                }
+
+                .loading-div p:nth-of-type(22) {
+                    background: #4080bf;
+                    animation-delay: 0.33s;
+                }
+
+                .loading-div p:nth-of-type(23) {
+                    background: #406abf;
+                    animation-delay: 0.345s;
+                }
+
+                .loading-div p:nth-of-type(24) {
+                    background: #4055bf;
+                    animation-delay: 0.36s;
+                }
+
+                .loading-div p:nth-of-type(25) {
+                    background: #4040bf;
+                    animation-delay: 0.375s;
+                }
+
+                .loading-div p:nth-of-type(26) {
+                    background: #5540bf;
+                    animation-delay: 0.39s;
+                }
+
+                .loading-div p:nth-of-type(27) {
+                    background: #6a40bf;
+                    animation-delay: 0.405s;
+                }
+
+                .loading-div p:nth-of-type(28) {
+                    background: #8040bf;
+                    animation-delay: 0.42s;
+                }
+
+                .loading-div p:nth-of-type(29) {
+                    background: #9540bf;
+                    animation-delay: 0.435s;
+                }
+
+                .loading-div p:nth-of-type(30) {
+                    background: #aa40bf;
+                    animation-delay: 0.45s;
+                }
+
+                .loading-div p:nth-of-type(31) {
+                    background: #bf40bf;
+                    animation-delay: 0.465s;
+                }
+
+                .loading-div p:nth-of-type(32) {
+                    background: #bf40aa;
+                    animation-delay: 0.48s;
+                }
+
+                .loading-div p:nth-of-type(33) {
+                    background: #bf4095;
+                    animation-delay: 0.495s;
+                }
+
+                .loading-div p:nth-of-type(34) {
+                    background: #bf4080;
+                    animation-delay: 0.51s;
+                }
+
+                .loading-div p:nth-of-type(35) {
+                    background: #bf406a;
+                    animation-delay: 0.525s;
+                }
+
+        @keyframes path {
+            to {
+                offset-distance: 100%;
+            }
+        }
+
+        @keyframes dot {
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Modified-by MUKESH BHAGAT on 11-09-2026 : in-page confirm modal (replaces window.confirm).
+           z-index sits above .loader-wrapper (999999999) so no stray loader can ever cover it. */
+        .ocr-modal-backdrop {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 2147483000;
+            background: rgba(41, 43, 55, 0.65);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+            .ocr-modal-backdrop.is-open {
+                display: flex;
+            }
+
+        .ocr-modal {
+            width: 100%;
+            max-width: 520px;
+            max-height: calc(100vh - 32px);
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .3);
+            overflow: hidden;
+            animation: ocrModalIn .15s ease-out;
+        }
+
+        @keyframes ocrModalIn {
+            from {
+                opacity: 0;
+                transform: translateY(-12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .ocr-modal {
+                animation: none;
+            }
+        }
+
+        .ocr-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .ocr-modal-icon {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ecf7ff;
+            color: #375973;
+        }
+
+        .ocr-modal--info .ocr-modal-icon {
+            background: #e8f0f8;
+            color: #1F4E79;
+        }
+
+        .ocr-modal-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .ocr-modal-body {
+            padding: 16px 18px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #374151;
+        }
+
+            .ocr-modal-body ul {
+                margin: 8px 0 12px;
+                padding-left: 18px;
+            }
+
+            .ocr-modal-body li {
+                margin-bottom: 4px;
+            }
+
+        .ocr-modal-note {
+            background: #eff6fb;
+            border-left: 3px solid #375973;
+            border-radius: 4px;
+            padding: 8px 10px;
+            margin-top: 8px;
+        }
+
+        .ocr-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 18px;
+            border-top: 1px solid #e5e5e5;
+            background: #fafafa;
+        }
     </style>
     <div class="breadcrumbs">
         <div class="leftFung">
@@ -303,7 +647,49 @@
                                     </Animations>
                                 </asp:AutoCompleteExtender>
 
-                                <img alt="Loading..." src="images/ajax-loader.gif" id="loading" class="inputLoading" />
+                                <%--<img alt="Loading..." src="images/ajax-loader.gif"  class="inputLoading" />--%>
+                                <div class="inputLoading" id="loading">
+                                    <div class="loader-wrapper">
+                                        <div class="loading-div">
+                                            <span></span>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                            <p></p>
+                                        </div>
+                                    </div>
+                                </div>
                                 <asp:Panel ID="Panel1" runat="server" ScrollBars="Vertical" Style="overflow-y: scroll; position: absolute; left: 0; top: 0">
                                 </asp:Panel>
                             </div>
@@ -539,8 +925,48 @@
                  so the user can neither edit fields nor miss that something is in progress. --%>
             <div id="divOcrLoader" class="pageLoader" style="display: none;">
                 <div class="innerLoader">
-                    <img class="loaderImg" alt="progress" src="images/ajax-loader.gif" />
-                    <p class="loaderTx">Validating the uploaded invoice, please wait...</p>
+                    <%--<img class="loaderImg" alt="progress" src="images/ajax-loader.gif" />
+                    <p class="loaderTx">Validating the uploaded invoice, please wait...</p>--%>
+                    <div class="loader-wrapper">
+                        <div class="loading-div">
+                            <span></span>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                            <p></p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -949,6 +1375,26 @@
         </div>
     </asp:Panel>
 
+    <%-- Modified-by Pallab Mondal on 11-09-2026 : confirmation modal used by the invoice OCR checks
+         instead of window.confirm(). Kept outside all UpdatePanels so partial postbacks never wipe it.
+         Plain HTML (no runat="server"), so the designer / code-behind files need no change.
+         Buttons are type="button" - a bare <button> inside the ASP.NET form would post the page. --%>
+
+    <div id="ocrConfirmModal" class="ocr-modal-backdrop" role="dialog" aria-modal="true"
+        aria-labelledby="ocrConfirmTitle" aria-describedby="ocrConfirmBody">
+        <div class="ocr-modal">
+            <div class="ocr-modal-header">
+                <span class="ocr-modal-icon"><i id="ocrConfirmIcon" class="fas fa-exclamation-triangle"></i></span>
+                <h5 id="ocrConfirmTitle" class="ocr-modal-title"></h5>
+            </div>
+            <div id="ocrConfirmBody" class="ocr-modal-body"></div>
+            <div class="ocr-modal-footer">
+                <button type="button" id="ocrConfirmCancel" class="btn btn-secondary btn-sm">Cancel</button>
+                <button type="button" id="ocrConfirmOk" class="btn btn-warning btn-sm">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script type="text/javascript" src="Scripts/jquery.sumoselect.min.js"></script>
     <script type="text/javascript">
         $(document).ready(function () {
@@ -987,6 +1433,9 @@
            Supplier/Recipient GSTN . optional - shown, mismatch only warns
          NOTE: control ids are emitted through ClientID because this page runs under
          MasterPage.master (bare getElementById would not resolve).
+         Modified-by MUKESH BHAGAT on 11-09-2026 : both window.confirm() dialogs replaced with
+         the in-page modal (#ocrConfirmModal). The modal does not block like confirm() did, so
+         the code that used to follow each confirm() now lives in onOk / onCancel callbacks.
          ================================================================================ --%>
     <script type="text/javascript">
 
@@ -1071,25 +1520,128 @@
             if (h) { h.value = (flag === 'S') ? 'S' : (flag ? 'Y' : 'N'); }
         }
 
+        // ---------------------------------------------------------------------------------
+        // Modified-by MUKESH BHAGAT on 11-09-2026 : in-page confirm modal. Unlike window.confirm()
+        // it does not block, so the caller passes onOk / onCancel callbacks.
+        // ---------------------------------------------------------------------------------
+        var ocrModalState = null;
+
+        function ocrEscapeHtml(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+
+        function ocrListHtml(items) {
+            var html = '';
+            for (var i = 0; i < items.length; i++) {
+                html += '<li>' + ocrEscapeHtml(items[i]) + '</li>';
+            }
+            return '<ul>' + html + '</ul>';
+        }
+
+        function ocrModalIsOpen() { return ocrModalState !== null; }
+
+        // opts: { title, bodyHtml, okText, okClass, cancelText, icon, variant ('warning'|'info'),
+        //         focus ('ok'|'cancel'), onOk, onCancel }
+        function ocrShowConfirm(opts) {
+            var modal = ocrEl('ocrConfirmModal');
+            var okBtn = ocrEl('ocrConfirmOk');
+            var cancelBtn = ocrEl('ocrConfirmCancel');
+
+            modal.querySelector('.ocr-modal').className = 'ocr-modal ocr-modal--' + (opts.variant || 'warning');
+            ocrEl('ocrConfirmIcon').className = opts.icon || 'fas fa-exclamation-triangle';
+            ocrEl('ocrConfirmTitle').textContent = opts.title || 'Please confirm';
+            ocrEl('ocrConfirmBody').innerHTML = opts.bodyHtml || '';
+            okBtn.textContent = opts.okText || 'OK';
+            okBtn.className = 'btn btn-sm ' + (opts.okClass || 'btn-primary');
+            cancelBtn.textContent = opts.cancelText || 'Cancel';
+
+            ocrModalState = {
+                onOk: opts.onOk,
+                onCancel: opts.onCancel,
+                returnFocus: document.activeElement
+            };
+            modal.classList.add('is-open');
+            ((opts.focus === 'ok') ? okBtn : cancelBtn).focus();
+        }
+
+        function ocrCloseConfirm(confirmed) {
+            if (!ocrModalState) { return; }
+            var state = ocrModalState;
+            ocrModalState = null;
+            ocrEl('ocrConfirmModal').classList.remove('is-open');
+
+            // after Cancel, put focus back where the user was (normally the Submit button)
+            if (!confirmed && state.returnFocus && typeof state.returnFocus.focus === 'function') {
+                try { state.returnFocus.focus(); } catch (e) { }
+            }
+
+            var cb = confirmed ? state.onOk : state.onCancel;
+            if (typeof cb === 'function') { cb(); }
+        }
+
+        function ocrBindConfirmModal() {
+            var modal = ocrEl('ocrConfirmModal');
+            if (!modal || modal.getAttribute('data-ocr-bound')) { return; }
+            modal.setAttribute('data-ocr-bound', '1');
+
+            ocrEl('ocrConfirmOk').addEventListener('click', function () { ocrCloseConfirm(true); });
+            ocrEl('ocrConfirmCancel').addEventListener('click', function () { ocrCloseConfirm(false); });
+
+            // Capture phase, so it runs before the page's document.onkeydown (F7 / F8 shortcuts).
+            document.addEventListener('keydown', function (e) {
+                if (!ocrModalIsOpen()) { return; }
+                var k = e.keyCode;
+                if (k === 27) {                                   // Esc -> Cancel
+                    e.preventDefault();
+                    ocrCloseConfirm(false);
+                } else if (k === 9) {                             // Tab -> keep focus on the two buttons
+                    e.preventDefault();
+                    var ok = ocrEl('ocrConfirmOk'), cancel = ocrEl('ocrConfirmCancel');
+                    (document.activeElement === ok ? cancel : ok).focus();
+                } else if (k === 118 || k === 119) {              // F7 / F8 must not submit / leave the page
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }, true);
+        }
+
+        function ocrFinishVerifiedSave(btn) {
+            ocrSetVerified(true);
+            ocrEl('divInvoiceOcrPanel').style.display = 'none';
+            ocrMsg('', 'info');
+            ocrContinueSubmit(btn);
+        }
+
         // Modified-by MUKESH BHAGAT on 09-09-2026 : when the bill cannot be validated - the OCR
         // service is down, or it cannot read the PDF (scanned image, unusual layout) - the user
         // is no longer blocked. The save goes ahead only after an explicit confirmation, the same
         // way the optional checks (quantity / GSTN / E-Way no) are accepted. Cancel holds the save.
+        // Modified-by MUKESH BHAGAT on 11-09-2026 : window.confirm() replaced with the in-page modal.
         function ocrConfirmUnverifiedSave(reasons, btn) {
-            var proceed = window.confirm(
-                'Invoice validation could not be completed.\n\n- ' + reasons.join('\n- ') +
-                '\n\nThe Invoice No, Invoice Date and Final Invoice Value you entered could NOT be verified against the uploaded PDF.' +
-                '\nYou may still save this despatch challan with the PDF attached, but you do so at your own risk - ' +
-                'please double-check the entered details before continuing.' +
-                '\n\nDo you want to save anyway?');
-            if (!proceed) {
-                ocrSetVerified(false);
-                ocrMsg('Save cancelled: the uploaded invoice could not be validated. Please check the PDF and try again.', 'danger');
-                return;
-            }
-            ocrSetVerified('S');
-            ocrMsg('Saving without invoice validation - accepted by user.', 'info');
-            ocrContinueSubmit(btn);
+            ocrShowConfirm({
+                title: 'Invoice validation could not be completed',
+                bodyHtml:
+                    ocrListHtml(reasons) +
+                    '<p style="margin:0 0 6px;">The <b>Invoice No</b>, <b>Invoice Date</b> and <b>Final Invoice Value</b> ' +
+                    'you entered could <b>not</b> be verified against the uploaded PDF.</p>' +
+                    '<div class="ocr-modal-note">You may still save this despatch challan with the PDF attached, ' +
+                    'but you do so at your own risk. Please double-check the entered details before continuing.</div>',
+                okText: 'Save Anyway',
+                okClass: 'btn-warning',
+                cancelText: 'Cancel',
+                focus: 'cancel',          // the risky action is not the default
+                onOk: function () {
+                    ocrSetVerified('S');
+                    ocrMsg('Saving without invoice validation - accepted by user.', 'info');
+                    ocrContinueSubmit(btn);
+                },
+                onCancel: function () {
+                    ocrSetVerified(false);
+                    ocrMsg('Save cancelled: the uploaded invoice could not be validated. Please check the PDF and try again.', 'danger');
+                }
+            });
         }
 
         // Any manual edit after a successful check invalidates the verification, so the
@@ -1316,29 +1868,40 @@
             }
 
             // Modified-by MUKESH BHAGAT on 31-08-2026 : optional checks (quantity, GSTN,
-            // E-Way no) no longer pass silently - the user must consciously accept them
-            // through a confirm dialog. OK -> save proceeds; Cancel -> save is held, the
-            // panel shows what the bill contains, and the next Submit re-validates.
+            // E-Way no) no longer pass silently - the user must consciously accept them.
+            // OK -> save proceeds; Cancel -> save is held, the panel shows what the bill
+            // contains, and the next Submit re-validates.
+            // Modified-by MUKESH BHAGAT on 11-09-2026 : window.confirm() replaced with the in-page modal.
             if (warnings.length > 0) {
-                var proceed = window.confirm(
-                    'Please note:\n\n- ' + warnings.join('\n- ') +
-                    '\n\nDo you want to continue saving this despatch?');
-                if (!proceed) {
-                    ocrSetVerified(false);
-                    ocrEl('divInvoiceOcrPanel').style.display = '';
-                    ocrMsg('Save cancelled: ' + warnings.join('; ') + '.', 'danger');
-                    return;
-                }
+                ocrShowConfirm({
+                    title: 'Please review before saving',
+                    bodyHtml:
+                        '<p style="margin:0;">The invoice details match the uploaded bill, but please note:</p>' +
+                        ocrListHtml(warnings) +
+                        '<p style="margin:0;">Do you want to continue saving this despatch?</p>',
+                    okText: 'Continue Saving',
+                    okClass: 'btn-primary',
+                    icon: 'fas fa-info-circle',
+                    variant: 'info',
+                    focus: 'ok',
+                    onOk: function () { ocrFinishVerifiedSave(btn); },
+                    onCancel: function () {
+                        ocrSetVerified(false);
+                        ocrEl('divInvoiceOcrPanel').style.display = '';
+                        ocrMsg('Save cancelled: ' + warnings.join('; ') + '.', 'danger');
+                    }
+                });
+                return;
             }
 
             // bill matches -> continue the save the user asked for
-            ocrSetVerified(true);
-            ocrEl('divInvoiceOcrPanel').style.display = 'none';
-            ocrMsg('', 'info');
-            ocrContinueSubmit(btn);
+            ocrFinishVerifiedSave(btn);
         }
 
-        document.addEventListener('DOMContentLoaded', function () { bindInvoiceUploadExtract(); });
+        document.addEventListener('DOMContentLoaded', function () {
+            ocrBindConfirmModal();
+            bindInvoiceUploadExtract();
+        });
 
         // re-bind after every partial postback and reset stale verification
         // (an UpdatePanel refresh clears the file input, so the bill must be re-selected)
