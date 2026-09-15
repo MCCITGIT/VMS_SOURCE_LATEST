@@ -292,8 +292,10 @@ Partial Class VendorWiseLoadSummary
     ' was replaced by the dot-pictogram list (no paging control); Page_Load's postback branch
     ' already calls LoadData() again after this handler runs, picking up the new txtSku value.
     Protected Sub btnSubmit_Click(sender As Object, e As EventArgs)
+        LoadData()
     End Sub
     Protected Sub btnReset_Click(sender As Object, e As EventArgs)
         txtSku.Text = String.Empty
+        LoadData()
     End Sub
 End Class
