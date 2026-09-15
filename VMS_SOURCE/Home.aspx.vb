@@ -1036,6 +1036,7 @@ Partial Class Home
                 divSkuChart.Visible = True
                 divSearch.Visible = True
                 divSumData.Visible = False
+                btnResetVendorFilter.Visible = False
 
                 'Dim unitCode = ddlvendor.SelectedValue
                 'Dim year = ddlProcessYr.SelectedValue
