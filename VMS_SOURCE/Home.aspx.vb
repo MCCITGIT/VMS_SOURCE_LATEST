@@ -1,8 +1,9 @@
 'Imports VMS.Common
 'Imports VMS.BusinessFacade
-Imports System.Data.SqlClient
 Imports System.Data
+Imports System.Data.SqlClient
 Imports System.Text
+'Imports Microsoft.Office.Interop.Excel
 Imports VMS.Web
 
 
@@ -62,10 +63,19 @@ Partial Class Home
             ddlvendor.DataValueField = "unit_code"
             ddlvendor.DataBind()
             ddlvendor.Items.Insert(0, New ListItem(Constant.Common.All, String.Empty, True))
+
+            ddlVendorList.DataSource = UnitSet.Tables(0)
+            ddlVendorList.DataTextField = "unit_name"
+            ddlVendorList.DataValueField = "unit_code"
+            ddlVendorList.DataBind()
+            ddlVendorList.Items.Insert(0, New ListItem(Constant.Common.All, String.Empty, True))
         End If
         If (userInfo.userGroupCodeEntity = "UNIT") Then
             ddlvendor.SelectedValue = userInfo.userBranchEntity
             ddlvendor.Enabled = False
+
+            ddlVendorList.SelectedValue = userInfo.userBranchEntity
+            ddlVendorList.Enabled = False
         End If
     End Sub
 
@@ -931,6 +941,7 @@ Partial Class Home
             Dim userDetailsObject As New UserLogin()
             Dim ds As DataSet = userDetailsObject.GetDashBoardInfo(userInfo.userIDEntity, userInfo.userBranchEntity)
             Dim sumDs As DataSet = userDetailsObject.GetDashboardLoadDespatchSummary(unitCode, year, month)
+            'Dim venDs As DataSet = userDetailsObject.GetPendingDespatchData(unitCode, year, month, Constant.Common.ActiveStatus)
             If userInfo.userGroupCodeEntity.Equals("HO", StringComparison.InvariantCultureIgnoreCase) Or userInfo.userGroupCodeEntity.Equals("SYSADMIN", StringComparison.InvariantCultureIgnoreCase) Then
                 divHo.Visible = True
                 divNewsCard.Visible = True
@@ -938,7 +949,7 @@ Partial Class Home
                 divUnit.Visible = False
                 divDepot.Visible = False
                 'divData.Visible = False
-                divDespatch.Visible = False
+                divDespatch.Visible = True
                 divSkuChart.Visible = False
                 divSearch.Visible = True
                 divVendor.Visible = False
@@ -957,6 +968,15 @@ Partial Class Home
                     gvVendorList.DataSource = Nothing
                     gvVendorList.DataBind()
                 End If
+
+                BindVendorDispatchGrid(unitCode)
+                'If (venDs IsNot Nothing AndAlso venDs.Tables.Count > 0) Then
+                '    gvVendorDispatch.DataSource = venDs.Tables(0)
+                '    gvVendorDispatch.DataBind()
+                'Else
+                '    gvVendorDispatch.DataSource = Nothing
+                '    gvVendorDispatch.DataBind()
+                'End If
 
                 If (ds IsNot Nothing AndAlso ds.Tables.Count > 0) Then
                     If (ds.Tables(0).Rows.Count > 0) Then
@@ -1012,8 +1032,7 @@ Partial Class Home
                 'Dim unitCode = ddlvendor.SelectedValue
                 'Dim year = ddlProcessYr.SelectedValue
                 'Dim month = ddlProcessMnth.SelectedValue
-                Dim active = "Y"
-                Dim SkuDs As DataSet = userDetailsObject.GetPendingDespatchData(unitCode, year, month, active)
+                Dim SkuDs As DataSet = userDetailsObject.GetPendingDespatchData(unitCode, year, month, Constant.Common.ActiveStatus)
                 If (SkuDs IsNot Nothing AndAlso SkuDs.Tables(0).Rows.Count > 0) Then
                     gvVendorDispatch.DataSource = SkuDs.Tables(0)
                     gvVendorDispatch.DataBind()
@@ -1037,6 +1056,31 @@ Partial Class Home
 
     End Sub
 
+    Private Sub BindVendorDispatchGrid(ByVal vendorCode As String)
+        Try
+            Dim unitCode As String = vendorCode
+            Dim year As String = ddlProcessYr.SelectedValue
+            Dim month As String = ddlProcessMnth.SelectedValue
+
+            Dim userDetailsObject As New UserLogin()
+
+            Dim venDs As DataSet = userDetailsObject.GetPendingDespatchData(unitCode, year, month, Constant.Common.ActiveStatus)
+
+            If venDs IsNot Nothing AndAlso venDs.Tables.Count > 0 Then
+                gvVendorDispatch.DataSource = venDs.Tables(0)
+                gvVendorDispatch.DataBind()
+            Else
+                gvVendorDispatch.DataSource = Nothing
+                gvVendorDispatch.DataBind()
+            End If
+
+        Catch ex As Exception
+            gvVendorDispatch.DataSource = Nothing
+            gvVendorDispatch.DataBind()
+            'Log exception if required
+        End Try
+    End Sub
+
     Private Sub BindLoadDispatchChart()
         Dim userInfo As VMSUserEntity = New VMSUserEntity()
         If (Not (Session(Constant.SessionKeys.UserInfo) Is Nothing)) Then
@@ -1058,7 +1102,7 @@ Partial Class Home
             Return
         End If
 
-        Dim dt As DataTable = ds.Tables(0)
+        Dim dt As Data.DataTable = ds.Tables(0)
 
         Dim sb As New StringBuilder()
         ' Modified-by MUKESH BHAGAT on 14-09-2026 : running totals across every SKU row, used to
@@ -1445,5 +1489,16 @@ Partial Class Home
         Catch ex As Exception
             Throw
         End Try
+    End Sub
+
+    Protected Sub ddlVendorList_SelectedIndexChanged(sender As Object, e As EventArgs)
+        Dim unitCode = ddlVendorList.SelectedValue
+        BindVendorDispatchGrid(unitCode)
+    End Sub
+
+    Protected Sub btnResetVendorFilter_Click(sender As Object, e As EventArgs)
+        ddlVendorList.ClearSelection()
+        Dim unitCode = ddlVendorList.SelectedValue
+        BindVendorDispatchGrid(unitCode)
     End Sub
 End Class

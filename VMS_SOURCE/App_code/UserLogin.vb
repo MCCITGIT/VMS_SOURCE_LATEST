@@ -426,7 +426,7 @@ Namespace VMS.Web
             sqlParams(0).ParameterName = "@unit_code"
             sqlParams(0).DbType = DbType.String
             sqlParams(0).Direction = Data.ParameterDirection.Input
-            sqlParams(0).Value = unitCode
+            sqlParams(0).Value = If(unitCode = "", DBNull.Value, CObj(unitCode))
 
             sqlParams(1) = New SqlParameter()
             sqlParams(1).ParameterName = "@ProcessYr"

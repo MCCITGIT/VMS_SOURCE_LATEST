@@ -285,6 +285,12 @@
                 padding-top: 20px;
             }
         }
+        .p-pdl-select-box > span{
+            min-width: 200px !important;
+        }
+        .p-pdl-select-box span ul li.select2-results__option {
+            text-align: center;
+        }
     </style>
 
     <div class="vms-home">
@@ -637,8 +643,14 @@
                                 <div class="mst-panel-header-left">
                                     <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
                                     <div>
-                                        <h5 id="DespatchTitle" class="mst-panel-title">Despatch List</h5>
+                                        <h5 id="DespatchTitle" class="mst-panel-title">Pending Despatch List</h5>
                                     </div>
+                                </div>
+                                <div class="p-pdl-select-box" style="display: flex; align-items: center; column-gap: 5px;">
+                                    <asp:DropDownList ID="ddlVendorList" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlVendorList_SelectedIndexChanged"></asp:DropDownList>
+                                    <asp:Button ID="btnResetVendorFilter" runat="server"
+                                        Text="Reset"
+                                        CssClass="btn btn-sm btn-outline-secondary" OnClick="btnResetVendorFilter_Click" />
                                 </div>
                             </div>
                             <div class="table-responsive rm-grid-scroll">
@@ -649,6 +661,21 @@
                                     <HeaderStyle CssClass="headerGrid" />
                                     <FooterStyle CssClass="footerGrid" />
                                     <Columns>
+                                        <asp:TemplateField HeaderText="Vendor Name" HeaderStyle-HorizontalAlign="Center">
+                                            <ItemTemplate>
+                                                <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vm_vendor_name") %>'></asp:Label>
+                                                <asp:HiddenField ID="hdnVednorCode" runat="server" Value='<%# Bind("ddrh_vendor_id")%>' />
+                                            </ItemTemplate>
+                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                            <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                        </asp:TemplateField>
+                                        <asp:TemplateField HeaderText="Depot" HeaderStyle-HorizontalAlign="Center">
+                                            <ItemTemplate>
+                                                <asp:Label ID="lblDepot" runat="server" Text='<%# Bind("depot_name") %>'></asp:Label>
+                                            </ItemTemplate>
+                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                            <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                        </asp:TemplateField>
                                         <asp:TemplateField HeaderText="Order Sl No." HeaderStyle-HorizontalAlign="Center">
                                             <ItemTemplate>
                                                 <asp:Label ID="lblOrderId" runat="server" Text='<%# Bind("ddrh_order_sl_no") %>'></asp:Label>
@@ -672,13 +699,13 @@
                                             <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
                                             <ItemStyle HorizontalAlign="Center" Width="15%"></ItemStyle>
                                         </asp:TemplateField>
-                                        <asp:TemplateField HeaderText="Transporter Name" HeaderStyle-HorizontalAlign="Center">
+                                        <%--<asp:TemplateField HeaderText="Transporter Name" HeaderStyle-HorizontalAlign="Center">
                                             <ItemTemplate>
                                                 <asp:Label ID="lblTransporter" runat="server" Text='<%# Bind("tm_transporter_name") %>'></asp:Label>
                                             </ItemTemplate>
                                             <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
                                             <ItemStyle HorizontalAlign="Center" Width="15%"></ItemStyle>
-                                        </asp:TemplateField>
+                                        </asp:TemplateField>--%>
 
 
                                         <asp:TemplateField HeaderText="Truck" HeaderStyle-HorizontalAlign="Center">
@@ -688,13 +715,13 @@
                                             <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
                                             <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
                                         </asp:TemplateField>
-                                        <asp:TemplateField HeaderText="Status" HeaderStyle-HorizontalAlign="Center">
+                                        <%--<asp:TemplateField HeaderText="Status" HeaderStyle-HorizontalAlign="Center">
                                             <ItemTemplate>
                                                 <asp:Label ID="lblStatus" runat="server" Text='<%# Bind("Status") %>'></asp:Label>
                                             </ItemTemplate>
                                             <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
                                             <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                        </asp:TemplateField>
+                                        </asp:TemplateField>--%>
 
                                         <%--<asp:TemplateField HeaderText="View" HeaderStyle-HorizontalAlign="Center">
                                 <ItemTemplate>
