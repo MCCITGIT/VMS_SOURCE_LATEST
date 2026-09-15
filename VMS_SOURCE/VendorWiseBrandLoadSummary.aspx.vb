@@ -174,7 +174,7 @@ Partial Class VendorWiseBrandLoadSummary
     Protected Sub btnSubmit_Click(sender As Object, e As EventArgs)
         gvFgVendorlist.PageIndex = 0
         'SaveSearchCriteria()
-        'BindGrid()
+        LoadData()
     End Sub
     Protected Sub btnReset_Click(sender As Object, e As EventArgs)
         'Session("PaymentReconciliationSearchCriteria") = Nothing
@@ -182,6 +182,6 @@ Partial Class VendorWiseBrandLoadSummary
         'txtFromDate.Text = String.Empty
         'txtToDate.Text = String.Empty
         gvFgVendorlist.PageIndex = 0
-        'BindGrid()
+        LoadData()
     End Sub
 End Class
