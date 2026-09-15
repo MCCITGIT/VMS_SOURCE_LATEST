@@ -40,6 +40,7 @@
                                         </div>
                                         <asp:Button ID="btnSubmit" ClientIDMode="Static" runat="server" Text="Search" CssClass="btn btn-primary btn-sm" OnClick="btnSubmit_Click" />
                                         <asp:Button ID="btnReset" runat="server" Text="Reset" CssClass="btn btn-outline-danger btn-sm" OnClick="btnReset_Click" />
+                                        <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="btn btn-outline-danger btn-sm" OnClick="btnBack_Click" />
                                     </div>
                                     <div id="dateError" class="date-error"></div>
                                     <asp:Label ID="valBrandName" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>

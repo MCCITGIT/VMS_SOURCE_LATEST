@@ -647,10 +647,10 @@
                                     </div>
                                 </div>
                                 <div class="p-pdl-select-box" style="display: flex; align-items: center; column-gap: 5px;">
-                                    <asp:DropDownList ID="ddlVendorList" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server"></asp:DropDownList>
+                                    <asp:DropDownList ID="ddlVendorList" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlVendorList_SelectedIndexChanged"></asp:DropDownList>
                                     <asp:Button ID="btnResetVendorFilter" runat="server"
                                         Text="Reset"
-                                        CssClass="btn btn-sm btn-outline-secondary" />
+                                        CssClass="btn btn-sm btn-outline-secondary" OnClick="btnResetVendorFilter_Click" />
                                 </div>
                             </div>
                             <div class="table-responsive rm-grid-scroll">

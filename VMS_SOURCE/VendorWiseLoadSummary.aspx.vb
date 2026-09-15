@@ -298,4 +298,8 @@ Partial Class VendorWiseLoadSummary
         txtSku.Text = String.Empty
         LoadData()
     End Sub
+
+    Protected Sub btnBack_Click(sender As Object, e As EventArgs)
+        Response.Redirect("Home.aspx")
+    End Sub
 End Class
