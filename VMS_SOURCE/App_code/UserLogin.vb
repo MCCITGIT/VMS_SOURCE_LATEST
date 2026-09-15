@@ -454,7 +454,7 @@ Namespace VMS.Web
 
             sqlParams(5) = New SqlParameter()
             sqlParams(5).ParameterName = "@PageSize"
-            sqlParams(5).DbType = DbType.String
+            sqlParams(5).DbType = DbType.Int32
             sqlParams(5).Direction = Data.ParameterDirection.Input
             sqlParams(5).Value = pageSize
 
@@ -494,9 +494,9 @@ Namespace VMS.Web
             Return DS
         End Function
 
-        Public Function GetBrandDashboardLoadDespatchSummary(ByVal unitCode As String, ByVal year As String, ByVal month As String) As DataSet
+        Public Function GetBrandDashboardLoadDespatchSummary(ByVal unitCode As String, ByVal year As String, ByVal month As String, ByVal pageIndex As Integer, ByVal pageSize As Integer) As DataSet
             Dim DS As DataSet
-            Dim sqlParams(2) As SqlParameter
+            Dim sqlParams(4) As SqlParameter
 
             sqlParams(0) = New SqlParameter()
             sqlParams(0).ParameterName = "@vendor_unit"
@@ -515,14 +515,26 @@ Namespace VMS.Web
             sqlParams(2).DbType = DbType.String
             sqlParams(2).Direction = Data.ParameterDirection.Input
             sqlParams(2).Value = month
+
+            sqlParams(3) = New SqlParameter()
+            sqlParams(3).ParameterName = "@PageIndex"
+            sqlParams(3).DbType = DbType.Int32
+            sqlParams(3).Direction = Data.ParameterDirection.Input
+            sqlParams(3).Value = pageIndex
+
+            sqlParams(4) = New SqlParameter()
+            sqlParams(4).ParameterName = "@PageSize"
+            sqlParams(4).DbType = DbType.Int32
+            sqlParams(4).Direction = Data.ParameterDirection.Input
+            sqlParams(4).Value = pageSize
 
             DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[Get_BrandWise_Dashboard_Load_Dispatch_Summary]", Data.CommandType.StoredProcedure, sqlParams)
             Return DS
         End Function
 
-        Public Function GetVendorDashboardLoadDespatchSummary(ByVal unitCode As String, ByVal year As String, ByVal month As String) As DataSet
+        Public Function GetVendorDashboardLoadDespatchSummary(ByVal unitCode As String, ByVal year As String, ByVal month As String, ByVal pageIndex As Integer, ByVal pageSize As Integer) As DataSet
             Dim DS As DataSet
-            Dim sqlParams(2) As SqlParameter
+            Dim sqlParams(4) As SqlParameter
 
             sqlParams(0) = New SqlParameter()
             sqlParams(0).ParameterName = "@vendor_unit"
@@ -541,6 +553,18 @@ Namespace VMS.Web
             sqlParams(2).DbType = DbType.String
             sqlParams(2).Direction = Data.ParameterDirection.Input
             sqlParams(2).Value = month
+
+            sqlParams(3) = New SqlParameter()
+            sqlParams(3).ParameterName = "@PageIndex"
+            sqlParams(3).DbType = DbType.Int32
+            sqlParams(3).Direction = Data.ParameterDirection.Input
+            sqlParams(3).Value = pageIndex
+
+            sqlParams(4) = New SqlParameter()
+            sqlParams(4).ParameterName = "@PageSize"
+            sqlParams(4).DbType = DbType.Int32
+            sqlParams(4).Direction = Data.ParameterDirection.Input
+            sqlParams(4).Value = pageSize
 
             DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[Get_Vendor_Dashboard_Load_Dispatch_Summary]", Data.CommandType.StoredProcedure, sqlParams)
             Return DS
