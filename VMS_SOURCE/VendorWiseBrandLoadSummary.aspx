@@ -40,6 +40,269 @@
             background: #27ae60;
         }
     </style>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+
+        /* ---------- Table container ---------- */
+        .rm-brand-master .rm-grid-scroll {
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 2px 12px rgba(30, 60, 90, .12);
+            overflow: auto;
+            padding: 0 !important;
+        }
+
+        .rm-brand-master table.upgradDataGrid {
+            width: 100%;
+            margin: 0 !important;
+            border: none !important;
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            background: #fff;
+            font-family: 'Nunito', 'Segoe UI', sans-serif;
+        }
+
+        /* ---------- Header (original colors kept) ---------- */
+        .rm-brand-master .upgradDataGrid tr.headerGrid th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            padding: 12px 14px !important;
+            white-space: nowrap;
+        }
+
+            .rm-brand-master .upgradDataGrid tr.headerGrid th::before {
+                font-family: "Font Awesome 6 Free", "Font Awesome 5 Free";
+                font-weight: 900;
+                font-size: 11px;
+                margin-right: 7px;
+            }
+
+            .rm-brand-master .upgradDataGrid tr.headerGrid th:nth-child(1)::before {
+                content: "\f292";
+            }
+
+            .rm-brand-master .upgradDataGrid tr.headerGrid th:nth-child(2)::before {
+                content: "\f54e";
+            }
+
+            .rm-brand-master .upgradDataGrid tr.headerGrid th:nth-child(3)::before {
+                content: "\f466";
+            }
+
+            .rm-brand-master .upgradDataGrid tr.headerGrid th:nth-child(4)::before {
+                content: "\f0d1";
+            }
+
+            .rm-brand-master .upgradDataGrid tr.headerGrid th:nth-child(5)::before {
+                content: "\f201";
+            }
+
+        /* ---------- Rows ---------- */
+        .rm-brand-master .upgradDataGrid tr.tlrowlight {
+            background: #fff !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+            .rm-brand-master .upgradDataGrid tr.tlrowlight td {
+                background: #fff !important;
+                color: #5b6b82;
+                font-size: 13px;
+                padding: 10px 14px !important;
+                border: none !important;
+                border-bottom: 1px solid #e6ebf1 !important;
+                box-shadow: none !important;
+                vertical-align: middle !important;
+                transition: background .15s ease;
+            }
+
+            .rm-brand-master .upgradDataGrid tr.tlrowlight:last-child td {
+                border-bottom: none !important;
+            }
+
+            .rm-brand-master .upgradDataGrid tr.tlrowlight:hover td {
+                background: #f4f9fe !important;
+            }
+
+            /* Sl No */
+            .rm-brand-master .upgradDataGrid tr.tlrowlight td:nth-child(1) {
+                color: #8a97a8;
+                font-weight: 600;
+            }
+
+            /* Vendor name with avatar circle */
+            .rm-brand-master .upgradDataGrid tr.tlrowlight td:nth-child(2) > span {
+                display: inline-flex;
+                align-items: center;
+                gap: 12px;
+                color: #4f6282;
+                font-weight: 600;
+            }
+
+                .rm-brand-master .upgradDataGrid tr.tlrowlight td:nth-child(2) > span::before {
+                    content: "\f54e";
+                    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free";
+                    font-weight: 900;
+                    font-size: 13px;
+                    flex-shrink: 0;
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: #e8f4fd;
+                    color: #1da1f2;
+                    box-shadow: 0 0 0 2px #fff, 0 1px 5px rgba(0, 0, 0, .15);
+                }
+
+            /* Total Load / Dispatched */
+            .rm-brand-master .upgradDataGrid tr.tlrowlight td:nth-child(3) {
+                color: #4f6282;
+                font-weight: 600;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .rm-brand-master .upgradDataGrid tr.tlrowlight td:nth-child(4) {
+                color: #6b7a90;
+                font-variant-numeric: tabular-nums;
+            }
+
+            /* ---------- Serviceability column ---------- */
+            .rm-brand-master .upgradDataGrid tr.tlrowlight td:nth-child(5) {
+                white-space: nowrap;
+                text-align: center !important;
+            }
+
+        /* Pill (percentage text, sits below the bar) */
+        .pct-pill {
+            /* bar settings */
+            --stick: 5px; /* stick width */
+            --gap: 4px; /* space between sticks */
+            --bar-h: 18px; /* stick height */
+            --bar-w: calc(var(--stick) * 10 + var(--gap) * 9); /* exactly 10 sticks */
+            --n: 0; /* filled sticks (set per tier) */
+            position: relative;
+            display: inline-block;
+            min-width: 64px;
+            margin-top: calc(var(--bar-h) + 8px); /* room for the bar above */
+            padding: 3px 10px;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.3;
+            text-align: center;
+            letter-spacing: .3px;
+        }
+
+            /* Bar: track + fill, centered above the pill */
+            .pct-pill::before,
+            .pct-pill::after {
+                content: "";
+                position: absolute;
+                top: calc(-1 * (var(--bar-h) + 6px));
+                left: 50%;
+                margin-left: calc(var(--bar-w) / -2);
+                height: var(--bar-h);
+                pointer-events: none;
+            }
+
+            /* Track: 10 gray sticks */
+            .pct-pill::before {
+                width: var(--bar-w);
+                background: repeating-linear-gradient(90deg, #dfe5ec 0 var(--stick), transparent var(--stick) calc(var(--stick) + var(--gap)));
+                border: 1px solid #ffa9a9;
+            }
+
+            /* Fill: colored sticks, count set from code-behind (pct-n-0 ... pct-n-10) */
+            .pct-pill::after {
+                width: max(0px, calc(var(--n) * (var(--stick) + var(--gap)) - var(--gap)));
+                max-width: var(--bar-w);
+                background: repeating-linear-gradient(90deg, var(--bar-color, #7f8fa6) 0 var(--stick), transparent var(--stick) calc(var(--stick) + var(--gap)));
+                animation: svcGrow .6s ease-out;
+            }
+
+        @keyframes svcGrow {
+            from {
+                width: 0;
+            }
+        }
+
+        /* Tier colors: pill + stick color */
+        .pct-pill-danger {
+            background: #e7483b;
+            --bar-color: #e7483b;
+        }
+
+        .pct-pill-warning {
+            background: #ef9e40;
+            --bar-color: #ef9e40;
+        }
+
+        .pct-pill-info {
+            background: #c9c78a;
+            --bar-color: #b5a91c;
+        }
+
+        .pct-pill-success {
+            background: #9cc9a3;
+            --bar-color: #2e9e5b;
+        }
+
+        /* Number of filled sticks (out of 10) */
+        .pct-pill.pct-n-0 {
+            --n: 0;
+        }
+
+        .pct-pill.pct-n-1 {
+            --n: 1;
+        }
+
+        .pct-pill.pct-n-2 {
+            --n: 2;
+        }
+
+        .pct-pill.pct-n-3 {
+            --n: 3;
+        }
+
+        .pct-pill.pct-n-4 {
+            --n: 4;
+        }
+
+        .pct-pill.pct-n-5 {
+            --n: 5;
+        }
+
+        .pct-pill.pct-n-6 {
+            --n: 6;
+        }
+
+        .pct-pill.pct-n-7 {
+            --n: 7;
+        }
+
+        .pct-pill.pct-n-8 {
+            --n: 8;
+        }
+
+        .pct-pill.pct-n-9 {
+            --n: 9;
+        }
+
+        .pct-pill.pct-n-10 {
+            --n: 10;
+        }
+
+        /* 0% = all 10 sticks gray */
+        .pct-pill.pct-n-0::after {
+            display: none;
+        }
+    </style>
+    </style>
+    </style>
 
     <div class="rm-module rm-compact rm-brand-master">
         <div class="breadcrumbs">
