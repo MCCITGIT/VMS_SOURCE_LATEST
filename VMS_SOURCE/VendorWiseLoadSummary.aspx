@@ -8,6 +8,260 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.14.0-beta3/js/bootstrap-select.min.js"></script>
 
+    <%-- Modified-by MUKESH BHAGAT on 14-09-2026 : SKU list redesigned as a 10-dot pictogram per
+         row (was a plain GridView with a numeric "Dispatch %" column) with an overall
+         serviceability donut beside it - same design as Home.aspx's SKU List panel, ported here
+         since this page reads the same [GetLoadDespatchSummary] columns for one vendor. Markup
+         and rendering logic (BindSkuList / BuildSkuSummaryPanel) mirror Home.aspx/Home.aspx.vb
+         exactly - see those files for the fuller design-history comments. --%>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin: 12px 0;
+            font-size: 13px;
+            color: #333;
+        }
+
+            .legend > div {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+        .dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+            .dot.total-load {
+                background: #2f8fd6;
+            }
+
+            .dot.total-dispatch {
+                background: #2ecc71;
+            }
+
+        .sku-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .sku-label {
+            flex: 1 1 auto;
+            min-width: 40px;
+            font-size: 13px;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; /* full name still available on hover via the title attribute */
+        }
+
+        .sku-dots {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 0 0 auto;
+        }
+
+        .sku-dot {
+            box-sizing: border-box;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .sku-dot-full {
+            background: #0ca30c;
+        }
+
+        .sku-dot-empty {
+            background: transparent;
+            border: 1.5px solid #2f8fd6;
+            opacity: 0.55;
+        }
+
+        .sku-stats {
+            flex: 0 0 auto;
+            white-space: nowrap;
+            font-size: 12px;
+            color: #444;
+        }
+
+        .pending-value {
+            color: #444;
+        }
+
+            .pending-value.pending-active {
+                color: #e74c3c;
+            }
+
+        .sku-badge {
+            min-width: 52px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .badge-danger {
+            background: #e74c3c;
+        }
+
+        .badge-warning {
+            background: #f39c12;
+        }
+
+        .badge-info {
+            background: #f1c40f;
+        }
+
+        .badge-success {
+            background: #27ae60;
+        }
+
+        .sku-panel-row {
+            display: flex;
+            align-items: stretch;
+            gap: 24px;
+        }
+
+        .sku-list-col {
+            flex: 1 1 68%;
+            min-width: 0;
+        }
+
+        .sku-summary-col {
+            flex: 1 1 32%;
+            min-width: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid #f0f0f0;
+            padding-left: 20px;
+        }
+
+        .sku-summary-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+        }
+
+        .sku-summary-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            letter-spacing: .3px;
+            text-transform: uppercase;
+        }
+
+        .sku-donut-wrap {
+            position: relative;
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            box-shadow: inset 0 0 0 1px #eef1f4;
+        }
+
+        .sku-donut-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .sku-donut-pct {
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .sku-donut-caption {
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        .sku-summary-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 13px;
+            color: #444;
+            width: 100%;
+        }
+
+            .sku-summary-stats > div {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+            }
+
+            .sku-summary-stats .dot {
+                margin-right: 6px;
+            }
+
+        @media (max-width: 820px) {
+            .sku-panel-row {
+                flex-direction: column;
+            }
+
+            .sku-summary-col {
+                border-left: none;
+                border-top: 1px solid #f0f0f0;
+                padding-left: 0;
+                padding-top: 20px;
+            }
+        }
+    </style>
+    <script type="text/javascript">
+        function renderSkuDonut() {
+            var el = document.getElementById('skuOverallChart');
+            if (!el || typeof Chart === 'undefined') { return; }
+            var dispatch = parseFloat(el.getAttribute('data-dispatch')) || 0;
+            var pending = parseFloat(el.getAttribute('data-pending')) || 0;
+            var existing = Chart.getChart ? Chart.getChart(el) : null;
+            if (existing) { existing.destroy(); }
+            new Chart(el, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Dispatched', 'Pending'],
+                    datasets: [{
+                        data: [dispatch, pending],
+                        backgroundColor: ['#0ca30c', '#e9ecef'],
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    cutout: '68%',
+                    plugins: { legend: { display: false }, tooltip: { enabled: (dispatch + pending) > 0 } }
+                }
+            });
+        }
+        document.addEventListener('DOMContentLoaded', renderSkuDonut);
+        if (typeof Sys !== 'undefined' && Sys.WebForms) {
+            Sys.WebForms.PageRequestManager.getInstance().add_endRequest(renderSkuDonut);
+        }
+    </script>
+
     <div class="rm-module rm-compact rm-brand-master">
         <div class="breadcrumbs">
             <div class="leftFung">
@@ -68,133 +322,20 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive rm-grid-scroll">
-                            <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0"
-                                ID="gvFgVendorlist" runat="server" AutoGenerateColumns="false" Visible="true"
-                                ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
-                                PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
-                                <RowStyle CssClass="tlrowlight" />
-                                <PagerStyle CssClass="PagerGrid" HorizontalAlign="Left" />
-                                <HeaderStyle CssClass="headerGrid" />
-                                <FooterStyle CssClass="footerGrid" />
-                                <%--<asp:GridView
-                                CssClass="table table-hover upgradDataGrid"
-                                ID="gvFgVendorlist"
-                                runat="server"
-                                AutoGenerateColumns="false"
-                                AllowPaging="false"
-                                PageSize="10"
-                                OnRowCommand="gvFgVendorlist_RowCommand">
-                                <RowStyle CssClass="tlrowlight" />
-                                <PagerStyle CssClass="PagerGrid" HorizontalAlign="Left" />
-                                <HeaderStyle CssClass="headerGrid" />
-                                <FooterStyle CssClass="footerGrid" />--%>
-                                <Columns>
-                                    <asp:TemplateField HeaderText="Sl No">
-                                        <ItemTemplate>
-                                            <asp:Label ID="lblbrandid" runat="server" Text='<%# (gvFgVendorlist.PageIndex * gvFgVendorlist.PageSize) + Container.DataItemIndex + 1 %>'></asp:Label>
-                                        </ItemTemplate>
-                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
-                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
-                                    </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="SKU Name">
-                                        <ItemTemplate>
-                                            <asp:HiddenField ID="hdnVendor"
-                                                runat="server"
-                                                Value='<%# Bind("VendorUnit") %>' />
-
-                                            <asp:Label ID="lblSkuName"
-                                                runat="server"
-                                                Text='<%# Bind("SKU_Name") %>'>
-                                            </asp:Label>
-
-                                            <asp:HiddenField ID="hdnSkuCode"
-                                                runat="server"
-                                                Value='<%# Bind("SKU") %>' />
-
-                                        </ItemTemplate>
-
-                                        <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="30%" CssClass="text-left" />
-                                        <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="30%" CssClass="text-left" />
-                                    </asp:TemplateField>
-
-
-                                    <asp:TemplateField HeaderText="Total Load">
-                                        <ItemTemplate>
-                                            <asp:Label ID="lblTotalLoad"
-                                                runat="server"
-                                                Text='<%# Bind("Total_Load_NOP") %>'>
-                                            </asp:Label>
-                                        </ItemTemplate>
-
-                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                    </asp:TemplateField>
-
-
-                                    <asp:TemplateField HeaderText="Dispatched">
-                                        <ItemTemplate>
-                                            <asp:Label ID="lblDispatched"
-                                                runat="server"
-                                                Text='<%# Bind("Total_Despatched_NOP") %>'>
-                                            </asp:Label>
-                                        </ItemTemplate>
-
-                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                    </asp:TemplateField>
-
-
-                                    <asp:TemplateField HeaderText="Pending Load">
-                                        <ItemTemplate>
-                                            <asp:Label ID="lblPendingLoad"
-                                                runat="server"
-                                                Text='<%# Bind("Pending_Load_NOP") %>'>
-                                            </asp:Label>
-                                        </ItemTemplate>
-
-                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                    </asp:TemplateField>
-
-
-                                    <asp:TemplateField HeaderText="Dispatch %">
-                                        <ItemTemplate>
-                                            <asp:Label ID="lblDispatchPercentage"
-                                                runat="server"
-                                                Text='<%# Bind("Dispatch_Percentage") %>'>
-                                            </asp:Label>
-                                        </ItemTemplate>
-
-                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                    </asp:TemplateField>
-                                </Columns>
-                            </asp:GridView>
+                        <div class="legend">
+                            <div><span class="dot total-load"></span>Total Load</div>
+                            <div><span class="dot total-dispatch"></span>Total Dispatch</div>
                         </div>
-                        <%--<div class="custom-pagination">
-
-                            <div class="page-selector">
-
-                                <span class="page-label">Page</span>
-
-                                <asp:DropDownList
-                                    ID="ddlPageNumber"
-                                    runat="server"
-                                    CssClass="selectpicker page-dropdown p-page-selector"
-                                    data-live-search="true"
-                                    data-size="5"
-                                    AutoPostBack="true"
-                                    OnSelectedIndexChanged="ddlPageNumber_SelectedIndexChanged">
-                                </asp:DropDownList>
-
-                                <span class="page-label">of
-            <asp:Label ID="lblTotalPages" runat="server"></asp:Label>
-                                </span>
-
+                        <div class="sku-panel-row">
+                            <div class="sku-list-col">
+                                <div id="chartContainer" style="height: 400px; overflow-y: auto;">
+                                    <asp:Literal ID="litSkuRows" runat="server"></asp:Literal>
+                                </div>
                             </div>
-
-                        </div>--%>
+                            <div class="sku-summary-col">
+                                <asp:Literal ID="litSkuSummary" runat="server"></asp:Literal>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 </div>

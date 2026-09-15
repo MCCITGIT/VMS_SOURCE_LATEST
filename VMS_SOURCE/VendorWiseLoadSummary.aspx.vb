@@ -2,6 +2,7 @@
 Imports System.Data
 Imports System.Data.SqlTypes
 Imports System.Data.SqlClient
+Imports System.Text
 Imports VMS.DataAccess
 Partial Class VendorWiseLoadSummary
     Inherits System.Web.UI.Page
@@ -118,20 +119,126 @@ Partial Class VendorWiseLoadSummary
     '        Throw
     '    End Try
     'End Sub
+    ' Modified-by MUKESH BHAGAT on 14-09-2026 : SKU list redesigned as a 10-dot pictogram per row
+    ' with an overall serviceability donut beside it - ported from Home.aspx.vb
+    ' BindLoadDispatchChart()/BuildSkuSummaryPanel() (same [GetLoadDespatchSummary] columns, same
+    ' visuals) so both pages look and behave the same way. See Home.aspx.vb for the fuller
+    ' design-history comments on the dot math and the donut's add_endRequest rendering.
     Private Sub LoadData()
+        txtVendor.Text = SelectedVendorName
+        txtVendor.Enabled = False
+
         Dim obj As New UserLogin()
-        Dim ds As New DataSet()
-        ds = obj.GetLoadDespatchSummary(SelectedVendorCode, SelectedYear, SelectedMonth, txtSku.Text)
-        If (ds IsNot Nothing AndAlso ds.Tables(0).Rows.Count > 0) Then
-            gvFgVendorlist.DataSource = ds.Tables(0)
-            gvFgVendorlist.DataBind()
-            txtVendor.Text = SelectedVendorName
-            txtVendor.Enabled = False
-        Else
-            gvFgVendorlist.DataSource = Nothing
-            gvFgVendorlist.DataBind()
+        Dim ds As DataSet = obj.GetLoadDespatchSummary(SelectedVendorCode, SelectedYear, SelectedMonth, txtSku.Text)
+
+        If ds Is Nothing OrElse ds.Tables.Count = 0 OrElse ds.Tables(0).Rows.Count = 0 Then
+            litSkuRows.Text = "<div class='mst-empty-state'>No data found for this selection.</div>"
+            litSkuSummary.Text = BuildSkuSummaryPanel(0, 0)
+            Return
         End If
+
+        Dim dt As DataTable = ds.Tables(0)
+        Dim sb As New StringBuilder()
+        Dim grandTotalLoad As Decimal = 0
+        Dim grandTotalDispatch As Decimal = 0
+
+        For Each row As DataRow In dt.Rows
+            Dim sku As String = row("SKU_Name").ToString()
+            Dim totalLoad As Decimal = Convert.ToDecimal(row("Total_Load_NOP"))
+            Dim totalDispatch As Decimal = Convert.ToDecimal(row("Total_Despatched_NOP"))
+            Dim pct As Decimal = Convert.ToDecimal(row("Dispatch_Percentage"))
+            Dim pendingLoad As Decimal = Convert.ToDecimal(row("Pending_Load_NOP"))
+
+            grandTotalLoad += totalLoad
+            grandTotalDispatch += totalDispatch
+
+            Dim badgeClass As String
+            If pct = 0 Then
+                badgeClass = "badge-danger"
+            ElseIf pct < 50 Then
+                badgeClass = "badge-warning"
+            ElseIf pct < 80 Then
+                badgeClass = "badge-info"
+            Else
+                badgeClass = "badge-success"
+            End If
+
+            Dim pendingClass As String = If(pendingLoad > 0, "pending-value pending-active", "pending-value")
+
+            ' ---- 10-dot pictogram : 1 dot = totalLoad / 10 ----
+            Dim dotValue As Decimal = If(totalLoad > 0, totalLoad / 10D, 0D)
+            Dim filledUnits As Decimal = If(totalLoad > 0, (totalDispatch / totalLoad) * 10D, 0D)
+            Dim fullDots As Integer = Math.Floor(filledUnits)
+            Dim fracDot As Decimal = filledUnits - fullDots
+            If totalDispatch > 0 AndAlso filledUnits < 0.5D Then
+                fullDots = 0
+                fracDot = 0.5D
+            End If
+            If fullDots >= 10 Then
+                fullDots = 10
+                fracDot = 0
+            End If
+
+            Dim dotsHtml As New StringBuilder()
+            For i As Integer = 0 To 9
+                If i < fullDots Then
+                    dotsHtml.Append("<div class='sku-dot sku-dot-full'></div>")
+                ElseIf i = fullDots AndAlso fracDot > 0 Then
+                    Dim fracDeg As Integer = CInt(Math.Round(fracDot * 360, 0))
+                    dotsHtml.Append("<div class='sku-dot sku-dot-partial' style='background:conic-gradient(#0ca30c " & fracDeg.ToString() & "deg, #e9ecef 0deg)'></div>")
+                Else
+                    dotsHtml.Append("<div class='sku-dot sku-dot-empty'></div>")
+                End If
+            Next
+
+            sb.Append("<div class='sku-row'>")
+            sb.Append("  <div class='sku-label' title='" & Server.HtmlEncode(sku) & "'>" & Server.HtmlEncode(sku) & "</div>")
+            sb.Append("  <div class='sku-dots' title='1 dot ~ " & dotValue.ToString("N0") & " units'>")
+            sb.Append(dotsHtml.ToString())
+            sb.Append("  </div>")
+            sb.Append("  <div class='sku-stats'>Load: <b>" & totalLoad.ToString("N0") & "</b> | Dispatch: <b>" & totalDispatch.ToString("N0") & "</b> | Pending: <b class='" & pendingClass & "'>" & pendingLoad.ToString("N0") & "</b></div>")
+            sb.Append("  <div class='sku-badge " & badgeClass & "'>" & pct.ToString("0.0") & "%</div>")
+            sb.Append("</div>")
+        Next
+
+        litSkuRows.Text = sb.ToString()
+        litSkuSummary.Text = BuildSkuSummaryPanel(grandTotalLoad, grandTotalDispatch)
     End Sub
+
+    Private Function BuildSkuSummaryPanel(totalLoad As Decimal, totalDispatch As Decimal) As String
+        Dim pct As Decimal = If(totalLoad > 0, Math.Round(totalDispatch / totalLoad * 100, 1), 0D)
+        Dim pending As Decimal = Math.Max(totalLoad - totalDispatch, 0)
+
+        Dim pctColor As String
+        If pct = 0 Then
+            pctColor = "#e74c3c"
+        ElseIf pct < 50 Then
+            pctColor = "#f39c12"
+        ElseIf pct < 80 Then
+            pctColor = "#d4ac0d"
+        Else
+            pctColor = "#27ae60"
+        End If
+
+        Dim html As New StringBuilder()
+        html.Append("<div class='sku-summary-inner'>")
+        html.Append("  <div class='sku-summary-title'>Overall Serviceability</div>")
+        html.Append("  <div class='sku-donut-wrap'>")
+        html.Append("    <canvas id='skuOverallChart' width='130' height='130' data-dispatch='" & totalDispatch.ToString(System.Globalization.CultureInfo.InvariantCulture) & "' data-pending='" & pending.ToString(System.Globalization.CultureInfo.InvariantCulture) & "'></canvas>")
+        html.Append("    <div class='sku-donut-center'>")
+        html.Append("      <div class='sku-donut-pct' style='color:" & pctColor & "'>" & pct.ToString("0.0") & "%</div>")
+        html.Append("      <div class='sku-donut-caption'>" & If(totalLoad > 0, "Dispatched", "No data") & "</div>")
+        html.Append("    </div>")
+        html.Append("  </div>")
+        html.Append("  <div class='sku-summary-stats'>")
+        html.Append("    <div><span><span class='dot total-load'></span>Total Load</span><b>" & totalLoad.ToString("N0") & "</b></div>")
+        html.Append("    <div><span><span class='dot total-dispatch'></span>Total Dispatch</span><b>" & totalDispatch.ToString("N0") & "</b></div>")
+        html.Append("    <div><span>Pending</span><b class='" & If(pending > 0, "pending-value pending-active", "pending-value") & "'>" & pending.ToString("N0") & "</b></div>")
+        html.Append("  </div>")
+        html.Append("</div>")
+
+        Return html.ToString()
+    End Function
 
     Public Function FormatDate(ByVal stringdate As String) As SqlDateTime
 
@@ -181,17 +288,14 @@ Partial Class VendorWiseLoadSummary
 
     End Function
 
+    ' Modified-by MUKESH BHAGAT on 14-09-2026 : gvFgVendorlist.PageIndex reset removed - the grid
+    ' was replaced by the dot-pictogram list (no paging control); Page_Load's postback branch
+    ' already calls LoadData() again after this handler runs, picking up the new txtSku value.
     Protected Sub btnSubmit_Click(sender As Object, e As EventArgs)
-        gvFgVendorlist.PageIndex = 0
-        'SaveSearchCriteria()
-        'BindGrid()
+        LoadData()
     End Sub
     Protected Sub btnReset_Click(sender As Object, e As EventArgs)
-        'Session("PaymentReconciliationSearchCriteria") = Nothing
         txtSku.Text = String.Empty
-        'txtFromDate.Text = String.Empty
-        'txtToDate.Text = String.Empty
-        gvFgVendorlist.PageIndex = 0
-        'BindGrid()
+        LoadData()
     End Sub
 End Class
