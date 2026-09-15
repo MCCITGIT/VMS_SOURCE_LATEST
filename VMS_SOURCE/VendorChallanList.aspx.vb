@@ -242,15 +242,18 @@ Partial Class VendorChallanList
             Dim pageIdx As Integer = gvChallanDetails.PageIndex * ddlPageSize.SelectedValue
             e.Row.Cells(0).Text = pageIdx + (e.Row.RowIndex + 1)
             Dim rowView As DataRowView = CType(e.Row.DataItem, DataRowView)
+            'Modified-by MUKESH BHAGAT on 11-09-2026 : three columns (GRN No, GRN Date, SKU NOP) were
+            'inserted before "Aproved/Pending", so its cell index moved 11 -> 14 (Print 12 -> 15).
+            'Cells() counts hidden columns too.
             If rowView("desph_approved_yn") = "Y" Then
-                e.Row.Cells(11).Text = "Approved"
+                e.Row.Cells(14).Text = "Approved"
                 chk.Visible = False
                 'e.Row.BackColor = Drawing.Color.LawnGreen
                 e.Row.BackColor = System.Drawing.ColorTranslator.FromHtml("#a5faaf")
                 'ImgbtnDeleteChallan.Visible = False
                 ImgbtnPrint.Visible = True
             Else
-                e.Row.Cells(11).Text = "Pending"
+                e.Row.Cells(14).Text = "Pending"
                 'ImgbtnDeleteChallan.Visible = True
                 ImgbtnPrint.Visible = False
             End If
@@ -286,10 +289,11 @@ Partial Class VendorChallanList
         If e.Row.RowType = DataControlRowType.DataRow OrElse e.Row.RowType = DataControlRowType.Header Then
             'Dim condition As Boolean = True ' Replace with your actual condition
 
+            'Print column: index 12 -> 15 after the three new columns (see comment above)
             If (ddlType.SelectedValue = "Direct") Then
-                e.Row.Cells(12).Visible = False
+                e.Row.Cells(15).Visible = False
             Else
-                e.Row.Cells(12).Visible = True
+                e.Row.Cells(15).Visible = True
             End If
         End If
     End Sub
@@ -393,7 +397,13 @@ Partial Class VendorChallanList
     Private Sub PageSizeDropdown()
         ddlPageSize.Items.Clear()
         'Gets the page size from the web.config file
-        Dim configPagesize As String = ConfigurationManager.AppSettings.Get("PageSize")
+        'Modified-by MUKESH BHAGAT on 11-09-2026 : this screen needs a 100-rows option. The shared
+        '"PageSize" key drives 19 other list pages, so a page-specific key "PageSizeVendorChallan"
+        'is used here (falls back to "PageSize" if the new key is missing from Web.config).
+        Dim configPagesize As String = ConfigurationManager.AppSettings.Get("PageSizeVendorChallan")
+        If String.IsNullOrEmpty(configPagesize) Then
+            configPagesize = ConfigurationManager.AppSettings.Get("PageSize")
+        End If
         Dim numbers As String() = configPagesize.Split(",")
         Dim index As Integer = 0
 
@@ -441,7 +451,8 @@ Partial Class VendorChallanList
         Else
             chalanNo = Integer.MinValue
         End If
-        DespatchDS = DespatchObj.GetChallanDetails_Vr1(ddlUnit.SelectedValue, ddlLocation.SelectedValue, ddlYear.SelectedValue, ddlMonth.SelectedValue, chalanNo, "A", userInfo.userIDEntity, ddlType.SelectedValue)
+        'Modified-by MUKESH BHAGAT on 11-09-2026 : _Vr2 -> SP _vr4, adds GRN No / GRN Date / SKU NOP columns
+        DespatchDS = DespatchObj.GetChallanDetails_Vr2(ddlUnit.SelectedValue, ddlLocation.SelectedValue, ddlYear.SelectedValue, ddlMonth.SelectedValue, chalanNo, "A", userInfo.userIDEntity, ddlType.SelectedValue)
         If (Not (DespatchDS Is Nothing) AndAlso DespatchDS.Tables.Count > 0 AndAlso Not (DespatchDS.Tables(0) Is Nothing) AndAlso DespatchDS.Tables(0).Rows.Count > 0) Then
             gvChallanDetails.DataSource = DespatchDS
             gvChallanDetails.DataBind()

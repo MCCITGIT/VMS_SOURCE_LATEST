@@ -9,7 +9,11 @@
     <script type="text/javascript">var cal1 = new CalendarPopup();</script>
     <script src="Scripts/FunctionValidator.js" type="text/javascript"></script>
     <%--<asp:ScriptManager ID="ScriptManager1" runat="server"></asp:ScriptManager>--%>
-
+    <style>
+        .vendor-name-column {
+            min-width: 150px;
+        }
+    </style>
     <div class="breadcrumbs">
         <div class="leftFung">
             <a href="Home.aspx" title="Home"><i class="fas fa-home"></i></a>
@@ -106,6 +110,12 @@
                             HeaderText="Type" DataField="Type">
                             <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
                             <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
+                            <FooterStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
+                        </asp:BoundField>
+                        <asp:BoundField HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center"
+                            HeaderText="Vendor Name" DataField="vendor_unit_name">
+                            <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
+                            <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" CssClass="vendor-name-column" />
                             <FooterStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
                         </asp:BoundField>
                         <asp:BoundField HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center"

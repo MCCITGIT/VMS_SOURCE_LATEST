@@ -942,4 +942,48 @@ Public Class POLinkingRequestClass
     End Function
 
 #End Region
+
+#Region "Cancelled by Vendor (Vendor Payment Dashboard)"
+    'Modified-by MUKESH BHAGAT on 11-09-2026 : "Cancelled by Vendor" on the Dispatch List.
+    'The flag lives on despatch_hdr (desph_vendor_cancel_yn); the attached credit-note /
+    'supporting PDFs live in dbo.vpr_vendor_cancellation_doc. One call per uploaded file.
+
+    Public Function InsertVendorCancellationDoc(ByVal releaseId As Integer, ByVal unitCode As String, ByVal depotCode As String,
+                                                ByVal invoiceNo As String, ByVal invoiceDate As Object, ByVal invoiceValue As Object,
+                                                ByVal remarks As String, ByVal docType As String,
+                                                ByVal fileName As String, ByVal orgFileName As String, ByVal docPath As String,
+                                                ByVal userId As String) As DataSet
+        Dim sqlParams(11) As SqlParameter
+
+        sqlParams(0) = New SqlParameter("@release_id", SqlDbType.Int) With {.Value = releaseId}
+        sqlParams(1) = New SqlParameter("@unit_code", SqlDbType.VarChar, 50) With {.Value = unitCode}
+        sqlParams(2) = New SqlParameter("@depot_code", SqlDbType.VarChar, 10) With {.Value = If(String.IsNullOrEmpty(depotCode), DBNull.Value, CObj(depotCode))}
+        sqlParams(3) = New SqlParameter("@invoice_no", SqlDbType.VarChar, 100) With {.Value = If(String.IsNullOrEmpty(invoiceNo), DBNull.Value, CObj(invoiceNo))}
+        sqlParams(4) = New SqlParameter("@invoice_date", SqlDbType.DateTime) With {.Value = If(invoiceDate Is Nothing, DBNull.Value, invoiceDate)}
+        sqlParams(5) = New SqlParameter("@invoice_value", SqlDbType.Decimal) With {.Precision = 18, .Scale = 2, .Value = If(invoiceValue Is Nothing, DBNull.Value, invoiceValue)}
+        sqlParams(6) = New SqlParameter("@remarks", SqlDbType.VarChar, 500) With {.Value = If(String.IsNullOrEmpty(remarks), DBNull.Value, CObj(remarks))}
+        sqlParams(7) = New SqlParameter("@doc_type", SqlDbType.VarChar, 50) With {.Value = docType}
+        sqlParams(8) = New SqlParameter("@doc_file_name", SqlDbType.VarChar, 200) With {.Value = fileName}
+        sqlParams(9) = New SqlParameter("@doc_org_filename", SqlDbType.VarChar, 200) With {.Value = orgFileName}
+        sqlParams(10) = New SqlParameter("@doc_path", SqlDbType.VarChar, 500) With {.Value = docPath}
+        sqlParams(11) = New SqlParameter("@user_id", SqlDbType.VarChar, 50) With {.Value = userId}
+
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[vpr_vendor_cancellation_insert]", CommandType.StoredProcedure, sqlParams)
+    End Function
+
+    Public Function GetVendorCancellationDocs(ByVal releaseId As Integer, ByVal unitCode As String) As DataSet
+        Dim sqlParams(1) As SqlParameter
+        sqlParams(0) = New SqlParameter("@release_id", SqlDbType.Int) With {.Value = releaseId}
+        sqlParams(1) = New SqlParameter("@unit_code", SqlDbType.VarChar, 50) With {.Value = unitCode}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[vpr_vendor_cancellation_get]", CommandType.StoredProcedure, sqlParams)
+    End Function
+
+    Public Function DeactivateVendorCancellation(ByVal releaseId As Integer, ByVal unitCode As String, ByVal userId As String) As DataSet
+        Dim sqlParams(2) As SqlParameter
+        sqlParams(0) = New SqlParameter("@release_id", SqlDbType.Int) With {.Value = releaseId}
+        sqlParams(1) = New SqlParameter("@unit_code", SqlDbType.VarChar, 50) With {.Value = unitCode}
+        sqlParams(2) = New SqlParameter("@user_id", SqlDbType.VarChar, 50) With {.Value = userId}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[vpr_vendor_cancellation_deactivate]", CommandType.StoredProcedure, sqlParams)
+    End Function
+#End Region
 End Class
