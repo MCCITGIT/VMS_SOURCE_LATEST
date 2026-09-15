@@ -1,4 +1,4 @@
-<%@ Page Title="Dashboard" Language="VB" MasterPageFile="~/MasterPage.master" AutoEventWireup="false" CodeFile="Home.aspx.vb" Inherits="Home" %>
+<%@ Page Title="Dashboard" Language="VB" MasterPageFile="~/MasterPage.master" AutoEventWireup="false" CodeFile="Home.aspx.vb" Inherits="Home" MaintainScrollPositionOnPostback="true" %>
 
 <%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="asp" %>
 <%--<asp:Content ID="Content1" ContentPlaceHolderID="Head1" runat="Server">
@@ -293,6 +293,14 @@
         }
     </style>
 
+    <%-- For Lazy Loading --%>
+    <style>
+        .rm-grid-scroll {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+
     <div class="vms-home">
 
         <div class="breadcrumbs">
@@ -421,7 +429,7 @@
                                     </div>
                                     <div class="newCardBody">
                                         <div class="table-responsive rm-grid-scroll">
-                                            <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0"
+                                            <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0" ClientIDMode="Static"
                                                 ID="gvBrandList" runat="server" AutoGenerateColumns="false" PageSize="10" Visible="true" OnRowCommand="gvBrandList_RowCommand"
                                                 ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
                                                 PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
@@ -485,7 +493,7 @@
                                     </div>
                                     <div class="newCardBody">
                                         <div class="table-responsive rm-grid-scroll">
-                                            <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0"
+                                            <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0" ClientIDMode="Static"
                                                 ID="gvVendorList" runat="server" AutoGenerateColumns="false" PageSize="10" Visible="true" OnRowCommand="gvVendorList_RowCommand"
                                                 ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
                                                 PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
@@ -654,7 +662,7 @@
                                 </div>
                             </div>
                             <div class="table-responsive rm-grid-scroll">
-                                <asp:GridView ID="gvVendorDispatch" runat="server" AutoGenerateColumns="false" OnRowCommand="gvVendorDispatch_RowCommand"
+                                <asp:GridView ID="gvVendorDispatch" runat="server" AutoGenerateColumns="false" OnRowCommand="gvVendorDispatch_RowCommand" ClientIDMode="Static"
                                     Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
                                     <RowStyle CssClass="tlrowlight" />
                                     <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
@@ -1740,4 +1748,152 @@
             </Triggers>
         </asp:UpdatePanel>
     </div>
+
+    <%-- For Lazy Loading--%>
+    <script>
+        $(function () {
+    var pageIndex = 0;
+    var loading = false;
+    var noMoreData = false;
+
+    $('#gvVendorDispatch').closest('.rm-grid-scroll').on('scroll', function () {
+        var $el = $(this);
+        var nearBottom = $el.scrollTop() + $el.innerHeight() >= $el[0].scrollHeight - 50;
+
+        if (!nearBottom || loading || noMoreData) return;
+
+        loading = true;
+        pageIndex++;
+
+        var vendorUnit = $('#ddlVendorList').val() || '';
+        var year = $('#<%= ddlProcessYr.ClientID %>').val();
+        var month = $('#<%= ddlProcessMnth.ClientID %>').val();
+
+        PageMethods.GetMoreDispatch(pageIndex, vendorUnit, year, month,
+            function (result) {
+                if (!result.rows || result.rows.length === 0) {
+                    noMoreData = true;
+                    loading = false;
+                    return;
+                }
+                $.each(result.rows, function (i, r) {
+                    appendDispatchRow($('#gvVendorDispatch tbody'), r);
+                });
+                if ($('#gvVendorDispatch tbody tr').length >= result.total) {
+                    noMoreData = true;
+                }
+                loading = false;
+            },
+            function (err) {
+                loading = false;
+                console.error(err);
+            }
+        );
+    });
+
+    // reset + reload from scratch when the vendor filter changes
+    $('#ddlVendorList').on('change', function () {
+        pageIndex = 0;
+        noMoreData = false;
+        // the existing OnSelectedIndexChanged postback (ddlVendorList_SelectedIndexChanged)
+        // already re-binds page 0 server-side via BindVendorDispatchGrid, so no extra JS needed here
+    });
+
+    function appendDispatchRow($tbody, r) {
+        $tbody.append(
+            '<tr class="tlrowlight">' +
+            '<td class="text-center">' + r.vm_vendor_name + '</td>' +
+            '<td class="text-center">' + r.depot_name + '</td>' +
+            '<td class="text-center">' + r.ddrh_order_sl_no + '</td>' +
+            '<td class="text-center">' + r.ReqDate + '</td>' +
+            '<td class="text-center">' + r.vom_org_name + '</td>' +
+            '<td class="text-center">' + r.lm_desc + '</td>' +
+            '</tr>'
+        );
+    }
+});
+
+$(function () {
+    setupInfiniteScroll('#gvBrandList', 'GetMoreBrands', appendBrandRow);
+    setupInfiniteScroll('#gvVendorList', 'GetMoreVendors', appendVendorRow);
+
+    function setupInfiniteScroll(gridSel, pageMethodName, appendFn) {
+        var pageIndex = 0;
+        var loading = false;
+        var noMoreData = false;
+
+        $(gridSel).closest('.rm-grid-scroll').on('scroll', function () {
+            var $el = $(this);
+            var nearBottom = $el.scrollTop() + $el.innerHeight() >= $el[0].scrollHeight - 50;
+            if (!nearBottom || loading || noMoreData) return;
+
+            loading = true;
+            pageIndex++;
+
+            var vendorUnit = $('#<%= ddlvendor.ClientID %>').val() || '';
+            var year = $('#<%= ddlProcessYr.ClientID %>').val();
+            var month = $('#<%= ddlProcessMnth.ClientID %>').val();
+
+            PageMethods[pageMethodName](pageIndex, vendorUnit, year, month,
+                function (result) {
+                    if (!result.rows || result.rows.length === 0) {
+                        noMoreData = true;
+                        loading = false;
+                        return;
+                    }
+                    $.each(result.rows, function (i, r) {
+                        appendFn($(gridSel + ' tbody'), r);
+                    });
+                    if ($(gridSel + ' tbody tr').length >= result.total) {
+                        noMoreData = true;
+                    }
+                    loading = false;
+                },
+                function (err) {
+                    loading = false;
+                    console.error(err);
+                }
+            );
+        });
+    }
+
+    function appendBrandRow($tbody, r) {
+        var slNo = $tbody.find('tr').length + 1;
+        $tbody.append(
+            '<tr class="tlrowlight">' +
+            '<td class="text-center">' + slNo + '</td>' +
+            '<td class="text-left">' + r.brand_name + '</td>' +
+            '<td>' + r.total_load + '</td>' +
+            '<td>' + r.total_despatched + '</td>' +
+            '<td>' + r.serviceability_percentage + '</td>' +
+            '<td class="text-center"><a href="#" class="btn btn-sm btn-primary view-brand" data-brand="' + r.brand_name + '"><i class="fa fa-arrow-right"></i></a></td>' +
+            '</tr>'
+        );
+    }
+
+    function appendVendorRow($tbody, r) {
+        var slNo = $tbody.find('tr').length + 1;
+        $tbody.append(
+            '<tr class="tlrowlight">' +
+            '<td class="text-center">' + slNo + '</td>' +
+            '<td class="text-left">' + r.vendor_name + '</td>' +
+            '<td>' + r.Total_Load_NOP + '</td>' +
+            '<td>' + r.Total_Despatched_NOP + '</td>' +
+            '<td>' + r.Dispatch_Percentage + '</td>' +
+            '<td class="text-center"><a href="#" class="btn btn-sm btn-primary view-vendor" data-vendor="' + r.vendor_unit + '"><i class="fa fa-arrow-right"></i></a></td>' +
+            '</tr>'
+        );
+    }
+
+    $(document).on('click', '.view-brand', function (e) {
+        e.preventDefault();
+        __doPostBack('gvBrandList', 'ViewBrand$' + $(this).data('brand'));
+    });
+    $(document).on('click', '.view-vendor', function (e) {
+        e.preventDefault();
+        __doPostBack('gvVendorList', 'ViewVendor$' + $(this).data('vendor'));
+    });
+});
+
+    </script>
 </asp:Content>
