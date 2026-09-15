@@ -293,6 +293,14 @@
         }
     </style>
 
+    <%-- For Lazy Loading --%>
+    <style>
+        .rm-grid-scroll {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+
     <div class="vms-home">
 
         <div class="breadcrumbs">
@@ -654,7 +662,7 @@
                                 </div>
                             </div>
                             <div class="table-responsive rm-grid-scroll">
-                                <asp:GridView ID="gvVendorDispatch" runat="server" AutoGenerateColumns="false" OnRowCommand="gvVendorDispatch_RowCommand"
+                                <asp:GridView ID="gvVendorDispatch" runat="server" AutoGenerateColumns="false" OnRowCommand="gvVendorDispatch_RowCommand" ClientIDMode="Static"
                                     Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
                                     <RowStyle CssClass="tlrowlight" />
                                     <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
@@ -1740,4 +1748,67 @@
             </Triggers>
         </asp:UpdatePanel>
     </div>
+    <script>
+        $(function () {
+    var pageIndex = 0;
+    var loading = false;
+    var noMoreData = false;
+
+    $('#gvVendorDispatch').closest('.rm-grid-scroll').on('scroll', function () {
+        var $el = $(this);
+        var nearBottom = $el.scrollTop() + $el.innerHeight() >= $el[0].scrollHeight - 50;
+
+        if (!nearBottom || loading || noMoreData) return;
+
+        loading = true;
+        pageIndex++;
+
+        var vendorUnit = $('#ddlVendorList').val() || '';
+        var year = $('#<%= ddlProcessYr.ClientID %>').val();
+        var month = $('#<%= ddlProcessMnth.ClientID %>').val();
+
+        PageMethods.GetMoreDispatch(pageIndex, vendorUnit, year, month,
+            function (result) {
+                if (!result.rows || result.rows.length === 0) {
+                    noMoreData = true;
+                    loading = false;
+                    return;
+                }
+                $.each(result.rows, function (i, r) {
+                    appendDispatchRow($('#gvVendorDispatch tbody'), r);
+                });
+                if ($('#gvVendorDispatch tbody tr').length >= result.total) {
+                    noMoreData = true;
+                }
+                loading = false;
+            },
+            function (err) {
+                loading = false;
+                console.error(err);
+            }
+        );
+    });
+
+    // reset + reload from scratch when the vendor filter changes
+    $('#ddlVendorList').on('change', function () {
+        pageIndex = 0;
+        noMoreData = false;
+        // the existing OnSelectedIndexChanged postback (ddlVendorList_SelectedIndexChanged)
+        // already re-binds page 0 server-side via BindVendorDispatchGrid, so no extra JS needed here
+    });
+
+    function appendDispatchRow($tbody, r) {
+        $tbody.append(
+            '<tr class="tlrowlight">' +
+            '<td class="text-center">' + r.vm_vendor_name + '</td>' +
+            '<td class="text-center">' + r.depot_name + '</td>' +
+            '<td class="text-center">' + r.ddrh_order_sl_no + '</td>' +
+            '<td class="text-center">' + r.ReqDate + '</td>' +
+            '<td class="text-center">' + r.vom_org_name + '</td>' +
+            '<td class="text-center">' + r.lm_desc + '</td>' +
+            '</tr>'
+        );
+    }
+});
+    </script>
 </asp:Content>
