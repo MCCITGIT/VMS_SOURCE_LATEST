@@ -34,7 +34,6 @@ Public Class MisVendorScoreExcelExport
         fontQuarterHeader.FontName = "Calibri"
         fontQuarterHeader.FontHeightInPoints = 11
         fontQuarterHeader.Boldweight = CShort(FontBoldWeight.Bold)
-        fontQuarterHeader.Color = IndexedColors.White.Index
 
         Dim fontSubHeader As IFont = workbook.CreateFont()
         fontSubHeader.FontName = "Calibri"
@@ -45,12 +44,45 @@ Public Class MisVendorScoreExcelExport
         fontNormal.FontName = "Calibri"
         fontNormal.FontHeightInPoints = 10
 
-        Dim styleQuarterHeader As ICellStyle = workbook.CreateCellStyle()
-        styleQuarterHeader.Alignment = HorizontalAlignment.Center
-        styleQuarterHeader.VerticalAlignment = VerticalAlignment.Center
-        styleQuarterHeader.SetFont(fontQuarterHeader)
-        styleQuarterHeader.FillForegroundColor = IndexedColors.RoyalBlue.Index
-        styleQuarterHeader.FillPattern = FillPattern.SolidForeground
+        ' Modified-by MUKESH BHAGAT on 15-09-2026 : one distinct fill colour per quarter, matched
+        ' exactly (RGB picked off) from the sample "Vendor Score Report.xlsx" header - Q1/Q2/Q4 are
+        ' theme accent colours with a tint applied there, Q3 is a plain RGB fill. Previously a single
+        ' shared style (IndexedColors.RoyalBlue) was reused for all 4 quarters, which is why every
+        ' quarter band exported blue instead of matching the source's Q1=peach/Q2=blue/Q3=green/
+        ' Q4=orange bands. Applied to both the Q1..Q4 label row and the Audit/.../Grade sub-header
+        ' row beneath it, same as the sample.
+        Dim quarterColors As Byte()() = {
+            New Byte() {&HFC, &HD5, &HB5},
+            New Byte() {&H95, &HB3, &HD7},
+            New Byte() {&H92, &HD0, &H50},
+            New Byte() {&HFA, &HC0, &H90}
+        }
+
+        Dim styleQuarterHeaderByQ(3) As ICellStyle
+        Dim styleSubHeaderByQ(3) As ICellStyle
+        For q As Integer = 0 To 3
+            Dim color As New XSSFColor(quarterColors(q))
+
+            Dim styleQ As ICellStyle = workbook.CreateCellStyle()
+            styleQ.Alignment = HorizontalAlignment.Center
+            styleQ.VerticalAlignment = VerticalAlignment.Center
+            styleQ.SetFont(fontQuarterHeader)
+            CType(styleQ, XSSFCellStyle).SetFillForegroundColor(color)
+            styleQ.FillPattern = FillPattern.SolidForeground
+            styleQuarterHeaderByQ(q) = styleQ
+
+            Dim styleSub As ICellStyle = workbook.CreateCellStyle()
+            styleSub.Alignment = HorizontalAlignment.Center
+            styleSub.VerticalAlignment = VerticalAlignment.Center
+            styleSub.SetFont(fontSubHeader)
+            CType(styleSub, XSSFCellStyle).SetFillForegroundColor(color)
+            styleSub.FillPattern = FillPattern.SolidForeground
+            styleSub.BorderTop = BorderStyle.Thin
+            styleSub.BorderBottom = BorderStyle.Thin
+            styleSub.BorderLeft = BorderStyle.Thin
+            styleSub.BorderRight = BorderStyle.Thin
+            styleSubHeaderByQ(q) = styleSub
+        Next
 
         Dim styleFixedHeader As ICellStyle = workbook.CreateCellStyle()
         styleFixedHeader.Alignment = HorizontalAlignment.Center
@@ -58,17 +90,6 @@ Public Class MisVendorScoreExcelExport
         styleFixedHeader.SetFont(fontQuarterHeader)
         styleFixedHeader.FillForegroundColor = IndexedColors.Grey50Percent.Index
         styleFixedHeader.FillPattern = FillPattern.SolidForeground
-
-        Dim styleSubHeader As ICellStyle = workbook.CreateCellStyle()
-        styleSubHeader.Alignment = HorizontalAlignment.Center
-        styleSubHeader.VerticalAlignment = VerticalAlignment.Center
-        styleSubHeader.SetFont(fontSubHeader)
-        styleSubHeader.FillForegroundColor = IndexedColors.Grey25Percent.Index
-        styleSubHeader.FillPattern = FillPattern.SolidForeground
-        styleSubHeader.BorderTop = BorderStyle.Thin
-        styleSubHeader.BorderBottom = BorderStyle.Thin
-        styleSubHeader.BorderLeft = BorderStyle.Thin
-        styleSubHeader.BorderRight = BorderStyle.Thin
 
         Dim styleText As ICellStyle = CreateBorderedStyle(workbook, fontNormal, HorizontalAlignment.Left)
         Dim styleTextCenter As ICellStyle = CreateBorderedStyle(workbook, fontNormal, HorizontalAlignment.Center)
@@ -93,9 +114,9 @@ Public Class MisVendorScoreExcelExport
             Dim startCol As Integer = 2 + (q * quarterColCount)
             Dim endCol As Integer = startCol + quarterColCount - 1
 
-            SetCell(row0, startCol, "Q" & (q + 1).ToString(), styleQuarterHeader)
+            SetCell(row0, startCol, "Q" & (q + 1).ToString(), styleQuarterHeaderByQ(q))
             For c As Integer = startCol + 1 To endCol
-                SetCell(row0, c, "", styleQuarterHeader)
+                SetCell(row0, c, "", styleQuarterHeaderByQ(q))
             Next
             If endCol > startCol Then
                 sheet.AddMergedRegion(New CellRangeAddress(0, 0, startCol, endCol))
@@ -113,7 +134,7 @@ Public Class MisVendorScoreExcelExport
                 ElseIf subLabel.Equals("grade_name", StringComparison.OrdinalIgnoreCase) Then
                     subLabel = "Grade"
                 End If
-                SetCell(row1, c, subLabel, styleSubHeader)
+                SetCell(row1, c, subLabel, styleSubHeaderByQ(q))
             Next
         Next
 
