@@ -226,6 +226,10 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             '    Exit Sub
             'End If
 
+            'Modified-by MUKESH BHAGAT on 17-09-2026 : highest GST % among the ticked rows - the rate
+            'applied to the freight below.
+            Dim maxGst As Decimal = 0
+
             For i As Integer = 0 To gvSKUDetails.Rows.Count - 1
                 chk = gvSKUDetails.Rows(i).FindControl("chkSelect")
                 txtThisDesp = gvSKUDetails.Rows(i).FindControl("txtThisDesp")
@@ -236,8 +240,28 @@ Partial Class UnitDespatchPlanAddUpdateVr1
                     ChkCount = ChkCount + 1
                     Dim total As Decimal = Val(txtThisDesp.Text) * Val(hdnSkuRate.Value)
                     TotalRate = TotalRate + (total + (total * Val(hdnSkuGST.Value / 100)))
+                    If CDec(Val(hdnSkuGST.Value)) > maxGst Then maxGst = CDec(Val(hdnSkuGST.Value))
                 End If
             Next
+
+            'Modified-by MUKESH BHAGAT on 17-09-2026 : freight. The bill total is SKU taxable + freight
+            '+ GST (GST is charged on the freight too - verified on Soujanya bill DS2627102720: line items
+            '1,033,524 + freight 15,708 = taxable 1,049,232, IGST 18% on that = 188,861.76, total
+            '1,238,094). The SKU grid knows nothing about freight, so the OCR-read freight
+            '(hdnOcrFreight, from tax.freight_amount) is added here at the highest ticked-row GST rate,
+            'otherwise every invoice carrying freight fails the band check by freight + GST-on-freight.
+            'Applied only when the bill was actually read (Y) or the user knowingly saved without
+            'validation (S); an unverified submit never carries a freight value (the browser clears it).
+            Dim ocrFreight As Decimal = 0
+            Dim freightIncGst As Decimal = 0
+            Dim ocrFlagForFreight As String = Convert.ToString(hdnOcrVerified.Value).Trim().ToUpperInvariant()
+            If (ocrFlagForFreight = "Y" OrElse ocrFlagForFreight = "S") AndAlso
+               Decimal.TryParse(Convert.ToString(hdnOcrFreight.Value), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, ocrFreight) AndAlso
+               ocrFreight > 0 Then
+                freightIncGst = ocrFreight + (ocrFreight * maxGst / 100)
+                TotalRate = TotalRate + freightIncGst
+            End If
+
             Dim FinalInvoiceValue As Decimal = 0
             If txtFinalInvoiceValue.Text = "" Then
                 FinalInvoiceValue = 0
@@ -268,7 +292,10 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             Dim upperBound As Decimal = Math.Max(Value1, Value2)
 
             If Result <= lowerBound OrElse Result >= upperBound Then
-                ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('Total Rate (Incl. GST) of " & TotalRate.ToString("N2") & " does not match the Final Invoice Value of " & FinalInvoiceValue.ToString("N2") & " (difference " & Result.ToString("N2") & "). The difference must be less than " & upperBound.ToString("N2") & ".');", True)
+                'Modified-by MUKESH BHAGAT on 17-09-2026 : say when freight was included, so the user
+                'can see why the grid footer total and this figure differ.
+                Dim freightNote As String = If(freightIncGst > 0, " (incl. freight " & ocrFreight.ToString("N2") & " + GST " & maxGst.ToString("N2") & "% = " & freightIncGst.ToString("N2") & ")", "")
+                ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('Total Rate (Incl. GST) of " & TotalRate.ToString("N2") & freightNote & " does not match the Final Invoice Value of " & FinalInvoiceValue.ToString("N2") & " (difference " & Result.ToString("N2") & "). The difference must be less than " & upperBound.ToString("N2") & ".');", True)
                 txtFinalInvoiceValue.Focus()
                 ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
                 Exit Sub
