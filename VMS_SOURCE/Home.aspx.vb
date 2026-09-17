@@ -75,10 +75,10 @@ Partial Class Home
             ddlVendorList.Items.Insert(0, New ListItem(Constant.Common.All, String.Empty, True))
         End If
         If (userInfo.userGroupCodeEntity = "UNIT") Then
-            ddlvendor.SelectedValue = userInfo.userBranchEntity
+            ddlvendor.SelectedValue = userInfo.userIDEntity
             ddlvendor.Enabled = False
 
-            ddlVendorList.SelectedValue = userInfo.userBranchEntity
+            ddlVendorList.SelectedValue = userInfo.userIDEntity
             ddlVendorList.Enabled = False
         End If
     End Sub
@@ -1029,7 +1029,7 @@ Partial Class Home
                 divHo.Visible = False
                 divUnit.Visible = False
                 divDepot.Visible = False
-                divNewsCard.Visible = False
+                divNewsCard.Visible = True
                 divAction.Visible = False
                 'divData.Visible = True
                 divDespatch.Visible = True
