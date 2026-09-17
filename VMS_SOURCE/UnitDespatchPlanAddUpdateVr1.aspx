@@ -825,6 +825,11 @@
                              and this message area / the panel below appear only when the bill fails. --%>
                             <div id="divInvoiceOcrMessage" style="margin-top: 5px; font-size: 12px;"></div>
                             <asp:HiddenField ID="hdnOcrVerified" runat="server" Value="N" />
+                            <%-- Modified-by MUKESH BHAGAT on 17-09-2026 : freight read off the bill by OCR
+                             (tax.freight_amount). Not a form field - used only by the server-side Total Rate
+                             vs Final Invoice Value check, since bill total = SKU taxable + freight + GST and
+                             the SKU grid knows nothing about freight. Cleared whenever verification resets. --%>
+                            <asp:HiddenField ID="hdnOcrFreight" runat="server" Value="0" />
                             <%-- Modified-by MUKESH BHAGAT on 31-08-2026 : stored invoice copy - shows the
                              uploaded file's name and a download button when a document exists. --%>
                             <asp:HiddenField ID="hdnInvDocPath" runat="server" />
@@ -994,6 +999,12 @@
                                     <div class="form-group">
                                         <label class="form-control-label">Gross Value:<span class="mandatory">*</span></label>
                                         <input type="text" id="txtOcrGrossValue" class="form-control" readonly="readonly" />
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label class="form-control-label">Freight:</label>
+                                        <input type="text" id="txtOcrFreight" class="form-control" readonly="readonly" />
                                     </div>
                                 </div>
                                 <div class="col-md-2">
@@ -1451,6 +1462,7 @@
             invoiceNo: ['invoice_no', 'invoiceNo', 'invoice_number', 'bill_no'],
             invoiceDate: ['invoice_date', 'invoiceDate', 'bill_date'],
             grossValue: ['amount', 'gross_value', 'grossValue', 'total_amount', 'invoice_value', 'grand_total'],
+            freight: ['freight_amount', 'freight', 'freight_charges'],
             totalQty: ['total_quantity', 'totalQuantity', 'quantity', 'total_qty', 'qty'],
             supplierGstn: ['supplier_gstn', 'supplierGstn', 'supplier_gst', 'seller_gstin', 'supplier_gstin', 'gstin_supplier'],
             recipientGstn: ['recipient_gstn', 'recipientGstn', 'recipient_gst', 'buyer_gstin', 'recipient_gstin', 'gstin_recipient']
@@ -1518,6 +1530,16 @@
         function ocrSetVerified(flag) {
             var h = ocrEl('<%= hdnOcrVerified.ClientID %>');
             if (h) { h.value = (flag === 'S') ? 'S' : (flag ? 'Y' : 'N'); }
+            // Modified-by MUKESH BHAGAT on 17-09-2026 : a reset also drops the freight read off the
+            // bill, so a stale freight can never inflate the server-side Total Rate check.
+            if (!flag) { ocrSetFreight(''); }
+        }
+
+        function ocrSetFreight(value) {
+            var h = ocrEl('<%= hdnOcrFreight.ClientID %>');
+            if (!h) { return; }
+            var n = ocrToNumber(value);
+            h.value = isNaN(n) ? '0' : String(n);
         }
 
         // ---------------------------------------------------------------------------------
@@ -1763,6 +1785,7 @@
             var ocrInvNo = ocrPick(result, OCR_FIELDS.invoiceNo);
             var ocrInvDate = ocrNormalizeDate(ocrPick(result, OCR_FIELDS.invoiceDate));
             var ocrGross = ocrPick(result, OCR_FIELDS.grossValue);
+            var ocrFreight = ocrPick(result, OCR_FIELDS.freight);
             var ocrQty = ocrPick(result, OCR_FIELDS.totalQty);
             var ocrSupGstn = ocrPick(result, OCR_FIELDS.supplierGstn);
             var ocrRecGstn = ocrPick(result, OCR_FIELDS.recipientGstn);
@@ -1771,7 +1794,13 @@
             ocrEl('txtOcrInvoiceNo').value = ocrInvNo;
             ocrEl('txtOcrInvoiceDate').value = ocrInvDate;
             ocrEl('txtOcrGrossValue').value = ocrGross;
+            ocrEl('txtOcrFreight').value = ocrFreight;
             ocrEl('txtOcrTotalQty').value = ocrQty;
+
+            // Modified-by MUKESH BHAGAT on 17-09-2026 : freight goes to the server for the Total Rate
+            // check (bill total = SKU taxable + freight + GST). Set before the outcome is decided; every
+            // path that resets verification (ocrSetVerified(false)) clears it again.
+            ocrSetFreight(ocrFreight);
             ocrEl('txtOcrSupplierGstn').value = ocrSupGstn;
             ocrEl('txtOcrRecipientGstn').value = ocrRecGstn;
 
