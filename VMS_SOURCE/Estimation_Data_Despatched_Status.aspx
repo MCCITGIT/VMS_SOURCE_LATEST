@@ -168,6 +168,14 @@
                                     <ItemStyle HorizontalAlign="right" />
                                     <HeaderStyle HorizontalAlign="Center" Width="7%" />
                                 </asp:BoundField>
+                                <asp:BoundField DataField="INTRANSIT" HeaderText="INTRANSIT">
+                                    <ItemStyle HorizontalAlign="right" />
+                                    <HeaderStyle HorizontalAlign="Center" Width="7%" />
+                                </asp:BoundField>
+                                <asp:BoundField DataField="RECEIVED at Depot" HeaderText="RECEIVED at Depot">
+                                    <ItemStyle HorizontalAlign="right" />
+                                    <HeaderStyle HorizontalAlign="Center" Width="7%" />
+                                </asp:BoundField>
                                 <asp:BoundField DataField="Last_Desp_date" HeaderText="Last Despatch Date">
                                     <ItemStyle HorizontalAlign="right" />
                                     <HeaderStyle HorizontalAlign="Center" Width="7%" />
