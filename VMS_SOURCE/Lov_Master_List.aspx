@@ -1,11 +1,17 @@
 <%@ Page Title="LOV Master List" Language="VB" MasterPageFile="~/MasterPage.master" AutoEventWireup="false" CodeFile="Lov_Master_List.aspx.vb" Inherits="Lov_Master_List" %>
 
-
 <%--<asp:Content ID="Content1" ContentPlaceHolderID="Head1" runat="Server">
 </asp:Content>--%>
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
     <script type="text/javascript" src="Scripts/ValidationLovMaster.js"></script>
 
+    <style>
+        .lov-master-list-edit-item tbody tr td:last-child {
+           display: flex;
+           column-gap: 5px;
+           justify-content: center;
+        }
+    </style>
     <div class="breadcrumbs">
         <div class="leftFung">
             <a href="Home.aspx" title="Home"><i class="fas fa-home"></i></a>
@@ -38,7 +44,7 @@
             <div class="table-responsive">
                 <asp:GridView ID="gvLovMstr" runat="server" AutoGenerateColumns="false" AllowPaging="false"
                     Visible="true" ShowFooter="true" BorderWidth="1px" EmptyDataText="There are No Data..."
-                    OnRowCancelingEdit="gvLovMstr_RowCancelingEdit" OnRowEditing="gvLovMstr_RowEditing" CssClass="table table-hover upgradDataGrid">
+                    OnRowCancelingEdit="gvLovMstr_RowCancelingEdit" OnRowEditing="gvLovMstr_RowEditing" CssClass="table table-hover upgradDataGrid lov-master-list-edit-item">
                     <RowStyle CssClass="tlrowlight" />
                     <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
                     <HeaderStyle CssClass="headerGrid" />
