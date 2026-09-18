@@ -47,7 +47,132 @@
             Sys.WebForms.PageRequestManager.getInstance().add_endRequest(renderSkuDonut);
         }
     </script>
+    <script type="text/javascript">
+        (function () {
+            var PANELS = ['accSkuBody', 'accDespatchBody'];
 
+            function cardOf(bodyId) {
+                var el = document.getElementById(bodyId);
+                return el ? el.closest('.mst-acc-card') : null;
+            }
+
+            function openPanel(bodyId) {
+                PANELS.forEach(function (id) {
+                    var card = cardOf(id);
+                    if (card) card.classList.toggle('is-open', id === bodyId);
+                });
+                var hdn = document.getElementById('hdnOpenPanel');
+                if (hdn) hdn.value = bodyId;
+                if (bodyId === 'accSkuBody') resizeSkuChart();
+            }
+
+            function resizeSkuChart() {
+                // donut was built on a zero-height canvas while collapsed
+                if (!window.Chart) return;
+                setTimeout(function () {
+                    var reg = Chart.instances || {};
+                    Object.keys(reg).forEach(function (k) {
+                        try { reg[k].resize(); } catch (e) { }
+                    });
+                }, 260);
+            }
+
+            function initAccordion() {
+                document.querySelectorAll('.mst-acc-header').forEach(function (h) {
+                    h.onclick = function (e) {
+                        if (e.target.closest('.mst-acc-noclick')) return;
+                        var target = h.getAttribute('data-acc-target');
+                        var card = cardOf(target);
+                        openPanel(card && card.classList.contains('is-open') ? '' : target);
+                    };
+                });
+
+                var hdn = document.getElementById('hdnOpenPanel');
+                openPanel((hdn && hdn.value) || 'accSkuBody');
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initAccordion);
+            } else {
+                initAccordion();
+            }
+
+            if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(initAccordion);
+            }
+        })();
+    </script>
+    <script type="text/javascript">
+        (function () {
+            function headers() {
+                return Array.prototype.slice.call(document.querySelectorAll('.mst-acc-header'));
+            }
+            function cardOf(bodyId) {
+                var el = document.getElementById(bodyId);
+                return el ? el.closest('.mst-acc-card') : null;
+            }
+
+            // independent toggle - other panels are left alone
+            function setPanel(bodyId, open) {
+                var card = cardOf(bodyId);
+                if (!card) return;
+                card.classList.toggle('is-open', !!open);
+                saveState();
+                if (open && bodyId === 'accSkuBody') resizeCharts();
+            }
+
+            function saveState() {
+                var hdn = document.getElementById('hdnAccState');
+                if (!hdn) return;
+                var open = [];
+                document.querySelectorAll('.mst-acc-card.is-open .mst-acc-body').forEach(function (b) {
+                    if (b.id) open.push(b.id);
+                });
+                hdn.value = open.join(',');
+            }
+
+            function restoreState() {
+                var hdn = document.getElementById('hdnAccState'),
+                    raw = hdn ? hdn.value : '',
+                    saved = raw ? raw.split(',') : null;
+
+                headers().forEach(function (h) {
+                    var id = h.getAttribute('data-acc-target');
+                    // no saved state yet -> everything starts open
+                    setPanel(id, saved === null ? true : saved.indexOf(id) > -1);
+                });
+            }
+
+            function resizeCharts() {
+                if (!window.Chart) return;
+                setTimeout(function () {
+                    var reg = Chart.instances || {};
+                    Object.keys(reg).forEach(function (k) { try { reg[k].resize(); } catch (e) { } });
+                }, 260);
+            }
+
+            function initAccordion() {
+                headers().forEach(function (h) {
+                    h.onclick = function (e) {
+                        if (e.target.closest('.mst-acc-noclick')) return;
+                        var id = h.getAttribute('data-acc-target'),
+                            card = cardOf(id);
+                        setPanel(id, !(card && card.classList.contains('is-open')));
+                    };
+                });
+                restoreState();
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initAccordion);
+            } else {
+                initAccordion();
+            }
+            if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(initAccordion);
+            }
+        })();
+    </script>
     <style>
         .legend {
             display: flex;
@@ -285,9 +410,11 @@
                 padding-top: 20px;
             }
         }
-        .p-pdl-select-box > span{
+
+        .p-pdl-select-box > span {
             min-width: 200px !important;
         }
+
         .p-pdl-select-box span ul li.select2-results__option {
             text-align: center;
         }
@@ -298,6 +425,54 @@
         .rm-grid-scroll {
             max-height: 400px;
             overflow-y: auto;
+        }
+
+        .mst-acc-header {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .mst-acc-header-right {
+            display: flex;
+            align-items: center;
+            column-gap: 12px;
+        }
+
+        .mst-acc-chevron {
+            color: #8a93a8;
+            font-size: 12px;
+            transition: transform .2s ease;
+        }
+
+        .mst-acc-card.is-open .mst-acc-chevron {
+            transform: rotate(180deg);
+        }
+
+        .mst-acc-body {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height .25s ease, opacity .2s ease;
+        }
+
+        .mst-acc-card.is-open .mst-acc-body {
+            max-height: 900px; /* must exceed the tallest panel */
+            opacity: 1;
+        }
+
+        .newCardHead.mst-acc-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .mst-acc-card .mst-acc-body {
+            max-height: 0;
+        }
+
+        .mst-acc-card.is-open .mst-acc-body {
+            max-height: 1200px;
         }
     </style>
 
@@ -390,7 +565,7 @@
                         </div>
                     </div>
                 </div>
-                <%--Modified-by MUKESH BHAGAT on 20-08-2026 : restored from old UAT source (Action Required panel and Last Stock Update Date)--%>
+
                 <div id="divAction" class="card" runat="server">
                     <div class="card-body">
                         <div class="row" runat="server">
@@ -422,131 +597,137 @@
                 <div id="divSumData" class="card" runat="server">
                     <div class="card-body">
                         <div class="row" runat="server">
-                            <div class="col-md-6">
-                                <div class="newCard w100 home-card-action">
-                                    <div class="newCardHead">
+                            <div class="col-6">
+                                <div class="newCard w100 home-card-action mst-acc-card">
+                                    <div class="newCardHead mst-acc-header" data-acc-group="sumdata" data-acc-target="accBrandBody">
                                         <h3 class="newHeadTitle">Brand Wise</h3>
+                                        <span class="mst-acc-chevron"><i class="fas fa-chevron-down"></i></span>
                                     </div>
-                                    <div class="newCardBody">
-                                        <div class="table-responsive rm-grid-scroll">
-                                            <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0" ClientIDMode="Static"
-                                                ID="gvBrandList" runat="server" AutoGenerateColumns="false" PageSize="10" Visible="true" OnRowCommand="gvBrandList_RowCommand"
-                                                ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
-                                                PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
-                                                <RowStyle CssClass="tlrowlight" />
-                                                <PagerStyle CssClass="PagerGrid" HorizontalAlign="Left" />
-                                                <HeaderStyle CssClass="headerGrid" />
-                                                <FooterStyle CssClass="footerGrid" />
-                                                <Columns>
-                                                    <asp:TemplateField HeaderText="Sl No">
-                                                        <ItemTemplate>
-                                                            <asp:Label ID="lblbrandid" runat="server" Text='<%# (gvBrandList.PageIndex * gvBrandList.PageSize) + Container.DataItemIndex + 1 %>'></asp:Label>
-                                                        </ItemTemplate>
-                                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
-                                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
-                                                    </asp:TemplateField>
-                                                    <asp:TemplateField HeaderText="Brand Name">
-                                                        <ItemTemplate>
-                                                            <asp:Label ID="lblBrandName" runat="server" Text='<%# Bind("brand_name") %>'></asp:Label>
-                                                        </ItemTemplate>
-                                                        <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
-                                                        <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
-                                                    </asp:TemplateField>
-                                                    <asp:TemplateField HeaderText="Total">
-                                                        <ItemTemplate>
-                                                            <asp:Label ID="lblTotalLoad" runat="server" Text='<%# Bind("total_load") %>'></asp:Label>
-                                                        </ItemTemplate>
-                                                    </asp:TemplateField>
-                                                    <asp:TemplateField HeaderText="Despatched">
-                                                        <ItemTemplate>
-                                                            <asp:Label ID="lblTotalDes" runat="server" Text='<%# Bind("total_despatched") %>'></asp:Label>
-                                                        </ItemTemplate>
-                                                    </asp:TemplateField>
-                                                    <asp:TemplateField HeaderText="Serviceability(%)">
-                                                        <ItemTemplate>
-                                                            <asp:Label ID="lblKg" runat="server" Text='<%# Bind("serviceability_percentage") %>'></asp:Label>
-                                                        </ItemTemplate>
-                                                    </asp:TemplateField>
-                                                    <asp:TemplateField HeaderText="Action">
-                                                        <ItemTemplate>
-                                                            <asp:LinkButton ID="lbView"
-                                                                runat="server"
-                                                                Text="View"
-                                                                CssClass="btn btn-sm btn-primary"
-                                                                CommandName="ViewBrand">
-                                                                <i class="fa fa-arrow-right"></i>
-                                                            </asp:LinkButton>
-                                                        </ItemTemplate>
-                                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                                    </asp:TemplateField>
-                                                </Columns>
-                                            </asp:GridView>
+                                    <div id="accBrandBody" class="mst-acc-body">
+                                        <div class="newCardBody">
+                                            <div class="table-responsive rm-grid-scroll">
+                                                <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0" ClientIDMode="Static"
+                                                    ID="gvBrandList" runat="server" AutoGenerateColumns="false" PageSize="10" Visible="true" OnRowCommand="gvBrandList_RowCommand"
+                                                    ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
+                                                    PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
+                                                    <RowStyle CssClass="tlrowlight" />
+                                                    <PagerStyle CssClass="PagerGrid" HorizontalAlign="Left" />
+                                                    <HeaderStyle CssClass="headerGrid" />
+                                                    <FooterStyle CssClass="footerGrid" />
+                                                    <Columns>
+                                                        <asp:TemplateField HeaderText="Sl No">
+                                                            <ItemTemplate>
+                                                                <asp:Label ID="lblbrandid" runat="server" Text='<%# (gvBrandList.PageIndex * gvBrandList.PageSize) + Container.DataItemIndex + 1 %>'></asp:Label>
+                                                            </ItemTemplate>
+                                                            <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
+                                                            <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
+                                                        </asp:TemplateField>
+                                                        <asp:TemplateField HeaderText="Brand Name">
+                                                            <ItemTemplate>
+                                                                <asp:Label ID="lblBrandName" runat="server" Text='<%# Bind("brand_name") %>'></asp:Label>
+                                                            </ItemTemplate>
+                                                            <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
+                                                            <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
+                                                        </asp:TemplateField>
+                                                        <asp:TemplateField HeaderText="Total">
+                                                            <ItemTemplate>
+                                                                <asp:Label ID="lblTotalLoad" runat="server" Text='<%# Bind("total_load") %>'></asp:Label>
+                                                            </ItemTemplate>
+                                                        </asp:TemplateField>
+                                                        <asp:TemplateField HeaderText="Despatched">
+                                                            <ItemTemplate>
+                                                                <asp:Label ID="lblTotalDes" runat="server" Text='<%# Bind("total_despatched") %>'></asp:Label>
+                                                            </ItemTemplate>
+                                                        </asp:TemplateField>
+                                                        <asp:TemplateField HeaderText="Serviceability(%)">
+                                                            <ItemTemplate>
+                                                                <asp:Label ID="lblKg" runat="server" Text='<%# Bind("serviceability_percentage") %>'></asp:Label>
+                                                            </ItemTemplate>
+                                                        </asp:TemplateField>
+                                                        <asp:TemplateField HeaderText="Action">
+                                                            <ItemTemplate>
+                                                                <asp:LinkButton ID="lbView"
+                                                                    runat="server"
+                                                                    Text="View"
+                                                                    CssClass="btn btn-sm btn-primary"
+                                                                    CommandName="ViewBrand">
+                                                    <i class="fa fa-arrow-right"></i>
+                                                                </asp:LinkButton>
+                                                            </ItemTemplate>
+                                                            <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
+                                                            <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
+                                                        </asp:TemplateField>
+                                                    </Columns>
+                                                </asp:GridView>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="newCard w100 home-card-stock">
-                                    <div class="newCardHead">
+                            <div class="col-6">
+                                <div class="newCard w100 home-card-stock mst-acc-card">
+                                    <div class="newCardHead mst-acc-header" data-acc-group="sumdata" data-acc-target="accVendorBody">
                                         <h3 class="newHeadTitle">Vendor Wise</h3>
+                                        <span class="mst-acc-chevron"><i class="fas fa-chevron-down"></i></span>
                                     </div>
-                                    <div class="newCardBody">
-                                        <div class="table-responsive rm-grid-scroll">
-                                            <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0" ClientIDMode="Static"
-                                                ID="gvVendorList" runat="server" AutoGenerateColumns="false" PageSize="10" Visible="true" OnRowCommand="gvVendorList_RowCommand"
-                                                ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
-                                                PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
-                                                <RowStyle CssClass="tlrowlight" />
-                                                <PagerStyle CssClass="PagerGrid" HorizontalAlign="Left" />
-                                                <HeaderStyle CssClass="headerGrid" />
-                                                <FooterStyle CssClass="footerGrid" />
-                                                <Columns>
-                                                    <asp:TemplateField HeaderText="Sl No">
-                                                        <ItemTemplate>
-                                                            <asp:Label ID="lblbrandid" runat="server" Text='<%# (gvVendorList.PageIndex * gvVendorList.PageSize) + Container.DataItemIndex + 1 %>'></asp:Label>
-                                                        </ItemTemplate>
-                                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
-                                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
-                                                    </asp:TemplateField>
-                                                    <asp:TemplateField HeaderText="Vendor Name">
-                                                        <ItemTemplate>
-                                                            <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vendor_name") %>'></asp:Label>
-                                                            <asp:HiddenField ID="hdnVednorCode" runat="server" Value='<%# Bind("vendor_unit")%>' />
-                                                        </ItemTemplate>
-                                                        <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
-                                                        <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
-                                                    </asp:TemplateField>
-                                                    <asp:TemplateField HeaderText="Total">
-                                                        <ItemTemplate>
-                                                            <asp:Label ID="lblTotalLoad" runat="server" Text='<%# Bind("Total_Load_NOP") %>'></asp:Label>
-                                                        </ItemTemplate>
-                                                    </asp:TemplateField>
-                                                    <asp:TemplateField HeaderText="Despatched">
-                                                        <ItemTemplate>
-                                                            <asp:Label ID="lblTotalDes" runat="server" Text='<%# Bind("Total_Despatched_NOP") %>'></asp:Label>
-                                                        </ItemTemplate>
-                                                    </asp:TemplateField>
-                                                    <asp:TemplateField HeaderText="Serviceability(%)">
-                                                        <ItemTemplate>
-                                                            <asp:Label ID="lblKg" runat="server" Text='<%# Bind("Dispatch_Percentage") %>'></asp:Label>
-                                                        </ItemTemplate>
-                                                    </asp:TemplateField>
-                                                    <asp:TemplateField HeaderText="Action">
-                                                        <ItemTemplate>
-                                                            <asp:LinkButton ID="lbViewVendor"
-                                                                runat="server"
-                                                                Text="View"
-                                                                CssClass="btn btn-sm btn-primary"
-                                                                CommandName="ViewVendor">
-                                                                <i class="fa fa-arrow-right"></i>
-                                                            </asp:LinkButton>
-                                                        </ItemTemplate>
-                                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                                    </asp:TemplateField>
-                                                </Columns>
-                                            </asp:GridView>
+                                    <div id="accVendorBody" class="mst-acc-body">
+                                        <div class="newCardBody">
+                                            <div class="table-responsive rm-grid-scroll">
+                                                <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0" ClientIDMode="Static"
+                                                    ID="gvVendorList" runat="server" AutoGenerateColumns="false" PageSize="10" Visible="true" OnRowCommand="gvVendorList_RowCommand"
+                                                    ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
+                                                    PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
+                                                    <RowStyle CssClass="tlrowlight" />
+                                                    <PagerStyle CssClass="PagerGrid" HorizontalAlign="Left" />
+                                                    <HeaderStyle CssClass="headerGrid" />
+                                                    <FooterStyle CssClass="footerGrid" />
+                                                    <Columns>
+                                                        <asp:TemplateField HeaderText="Sl No">
+                                                            <ItemTemplate>
+                                                                <asp:Label ID="lblbrandid" runat="server" Text='<%# (gvVendorList.PageIndex * gvVendorList.PageSize) + Container.DataItemIndex + 1 %>'></asp:Label>
+                                                            </ItemTemplate>
+                                                            <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
+                                                            <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
+                                                        </asp:TemplateField>
+                                                        <asp:TemplateField HeaderText="Vendor Name">
+                                                            <ItemTemplate>
+                                                                <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vendor_name") %>'></asp:Label>
+                                                                <asp:HiddenField ID="hdnVednorCode" runat="server" Value='<%# Bind("vendor_unit")%>' />
+                                                            </ItemTemplate>
+                                                            <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
+                                                            <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
+                                                        </asp:TemplateField>
+                                                        <asp:TemplateField HeaderText="Total">
+                                                            <ItemTemplate>
+                                                                <asp:Label ID="lblTotalLoad" runat="server" Text='<%# Bind("Total_Load_NOP") %>'></asp:Label>
+                                                            </ItemTemplate>
+                                                        </asp:TemplateField>
+                                                        <asp:TemplateField HeaderText="Despatched">
+                                                            <ItemTemplate>
+                                                                <asp:Label ID="lblTotalDes" runat="server" Text='<%# Bind("Total_Despatched_NOP") %>'></asp:Label>
+                                                            </ItemTemplate>
+                                                        </asp:TemplateField>
+                                                        <asp:TemplateField HeaderText="Serviceability(%)">
+                                                            <ItemTemplate>
+                                                                <asp:Label ID="lblKg" runat="server" Text='<%# Bind("Dispatch_Percentage") %>'></asp:Label>
+                                                            </ItemTemplate>
+                                                        </asp:TemplateField>
+                                                        <asp:TemplateField HeaderText="Action">
+                                                            <ItemTemplate>
+                                                                <asp:LinkButton ID="lbViewVendor"
+                                                                    runat="server"
+                                                                    Text="View"
+                                                                    CssClass="btn btn-sm btn-primary"
+                                                                    CommandName="ViewVendor">
+                                                    <i class="fa fa-arrow-right"></i>
+                                                                </asp:LinkButton>
+                                                            </ItemTemplate>
+                                                            <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
+                                                            <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
+                                                        </asp:TemplateField>
+                                                    </Columns>
+                                                </asp:GridView>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -554,6 +735,10 @@
                         </div>
                     </div>
                 </div>
+
+                <asp:HiddenField ID="HiddenField3" ClientIDMode="Static" runat="server" Value="" />
+                <asp:HiddenField ID="hdnAccState" ClientIDMode="Static" runat="server" Value="" />
+
                 <%--<div id="divData" runat="server">
                     <div class="mst-panel-header">
                         <div class="mst-panel-header-left">
@@ -610,141 +795,120 @@
                         </div>
                     </div>
                 </div>--%>
-                <div id="divSkuChart" class="card" runat="server">
+                <div id="divSkuChart" class="card mst-acc-card" clientidmode="Static" runat="server">
                     <div class="card-body">
                         <div class="dashboard" runat="server">
-                            <div class="mst-panel-header">
+                            <div class="mst-panel-header mst-acc-header" data-acc-target="accSkuBody">
                                 <div class="mst-panel-header-left">
                                     <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
                                     <div>
                                         <h5 id="ChartTitle" class="mst-panel-title">SKU List</h5>
                                     </div>
                                 </div>
+                                <span class="mst-acc-chevron"><i class="fas fa-chevron-down"></i></span>
                             </div>
-                            <div class="legend">
-                                <div><span class="dot total-load"></span>Total Load</div>
-                                <div><span class="dot total-dispatch"></span>Total Dispatch</div>
-                            </div>
-                            <%-- Modified-by MUKESH BHAGAT on 14-09-2026 : card split in half - the SKU
-                                 list on the left, an overall Total Load vs Total Dispatch donut with the
-                                 serviceability % in the centre on the right. Donut markup and its Chart.js
-                                 script are built server-side in BindLoadDispatchChart() (litSkuSummary),
-                                 same pattern as the SKU rows (litSkuRows), so both refresh together on
-                                 every vendor/year/month search postback. --%>
-                            <div class="sku-panel-row">
-                                <div class="sku-list-col">
-                                    <div id="chartContainer" style="height: 250px; overflow-y: auto;">
-                                        <asp:Literal ID="litSkuRows" runat="server"></asp:Literal>
-                                    </div>
+
+                            <div id="accSkuBody" class="mst-acc-body">
+                                <div class="legend">
+                                    <div><span class="dot total-load"></span>Total Load</div>
+                                    <div><span class="dot total-dispatch"></span>Total Dispatch</div>
                                 </div>
-                                <div class="sku-summary-col">
-                                    <asp:Literal ID="litSkuSummary" runat="server"></asp:Literal>
+                                <div class="sku-panel-row">
+                                    <div class="sku-list-col">
+                                        <div id="chartContainer" style="height: 250px; overflow-y: auto;">
+                                            <asp:Literal ID="litSkuRows" runat="server"></asp:Literal>
+                                        </div>
+                                    </div>
+                                    <div class="sku-summary-col">
+                                        <asp:Literal ID="litSkuSummary" runat="server"></asp:Literal>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div id="divDespatch" class="card" runat="server">
+                <div id="divDespatch" class="card mst-acc-card" clientidmode="Static" runat="server">
                     <div class="card-body">
                         <div runat="server">
-                            <div class="mst-panel-header">
+                            <div class="mst-panel-header mst-acc-header" data-acc-target="accDespatchBody">
                                 <div class="mst-panel-header-left">
                                     <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
                                     <div>
                                         <h5 id="DespatchTitle" class="mst-panel-title">Pending Despatch List</h5>
                                     </div>
                                 </div>
-                                <div class="p-pdl-select-box" style="display: flex; align-items: center; column-gap: 5px;">
-                                    <asp:DropDownList ID="ddlVendorList" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlVendorList_SelectedIndexChanged"></asp:DropDownList>
-                                    <asp:Button ID="btnResetVendorFilter" runat="server"
-                                        Text="Reset"
-                                        CssClass="btn btn-sm btn-outline-secondary" OnClick="btnResetVendorFilter_Click" />
+                                <div class="mst-acc-header-right">
+                                    <div class="p-pdl-select-box mst-acc-noclick" style="display: flex; align-items: center; column-gap: 5px;">
+                                        <asp:DropDownList ID="ddlVendorList" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlVendorList_SelectedIndexChanged"></asp:DropDownList>
+                                        <asp:Button ID="btnResetVendorFilter" runat="server" Text="Reset"
+                                            CssClass="btn btn-sm btn-outline-secondary" OnClick="btnResetVendorFilter_Click" />
+                                    </div>
+                                    <span class="mst-acc-chevron"><i class="fas fa-chevron-down"></i></span>
                                 </div>
                             </div>
-                            <div class="table-responsive rm-grid-scroll">
-                                <asp:GridView ID="gvVendorDispatch" runat="server" AutoGenerateColumns="false" OnRowCommand="gvVendorDispatch_RowCommand" ClientIDMode="Static"
-                                    Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
-                                    <RowStyle CssClass="tlrowlight" />
-                                    <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
-                                    <HeaderStyle CssClass="headerGrid" />
-                                    <FooterStyle CssClass="footerGrid" />
-                                    <Columns>
-                                        <asp:TemplateField HeaderText="Vendor Name" HeaderStyle-HorizontalAlign="Center">
-                                            <ItemTemplate>
-                                                <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vm_vendor_name") %>'></asp:Label>
-                                                <asp:HiddenField ID="hdnVednorCode" runat="server" Value='<%# Bind("ddrh_vendor_id")%>' />
-                                            </ItemTemplate>
-                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                            <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                        </asp:TemplateField>
-                                        <asp:TemplateField HeaderText="Depot" HeaderStyle-HorizontalAlign="Center">
-                                            <ItemTemplate>
-                                                <asp:Label ID="lblDepot" runat="server" Text='<%# Bind("depot_name") %>'></asp:Label>
-                                            </ItemTemplate>
-                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                            <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                        </asp:TemplateField>
-                                        <asp:TemplateField HeaderText="Order Sl No." HeaderStyle-HorizontalAlign="Center">
-                                            <ItemTemplate>
-                                                <asp:Label ID="lblOrderId" runat="server" Text='<%# Bind("ddrh_order_sl_no") %>'></asp:Label>
-                                                <asp:Label ID="lblRequestId" Visible="false" runat="server" Text='<%# Bind("ddrh_hdr_req_id") %>'></asp:Label>
-                                            </ItemTemplate>
-                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                            <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                        </asp:TemplateField>
-                                        <asp:TemplateField HeaderText="Request Date" HeaderStyle-HorizontalAlign="Center">
-                                            <ItemTemplate>
-                                                <asp:Label ID="lblRequestDate" runat="server" Text='<%# Bind("ReqDate") %>'></asp:Label>
-                                            </ItemTemplate>
-                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                            <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                        </asp:TemplateField>
 
-                                        <asp:TemplateField HeaderText="Despatch To" HeaderStyle-HorizontalAlign="Center">
-                                            <ItemTemplate>
-                                                <asp:Label ID="Label1" runat="server" Text='<%# Bind("vom_org_name") %>'></asp:Label>
-                                            </ItemTemplate>
-                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                            <ItemStyle HorizontalAlign="Center" Width="15%"></ItemStyle>
-                                        </asp:TemplateField>
-                                        <%--<asp:TemplateField HeaderText="Transporter Name" HeaderStyle-HorizontalAlign="Center">
-                                            <ItemTemplate>
-                                                <asp:Label ID="lblTransporter" runat="server" Text='<%# Bind("tm_transporter_name") %>'></asp:Label>
-                                            </ItemTemplate>
-                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                            <ItemStyle HorizontalAlign="Center" Width="15%"></ItemStyle>
-                                        </asp:TemplateField>--%>
-
-
-                                        <asp:TemplateField HeaderText="Truck" HeaderStyle-HorizontalAlign="Center">
-                                            <ItemTemplate>
-                                                <asp:Label ID="lbllm_desc" runat="server" Text='<%# Bind("lm_desc") %>'></asp:Label>
-                                            </ItemTemplate>
-                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                            <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                        </asp:TemplateField>
-                                        <%--<asp:TemplateField HeaderText="Status" HeaderStyle-HorizontalAlign="Center">
-                                            <ItemTemplate>
-                                                <asp:Label ID="lblStatus" runat="server" Text='<%# Bind("Status") %>'></asp:Label>
-                                            </ItemTemplate>
-                                            <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                            <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                        </asp:TemplateField>--%>
-
-                                        <%--<asp:TemplateField HeaderText="View" HeaderStyle-HorizontalAlign="Center">
-                                <ItemTemplate>
-                                    <asp:Button ID="btnViewDetails" CommandName="ViewDetails" CssClass="btn btn-info btn-   sm"
-                                        runat="server" CommandArgument='<%# Bind("ddrh_hdr_req_id") %>' Text="View" />
-                                </ItemTemplate>
-                                <HeaderStyle HorizontalAlign="Center" Width="4%" />
-                                <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="4%" />
-                            </asp:TemplateField>--%>
-                                    </Columns>
-                                </asp:GridView>
+                            <div id="accDespatchBody" class="mst-acc-body">
+                                <div class="table-responsive rm-grid-scroll">
+                                    <asp:GridView ID="gvVendorDispatch" runat="server" AutoGenerateColumns="false" OnRowCommand="gvVendorDispatch_RowCommand" ClientIDMode="Static"
+                                        Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
+                                        <RowStyle CssClass="tlrowlight" />
+                                        <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
+                                        <HeaderStyle CssClass="headerGrid" />
+                                        <FooterStyle CssClass="footerGrid" />
+                                        <Columns>
+                                            <asp:TemplateField HeaderText="Vendor Name" HeaderStyle-HorizontalAlign="Center">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vm_vendor_name") %>'></asp:Label>
+                                                    <asp:HiddenField ID="hdnVednorCode" runat="server" Value='<%# Bind("ddrh_vendor_id")%>' />
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                                <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                            </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="Depot" HeaderStyle-HorizontalAlign="Center">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="lblDepot" runat="server" Text='<%# Bind("depot_name") %>'></asp:Label>
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                                <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                            </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="Order Sl No." HeaderStyle-HorizontalAlign="Center">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="lblOrderId" runat="server" Text='<%# Bind("ddrh_order_sl_no") %>'></asp:Label>
+                                                    <asp:Label ID="lblRequestId" Visible="false" runat="server" Text='<%# Bind("ddrh_hdr_req_id") %>'></asp:Label>
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                                <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                            </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="Request Date" HeaderStyle-HorizontalAlign="Center">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="lblRequestDate" runat="server" Text='<%# Bind("ReqDate") %>'></asp:Label>
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                                <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                            </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="Despatch To" HeaderStyle-HorizontalAlign="Center">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="Label1" runat="server" Text='<%# Bind("vom_org_name") %>'></asp:Label>
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                                <ItemStyle HorizontalAlign="Center" Width="15%"></ItemStyle>
+                                            </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="Truck" HeaderStyle-HorizontalAlign="Center">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="lbllm_desc" runat="server" Text='<%# Bind("lm_desc") %>'></asp:Label>
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                                <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                            </asp:TemplateField>
+                                        </Columns>
+                                    </asp:GridView>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <asp:HiddenField ID="hdnOpenPanel" ClientIDMode="Static" runat="server" Value="accSkuBody" />
 
                 <div class="row" runat="server" id="divUnit"></div>
                 <div class="row" runat="server" id="divDepot"></div>
@@ -1752,148 +1916,148 @@
     <%-- For Lazy Loading--%>
     <script>
         $(function () {
-    var pageIndex = 0;
-    var loading = false;
-    var noMoreData = false;
+            var pageIndex = 0;
+            var loading = false;
+            var noMoreData = false;
 
-    $('#gvVendorDispatch').closest('.rm-grid-scroll').on('scroll', function () {
-        var $el = $(this);
-        var nearBottom = $el.scrollTop() + $el.innerHeight() >= $el[0].scrollHeight - 50;
+            $('#gvVendorDispatch').closest('.rm-grid-scroll').on('scroll', function () {
+                var $el = $(this);
+                var nearBottom = $el.scrollTop() + $el.innerHeight() >= $el[0].scrollHeight - 50;
 
-        if (!nearBottom || loading || noMoreData) return;
+                if (!nearBottom || loading || noMoreData) return;
 
-        loading = true;
-        pageIndex++;
+                loading = true;
+                pageIndex++;
 
-        var vendorUnit = $('#ddlVendorList').val() || '';
-        var year = $('#<%= ddlProcessYr.ClientID %>').val();
-        var month = $('#<%= ddlProcessMnth.ClientID %>').val();
+                var vendorUnit = $('#ddlVendorList').val() || '';
+                var year = $('#<%= ddlProcessYr.ClientID %>').val();
+                var month = $('#<%= ddlProcessMnth.ClientID %>').val();
 
-        PageMethods.GetMoreDispatch(pageIndex, vendorUnit, year, month,
-            function (result) {
-                if (!result.rows || result.rows.length === 0) {
-                    noMoreData = true;
-                    loading = false;
-                    return;
-                }
-                $.each(result.rows, function (i, r) {
-                    appendDispatchRow($('#gvVendorDispatch tbody'), r);
-                });
-                if ($('#gvVendorDispatch tbody tr').length >= result.total) {
-                    noMoreData = true;
-                }
-                loading = false;
-            },
-            function (err) {
-                loading = false;
-                console.error(err);
-            }
-        );
-    });
-
-    // reset + reload from scratch when the vendor filter changes
-    $('#ddlVendorList').on('change', function () {
-        pageIndex = 0;
-        noMoreData = false;
-        // the existing OnSelectedIndexChanged postback (ddlVendorList_SelectedIndexChanged)
-        // already re-binds page 0 server-side via BindVendorDispatchGrid, so no extra JS needed here
-    });
-
-    function appendDispatchRow($tbody, r) {
-        $tbody.append(
-            '<tr class="tlrowlight">' +
-            '<td class="text-center">' + r.vm_vendor_name + '</td>' +
-            '<td class="text-center">' + r.depot_name + '</td>' +
-            '<td class="text-center">' + r.ddrh_order_sl_no + '</td>' +
-            '<td class="text-center">' + r.ReqDate + '</td>' +
-            '<td class="text-center">' + r.vom_org_name + '</td>' +
-            '<td class="text-center">' + r.lm_desc + '</td>' +
-            '</tr>'
-        );
-    }
-});
-
-$(function () {
-    setupInfiniteScroll('#gvBrandList', 'GetMoreBrands', appendBrandRow);
-    setupInfiniteScroll('#gvVendorList', 'GetMoreVendors', appendVendorRow);
-
-    function setupInfiniteScroll(gridSel, pageMethodName, appendFn) {
-        var pageIndex = 0;
-        var loading = false;
-        var noMoreData = false;
-
-        $(gridSel).closest('.rm-grid-scroll').on('scroll', function () {
-            var $el = $(this);
-            var nearBottom = $el.scrollTop() + $el.innerHeight() >= $el[0].scrollHeight - 50;
-            if (!nearBottom || loading || noMoreData) return;
-
-            loading = true;
-            pageIndex++;
-
-            var vendorUnit = $('#<%= ddlvendor.ClientID %>').val() || '';
-            var year = $('#<%= ddlProcessYr.ClientID %>').val();
-            var month = $('#<%= ddlProcessMnth.ClientID %>').val();
-
-            PageMethods[pageMethodName](pageIndex, vendorUnit, year, month,
-                function (result) {
-                    if (!result.rows || result.rows.length === 0) {
-                        noMoreData = true;
+                PageMethods.GetMoreDispatch(pageIndex, vendorUnit, year, month,
+                    function (result) {
+                        if (!result.rows || result.rows.length === 0) {
+                            noMoreData = true;
+                            loading = false;
+                            return;
+                        }
+                        $.each(result.rows, function (i, r) {
+                            appendDispatchRow($('#gvVendorDispatch tbody'), r);
+                        });
+                        if ($('#gvVendorDispatch tbody tr').length >= result.total) {
+                            noMoreData = true;
+                        }
                         loading = false;
-                        return;
+                    },
+                    function (err) {
+                        loading = false;
+                        console.error(err);
                     }
-                    $.each(result.rows, function (i, r) {
-                        appendFn($(gridSel + ' tbody'), r);
-                    });
-                    if ($(gridSel + ' tbody tr').length >= result.total) {
-                        noMoreData = true;
-                    }
-                    loading = false;
-                },
-                function (err) {
-                    loading = false;
-                    console.error(err);
-                }
-            );
+                );
+            });
+
+            // reset + reload from scratch when the vendor filter changes
+            $('#ddlVendorList').on('change', function () {
+                pageIndex = 0;
+                noMoreData = false;
+                // the existing OnSelectedIndexChanged postback (ddlVendorList_SelectedIndexChanged)
+                // already re-binds page 0 server-side via BindVendorDispatchGrid, so no extra JS needed here
+            });
+
+            function appendDispatchRow($tbody, r) {
+                $tbody.append(
+                    '<tr class="tlrowlight">' +
+                    '<td class="text-center">' + r.vm_vendor_name + '</td>' +
+                    '<td class="text-center">' + r.depot_name + '</td>' +
+                    '<td class="text-center">' + r.ddrh_order_sl_no + '</td>' +
+                    '<td class="text-center">' + r.ReqDate + '</td>' +
+                    '<td class="text-center">' + r.vom_org_name + '</td>' +
+                    '<td class="text-center">' + r.lm_desc + '</td>' +
+                    '</tr>'
+                );
+            }
         });
-    }
 
-    function appendBrandRow($tbody, r) {
-        var slNo = $tbody.find('tr').length + 1;
-        $tbody.append(
-            '<tr class="tlrowlight">' +
-            '<td class="text-center">' + slNo + '</td>' +
-            '<td class="text-left">' + r.brand_name + '</td>' +
-            '<td>' + r.total_load + '</td>' +
-            '<td>' + r.total_despatched + '</td>' +
-            '<td>' + r.serviceability_percentage + '</td>' +
-            '<td class="text-center"><a href="#" class="btn btn-sm btn-primary view-brand" data-brand="' + r.brand_name + '"><i class="fa fa-arrow-right"></i></a></td>' +
-            '</tr>'
-        );
-    }
+        $(function () {
+            setupInfiniteScroll('#gvBrandList', 'GetMoreBrands', appendBrandRow);
+            setupInfiniteScroll('#gvVendorList', 'GetMoreVendors', appendVendorRow);
 
-    function appendVendorRow($tbody, r) {
-        var slNo = $tbody.find('tr').length + 1;
-        $tbody.append(
-            '<tr class="tlrowlight">' +
-            '<td class="text-center">' + slNo + '</td>' +
-            '<td class="text-left">' + r.vendor_name + '</td>' +
-            '<td>' + r.Total_Load_NOP + '</td>' +
-            '<td>' + r.Total_Despatched_NOP + '</td>' +
-            '<td>' + r.Dispatch_Percentage + '</td>' +
-            '<td class="text-center"><a href="#" class="btn btn-sm btn-primary view-vendor" data-vendor="' + r.vendor_unit + '"><i class="fa fa-arrow-right"></i></a></td>' +
-            '</tr>'
-        );
-    }
+            function setupInfiniteScroll(gridSel, pageMethodName, appendFn) {
+                var pageIndex = 0;
+                var loading = false;
+                var noMoreData = false;
 
-    $(document).on('click', '.view-brand', function (e) {
-        e.preventDefault();
-        __doPostBack('gvBrandList', 'ViewBrand$' + $(this).data('brand'));
-    });
-    $(document).on('click', '.view-vendor', function (e) {
-        e.preventDefault();
-        __doPostBack('gvVendorList', 'ViewVendor$' + $(this).data('vendor'));
-    });
-});
+                $(gridSel).closest('.rm-grid-scroll').on('scroll', function () {
+                    var $el = $(this);
+                    var nearBottom = $el.scrollTop() + $el.innerHeight() >= $el[0].scrollHeight - 50;
+                    if (!nearBottom || loading || noMoreData) return;
+
+                    loading = true;
+                    pageIndex++;
+
+                    var vendorUnit = $('#<%= ddlvendor.ClientID %>').val() || '';
+                    var year = $('#<%= ddlProcessYr.ClientID %>').val();
+                    var month = $('#<%= ddlProcessMnth.ClientID %>').val();
+
+                    PageMethods[pageMethodName](pageIndex, vendorUnit, year, month,
+                        function (result) {
+                            if (!result.rows || result.rows.length === 0) {
+                                noMoreData = true;
+                                loading = false;
+                                return;
+                            }
+                            $.each(result.rows, function (i, r) {
+                                appendFn($(gridSel + ' tbody'), r);
+                            });
+                            if ($(gridSel + ' tbody tr').length >= result.total) {
+                                noMoreData = true;
+                            }
+                            loading = false;
+                        },
+                        function (err) {
+                            loading = false;
+                            console.error(err);
+                        }
+                    );
+                });
+            }
+
+            function appendBrandRow($tbody, r) {
+                var slNo = $tbody.find('tr').length + 1;
+                $tbody.append(
+                    '<tr class="tlrowlight">' +
+                    '<td class="text-center">' + slNo + '</td>' +
+                    '<td class="text-left">' + r.brand_name + '</td>' +
+                    '<td>' + r.total_load + '</td>' +
+                    '<td>' + r.total_despatched + '</td>' +
+                    '<td>' + r.serviceability_percentage + '</td>' +
+                    '<td class="text-center"><a href="#" class="btn btn-sm btn-primary view-brand" data-brand="' + r.brand_name + '"><i class="fa fa-arrow-right"></i></a></td>' +
+                    '</tr>'
+                );
+            }
+
+            function appendVendorRow($tbody, r) {
+                var slNo = $tbody.find('tr').length + 1;
+                $tbody.append(
+                    '<tr class="tlrowlight">' +
+                    '<td class="text-center">' + slNo + '</td>' +
+                    '<td class="text-left">' + r.vendor_name + '</td>' +
+                    '<td>' + r.Total_Load_NOP + '</td>' +
+                    '<td>' + r.Total_Despatched_NOP + '</td>' +
+                    '<td>' + r.Dispatch_Percentage + '</td>' +
+                    '<td class="text-center"><a href="#" class="btn btn-sm btn-primary view-vendor" data-vendor="' + r.vendor_unit + '"><i class="fa fa-arrow-right"></i></a></td>' +
+                    '</tr>'
+                );
+            }
+
+            $(document).on('click', '.view-brand', function (e) {
+                e.preventDefault();
+                __doPostBack('gvBrandList', 'ViewBrand$' + $(this).data('brand'));
+            });
+            $(document).on('click', '.view-vendor', function (e) {
+                e.preventDefault();
+                __doPostBack('gvVendorList', 'ViewVendor$' + $(this).data('vendor'));
+            });
+        });
 
     </script>
 </asp:Content>

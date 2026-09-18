@@ -34,6 +34,13 @@
         .p-vendor-dispatch-table table tr td {
             padding: 3px;
         }
+
+        .OpenCalender {
+            background: white;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: rgba(0, 0, 0, 0.314) 0px 0px 5px;
+        }
     </style>
     <div class="breadcrumbs">
         <div class="leftFung">

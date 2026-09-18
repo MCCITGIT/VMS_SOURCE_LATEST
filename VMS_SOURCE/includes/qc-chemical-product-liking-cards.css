@@ -19,7 +19,7 @@
 }
 
 .cpl-page.rm-module .card {
-    border-color: var(--cpl-line) !important;
+    /*border-color: var(--cpl-line) !important;*/
     box-shadow: var(--cpl-shadow) !important;
 }
 
