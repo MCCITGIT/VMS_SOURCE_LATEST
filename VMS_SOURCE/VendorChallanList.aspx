@@ -18,6 +18,37 @@
             }
             return false;
         }
+
+        // Modified-by MUKESH BHAGAT on 18-09-2026 : From Date - To Date search validation.
+        // The Search LinkButton posts back through __doPostBack, which skips the browser's own
+        // min/max checking, so a typed (not picked) date has to be checked here. Every limit is
+        // read from the inputs' own min / max / data-max-range-days attributes (set server-side),
+        // so there is one source of truth; the server re-validates regardless.
+        // yyyy-MM-dd strings compare correctly as plain text.
+        function validateChallanSearch() {
+            var from = document.getElementById('txtFromDate');
+            var to = document.getElementById('txtToDate');
+            var lbl = document.getElementById('lblSearchError');
+            if (!from || !to) { return true; }
+
+            function show(d) { var p = d.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+            function fail(msg, el) { if (lbl) { lbl.innerHTML = msg; } if (el) { el.focus(); } return false; }
+
+            if (lbl) { lbl.innerHTML = ''; }
+            if (!from.value) { return fail('Please select From Date.', from); }
+            if (!to.value) { return fail('Please select To Date.', to); }
+            if (from.min && from.value < from.min) { return fail('From Date cannot be earlier than ' + show(from.min) + '.', from); }
+            if (to.max && to.value > to.max) { return fail('To Date cannot be later than today (' + show(to.max) + ').', to); }
+            if (from.max && from.value > from.max) { return fail('From Date cannot be later than today (' + show(from.max) + ').', from); }
+            if (from.value > to.value) { return fail('From Date cannot be later than To Date.', from); }
+
+            var maxDays = parseInt(to.getAttribute('data-max-range-days'), 10);
+            if (!isNaN(maxDays) && maxDays > 0) {
+                var days = Math.round((new Date(to.value) - new Date(from.value)) / 86400000) + 1;
+                if (days > maxDays) { return fail('Please search a period of at most ' + maxDays + ' days (selected: ' + days + ').', to); }
+            }
+            return true;
+        }
     </script>
     <style>
         .no-record-card table tr td {
@@ -83,30 +114,27 @@
                                 <asp:DropDownList ID="ddlLocation" runat="server" AutoPostBack="True" CssClass="form-control select2" TabIndex="3"></asp:DropDownList>
                             </div>
                         </div>
+                        <%-- Modified-by MUKESH BHAGAT on 18-09-2026 : the Process Year / Process Month dropdowns
+                             are replaced by a From Date - To Date calendar (HTML5 date inputs, the same
+                             TextMode="Date" already used on MonthYearWiseUnitDespatch.aspx etc.).
+                             min / max / data-max-range-days are set in code-behind (InitSearchDates):
+                               min = 01-Jan of the oldest year in dbo.fin_year - the same [FinYr_Details_Get]
+                                     data the old Process Year dropdown listed, so the calendar goes back
+                                     exactly as far as the dropdown did and no further
+                               max = today - a future date cannot be picked
+                             The browser greys out anything outside min..max in the picker; typed values are
+                             checked by validateChallanSearch() and, authoritatively, again on the server
+                             (TryGetSearchDates). Search now runs SP [Unit_Dspatch_Get_Challan_Detail_vr5]. --%>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label class="form-control-label">Process Year:</label>
-                                <asp:DropDownList ID="ddlYear" runat="server" AutoPostBack="True" CssClass="form-control select2" TabIndex="3">
-                                </asp:DropDownList>
+                                <label class="form-control-label">From Date:<span class="mandatory">*</span></label>
+                                <asp:TextBox ID="txtFromDate" runat="server" ClientIDMode="Static" TextMode="Date" CssClass="form-control" TabIndex="3"></asp:TextBox>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label class="form-control-label">Process Month:</label>
-                                <asp:DropDownList ID="ddlMonth" runat="server" AutoPostBack="True" CssClass="form-control select2" TabIndex="3">
-                                    <asp:ListItem>01</asp:ListItem>
-                                    <asp:ListItem>02</asp:ListItem>
-                                    <asp:ListItem>03</asp:ListItem>
-                                    <asp:ListItem>04</asp:ListItem>
-                                    <asp:ListItem>05</asp:ListItem>
-                                    <asp:ListItem>06</asp:ListItem>
-                                    <asp:ListItem>07</asp:ListItem>
-                                    <asp:ListItem>08</asp:ListItem>
-                                    <asp:ListItem>09</asp:ListItem>
-                                    <asp:ListItem>10</asp:ListItem>
-                                    <asp:ListItem>11</asp:ListItem>
-                                    <asp:ListItem>12</asp:ListItem>
-                                </asp:DropDownList>
+                                <label class="form-control-label">To Date:<span class="mandatory">*</span></label>
+                                <asp:TextBox ID="txtToDate" runat="server" ClientIDMode="Static" TextMode="Date" CssClass="form-control" TabIndex="3"></asp:TextBox>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -128,9 +156,13 @@
                             <div class="form-group">
                                 <%--<asp:ImageButton CssClass="btn btn-primary btn-sm" ID="ImgbtnSearch" runat="server" ImageUrl="images/ic_search.gif" />
                                 <asp:ImageButton CssClass="btn btn-success btn-sm" ID="ImgbtnAdd" runat="server" ImageUrl="images/ic_add.gif" PostBackUrl="~/UnitDespatchPlanAddUpdateVr1.aspx" Visible="false" />--%>
-                                <asp:LinkButton CssClass="btn btn-primary btn-sm" ID="ImgbtnSearch" runat="server" OnClick="ImgbtnSearch_Click">Search</asp:LinkButton>
+                                <asp:LinkButton CssClass="btn btn-primary btn-sm" ID="ImgbtnSearch" runat="server" OnClick="ImgbtnSearch_Click" OnClientClick="return validateChallanSearch();">Search</asp:LinkButton>
                                 <asp:LinkButton CssClass="btn btn-success btn-sm" ID="ImgbtnAdd" runat="server" PostBackUrl="~/UnitDespatchPlanAddUpdateVr1.aspx" Visible="false"></asp:LinkButton>
                             </div>
+                        </div>
+                        <%-- Modified-by MUKESH BHAGAT on 18-09-2026 : From / To date validation message --%>
+                        <div class="col-md-12">
+                            <asp:Label ID="lblSearchError" runat="server" ClientIDMode="Static" CssClass="errormsg"></asp:Label>
                         </div>
                     </div>
                 </div>
