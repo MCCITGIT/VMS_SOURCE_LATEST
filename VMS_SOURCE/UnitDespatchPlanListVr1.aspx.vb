@@ -146,6 +146,26 @@ Partial Class UnitDespatchPlanListVr1
         Next
         Return keyname
     End Function
+    'Modified-by MUKESH BHAGAT on 22-09-2026 : the download buttons were registered for a FULL
+    'postback only in RowDataBound, which runs only when the grid is (re)bound - Search / paging.
+    'Print is an async postback that does not rebind the grid, so on that request the rows are
+    'rebuilt from ViewState, RowDataBound never fires, the registration is lost and the next
+    'Invoice / E-Way click goes out as an async postback. Streaming a file into a partial-postback
+    'response gives "Sys.WebForms.PageRequestManagerParserErrorException: The message received
+    'from the server could not be parsed". RowCreated fires for every row on EVERY request
+    '(bound or recreated), so registering here keeps the buttons full-postback after Print too.
+    Protected Sub gvChallanDetails_RowCreated(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewRowEventArgs) Handles gvChallanDetails.RowCreated
+        If e.Row.RowType <> DataControlRowType.DataRow Then Exit Sub
+        Dim sm As ScriptManager = ScriptManager.GetCurrent(Me.Page)
+        If sm Is Nothing Then Exit Sub
+
+        Dim btnDownloadChallan As LinkButton = TryCast(e.Row.FindControl("ImgbtndownloadChallan"), LinkButton)
+        If btnDownloadChallan IsNot Nothing Then sm.RegisterPostBackControl(btnDownloadChallan)
+
+        Dim btnDownloadEway As LinkButton = TryCast(e.Row.FindControl("ImgbtndownloadEway"), LinkButton)
+        If btnDownloadEway IsNot Nothing Then sm.RegisterPostBackControl(btnDownloadEway)
+    End Sub
+
     Protected Sub gvChallanDetails_RowDataBound(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewRowEventArgs) Handles gvChallanDetails.RowDataBound
         If (e.Row.RowType = DataControlRowType.DataRow) Then
             Dim chk As CheckBox = e.Row.FindControl("chkSelect")
