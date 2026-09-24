@@ -847,7 +847,11 @@ Public Class POLinkingRequestClass
             'sqlParams(4).Direction = ParameterDirection.Input
             'sqlParams(4).Value = pageSize
 
-            DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[get_inv_payment_details]", CommandType.StoredProcedure, sqlParams)
+            'Modified-by MUKESH BHAGAT on 24-09-2026 : _vr1 SP - the PAID tab now lists only FULLY PAID
+            'invoices (invoice_amount - amount_paid = 0), the same rule as the dashboard tile count and
+            'the Excel report. The old SP listed every release with a GRN, so GRN-done-but-unpaid rows
+            'showed under Paid. Roll-back = use "[dbo].[get_inv_payment_details]" again.
+            DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[get_inv_payment_details_vr1]", CommandType.StoredProcedure, sqlParams)
             Return DS
 
         Catch ex As Exception
