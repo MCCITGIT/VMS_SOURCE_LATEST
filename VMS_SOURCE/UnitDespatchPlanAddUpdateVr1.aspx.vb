@@ -291,11 +291,18 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             Dim lowerBound As Decimal = Math.Min(Value1, Value2)
             Dim upperBound As Decimal = Math.Max(Value1, Value2)
 
-            If Result <= lowerBound OrElse Result >= upperBound Then
+            'Modified-by MUKESH BHAGAT on 24-09-2026 : only the LOWER side of the band blocks now.
+            'PO rates (Thinner especially) change often; a vendor who invoiced at the OLD, lower rate
+            'keys a Final Invoice Value smaller than the grid total (Result positive, e.g. grid
+            '19,46,969.98 vs invoice 19,20,058.99) and could not save, so the depot could not do the
+            'GRN. Business asked to let such challans through for now. An invoice HIGHER than the
+            'PO-rate total (Result <= lowerBound, vendor billing above PO rate) is still blocked.
+            'The upperBound message / GridSummation() re-run below are unchanged for that case.
+            If Result <= lowerBound Then
                 'Modified-by MUKESH BHAGAT on 17-09-2026 : say when freight was included, so the user
                 'can see why the grid footer total and this figure differ.
                 Dim freightNote As String = If(freightIncGst > 0, " (incl. freight " & ocrFreight.ToString("N2") & " + GST " & maxGst.ToString("N2") & "% = " & freightIncGst.ToString("N2") & ")", "")
-                ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('Total Rate (Incl. GST) of " & TotalRate.ToString("N2") & freightNote & " does not match the Final Invoice Value of " & FinalInvoiceValue.ToString("N2") & " (difference " & Result.ToString("N2") & "). The difference must be less than " & upperBound.ToString("N2") & ".');", True)
+                ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('Final Invoice Value of " & FinalInvoiceValue.ToString("N2") & " is higher than the Total Rate (Incl. GST) of " & TotalRate.ToString("N2") & freightNote & " (difference " & Result.ToString("N2") & "). The invoice cannot exceed the PO-rate total by " & Math.Abs(lowerBound).ToString("N2") & " or more.');", True)
                 txtFinalInvoiceValue.Focus()
                 ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
                 Exit Sub
