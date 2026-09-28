@@ -16,14 +16,19 @@ Partial Class VendorChallanList
         If Not IsPostBack Then
             btnAprove.Enabled = False
             CheckLogin()
-            PopulateProcessYears()
-            GetScreenDetails()
+            'Modified-by MUKESH BHAGAT on 18-09-2026 : From Date - To Date calendar replaces the
+            'Process Year / Process Month dropdowns (was PopulateProcessYears + GetScreenDetails)
+            InitSearchDates()
             PopulateRegion()
             PopulateDepotName()
             PopulateUnit()
             PageSizeDropdown()
             BindGrid()
-            txtChallanNo.Attributes.Add("onkeypress", "KeyPressNumeric();")
+        Else
+            'Modified-by MUKESH BHAGAT on 18-09-2026 : re-stamp min / max on every postback so "today"
+            'stays correct for a page left open past midnight (the inputs sit inside the UpdatePanel,
+            'so the refreshed attributes reach the browser with each partial postback).
+            ApplyDateLimits()
         End If
     End Sub
 #End Region
@@ -312,6 +317,70 @@ Partial Class VendorChallanList
         BindGrid()
     End Sub
 
+    'Modified-by MUKESH BHAGAT on 28-09-2026 : Excel download of the current search. Same validation
+    'and the same SP call as BindGrid ([Unit_Dspatch_Get_Challan_Detail_vr6]) so the file holds exactly
+    'what the grid would show - every row, not only the current page. Built with GridExcelExport
+    '(NPOI .xlsx, saved under Excel_Reports\ like the other exports).
+    Protected Sub btnExcel_Click(sender As Object, e As EventArgs)
+        Dim fromDate As Date
+        Dim toDate As Date
+        Dim periodError As String = String.Empty
+        If Not TryGetSearchDates(fromDate, toDate, periodError) Then
+            lblSearchError.Text = periodError
+            Return
+        End If
+        lblSearchError.Text = String.Empty
+
+        Try
+            Dim DespatchObj As New UnitDespatchClassVr1
+            Dim ds As DataSet = DespatchObj.GetChallanDetails_Vr4(ddlUnit.SelectedValue, ddlLocation.SelectedValue, fromDate, toDate, txtSearchInvoiceNo.Text, "A", userInfo.userIDEntity, ddlType.SelectedValue)
+            If ds Is Nothing OrElse ds.Tables.Count = 0 OrElse ds.Tables(0) Is Nothing OrElse ds.Tables(0).Rows.Count = 0 Then
+                lblSearchError.Text = "No records found for the selected criteria - nothing to download."
+                Return
+            End If
+            Dim table As DataTable = ds.Tables(0).Copy()
+            'the grid shows Approved / Pending, not Y / N
+            If table.Columns.Contains("desph_approved_yn") Then
+                For Each r As DataRow In table.Rows
+                    r("desph_approved_yn") = If(Convert.ToString(r("desph_approved_yn")) = "Y", "Approved", "Pending")
+                Next
+            End If
+
+            Dim cols As New List(Of GridExcelExport.ExportColumn) From {
+                New GridExcelExport.ExportColumn("S.No", Nothing, GridExcelExport.ColumnKind.SerialNo, 7),
+                New GridExcelExport.ExportColumn("Despatch Type", "despatch_type", GridExcelExport.ColumnKind.Text, 16),
+                New GridExcelExport.ExportColumn("Source", "desph_desp_unit", GridExcelExport.ColumnKind.Text, 10),
+                New GridExcelExport.ExportColumn("Region", "region", GridExcelExport.ColumnKind.Text, 9),
+                New GridExcelExport.ExportColumn("Depot", "desph_desp_depot", GridExcelExport.ColumnKind.Text, 9),
+                New GridExcelExport.ExportColumn("Name", "depotName", GridExcelExport.ColumnKind.Text, 26),
+                New GridExcelExport.ExportColumn("Challan No.", "desph_challan_no", GridExcelExport.ColumnKind.Text, 12),
+                New GridExcelExport.ExportColumn("Challan Date", "desph_challan_date", GridExcelExport.ColumnKind.Text, 14),
+                New GridExcelExport.ExportColumn("SKU List", "skuList", GridExcelExport.ColumnKind.Text, 60),
+                New GridExcelExport.ExportColumn("Vendor Invoice No", "vendor_invoice_no", GridExcelExport.ColumnKind.Text, 20),
+                New GridExcelExport.ExportColumn("Vendor Invoice Date", "vendor_invoice_dt", GridExcelExport.ColumnKind.Text, 14),
+                New GridExcelExport.ExportColumn("GRN No", "GRN_No", GridExcelExport.ColumnKind.Text, 16),
+                New GridExcelExport.ExportColumn("GRN Date", "GRN_Date", GridExcelExport.ColumnKind.Text, 14),
+                New GridExcelExport.ExportColumn("SKU NOP (Pcs)", "sku_nop", GridExcelExport.ColumnKind.Number, 14),
+                New GridExcelExport.ExportColumn("Approved/Pending", "desph_approved_yn", GridExcelExport.ColumnKind.Text, 16)
+            }
+
+            Dim filterLine As String = "From : " & fromDate.ToString(DateDisplayFormat) & "   To : " & toDate.ToString(DateDisplayFormat) &
+                "   Type : " & If(ddlType.SelectedItem Is Nothing, "", ddlType.SelectedItem.Text) &
+                "   Source : " & If(ddlUnit.SelectedValue = "", "All", ddlUnit.SelectedItem.Text) &
+                "   Region : " & If(ddlRegion.SelectedValue = "", "All", ddlRegion.SelectedItem.Text) &
+                "   Depot : " & If(ddlLocation.SelectedValue = "", "All", ddlLocation.SelectedItem.Text) &
+                If(txtSearchInvoiceNo.Text.Trim() <> "", "   Vendor Invoice No : " & txtSearchInvoiceNo.Text.Trim(), "")
+
+            GridExcelExport.Export(table, cols, "Vendor Challan List", filterLine, userInfo.userCompanyEntity,
+                                   "Vendor_Challan_List", AppDomain.CurrentDomain.BaseDirectory, Response)
+        Catch ex As Threading.ThreadAbortException
+            'Response.End() - normal
+        Catch ex As Exception
+            Session(Constant.SessionKeys.ErrMessage) = Constant.ErrorMessages.ErrorExporttoExcel
+            Server.Transfer("~/ExceptionPage.aspx")
+        End Try
+    End Sub
+
     'Modified-by MUKESH BHAGAT on 07-09-2026 : Results Per Page / pagination were present in the
     'markup but had no handlers - changing the page size did nothing and clicking a pager link
     'threw "PageIndexChanging which wasn't handled". Wired the same pattern as
@@ -340,27 +409,148 @@ Partial Class VendorChallanList
             Response.Redirect("~/Login.aspx")
         End If
     End Sub
-    'Modified-by MUKESH BHAGAT on 02-09-2026 : the Process Year list was hardcoded 2010-2025 in
-    'the markup; on process-year rollover the SelectedValue assignment in GetScreenDetails
-    'would throw and the page would stop opening. Generated up to the current year instead.
-    Private Sub PopulateProcessYears()
-        'Modified-by MUKESH BHAGAT on 02-09-2026 : now database-driven - years come from
-        'dbo.fin_year through the shared Common.BindProcessYearDropdown, so a new process
-        'year is one master-data insert for the whole application.
-        Dim commonObj As New Common
-        commonObj.BindProcessYearDropdown(ddlYear, Constant.Common.Company, Constant.Common.ActiveStatus)
+    '=====================================================================================
+    'Modified-by MUKESH BHAGAT on 18-09-2026 : From Date - To Date search.
+    'The Process Year / Process Month dropdowns (PopulateProcessYears + GetScreenDetails, which
+    'filled them) are replaced by two HTML5 date inputs.
+    '  Earliest date : 01-Jan of the oldest year in dbo.fin_year, read through the same
+    '                  Common.GetFinYrDetails ([FinYr_Details_Get]) that fed the old dropdown - so
+    '                  the calendar goes back exactly as far as the dropdown did (e.g. 2011) and a
+    '                  new/removed year is still one master-data change. Process year = calendar
+    '                  year of the process month (verified on despatch_hdr, 2012-2026), hence 01-Jan.
+    '  Latest date   : today.
+    '  Default range : first day of the current process month ([Unit_Dspatch_Get_Screen_Details],
+    '                  as the dropdowns defaulted) up to today.
+    '  Range cap     : MaxSearchRangeDays. The old screen could only ever load one month; without a
+    '                  cap a 2011-to-today search would pull 15 years into the grid's in-memory paging.
+    'The browser enforces min/max in its picker, validateChallanSearch() covers typed values, and
+    'TryGetSearchDates() below is the authority - nothing reaches the SP unless it passes here.
+    '=====================================================================================
+    Private Const MaxSearchRangeDays As Integer = 366
+    Private Const DateInputFormat As String = "yyyy-MM-dd"      'what <input type="date"> posts
+    Private Const DateDisplayFormat As String = "dd/MM/yyyy"
+    Private Const MinSearchDateKey As String = "MinSearchDate"
+
+    Private Sub InitSearchDates()
+        Dim today As Date = Date.Today
+        ViewState(MinSearchDateKey) = GetMinSearchDate()
+        Dim minDate As Date = CDate(ViewState(MinSearchDateKey))
+
+        'default From = first day of the current process month
+        Dim fromDate As Date = New Date(today.Year, today.Month, 1)
+        Dim StockObj As New UnitDespatchClass
+        Dim ScreenDS As DataSet = StockObj.GetSCreenDetails(userInfo.userBranchEntity)
+        If (Not (ScreenDS Is Nothing) AndAlso ScreenDS.Tables.Count > 0 AndAlso Not (ScreenDS.Tables(0) Is Nothing) AndAlso ScreenDS.Tables(0).Rows.Count > 0) Then
+            Dim processYear As Integer
+            Dim processMonth As Integer
+            If Integer.TryParse(Convert.ToString(ScreenDS.Tables(0).Rows(0)("year")).Trim(), processYear) AndAlso
+               Integer.TryParse(Convert.ToString(ScreenDS.Tables(0).Rows(0)("month")).Trim(), processMonth) AndAlso
+               processYear >= 1900 AndAlso processYear <= 9999 AndAlso processMonth >= 1 AndAlso processMonth <= 12 Then
+                fromDate = New Date(processYear, processMonth, 1)
+            End If
+        End If
+        'a process period that has been opened ahead of the calendar must not produce From > To
+        If fromDate > today Then fromDate = New Date(today.Year, today.Month, 1)
+        If fromDate < minDate Then fromDate = minDate
+
+        txtFromDate.Text = fromDate.ToString(DateInputFormat, System.Globalization.CultureInfo.InvariantCulture)
+        txtToDate.Text = today.ToString(DateInputFormat, System.Globalization.CultureInfo.InvariantCulture)
+        ApplyDateLimits()
     End Sub
 
-    Private Sub GetScreenDetails()
-        Dim ScreenDS As DataSet
-        Dim StockObj As New UnitDespatchClass
-        ScreenDS = StockObj.GetSCreenDetails(userInfo.userBranchEntity)
-        If (Not (ScreenDS Is Nothing) AndAlso ScreenDS.Tables.Count > 0 AndAlso Not (ScreenDS.Tables(0) Is Nothing) AndAlso ScreenDS.Tables(0).Rows.Count > 0) Then
-            ddlYear.SelectedValue = ScreenDS.Tables(0).Rows(0)("year").ToString
-            ddlMonth.SelectedValue = ScreenDS.Tables(0).Rows(0)("month").ToString
-            'lblUnit.Text = ScreenDS.Tables(0).Rows(0)("unit").ToString
+    'Oldest selectable date = 01-Jan of the smallest fin_year the Process Year dropdown used to list.
+    'Falls back to 2010 - the same fallback Common.BindProcessYearDropdown uses - if the master
+    'cannot be read, so the screen still opens.
+    Private Function GetMinSearchDate() As Date
+        Dim minYear As Integer = Integer.MaxValue
+        Try
+            Dim commonObj As New Common
+            Dim ds As DataSet = commonObj.GetFinYrDetails(Constant.Common.Company, Constant.Common.ActiveStatus)
+            If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+                For Each yearRow As DataRow In ds.Tables(0).Rows
+                    Dim y As Integer
+                    If Integer.TryParse(Convert.ToString(yearRow("fin_year")).Trim(), y) AndAlso y >= 1900 AndAlso y <= 9999 AndAlso y < minYear Then
+                        minYear = y
+                    End If
+                Next
+            End If
+        Catch
+            minYear = Integer.MaxValue
+        End Try
+
+        If minYear = Integer.MaxValue Then minYear = 2010
+        Dim minDate As Date = New Date(minYear, 1, 1)
+        'bad master data (a future-only year list) must not leave the calendar with min > max
+        If minDate > Date.Today Then minDate = New Date(Date.Today.Year, 1, 1)
+        Return minDate
+    End Function
+
+    Private Function CurrentMinSearchDate() As Date
+        If ViewState(MinSearchDateKey) Is Nothing Then
+            ViewState(MinSearchDateKey) = GetMinSearchDate()
         End If
+        Return CDate(ViewState(MinSearchDateKey))
+    End Function
+
+    Private Sub ApplyDateLimits()
+        Dim inv As System.Globalization.CultureInfo = System.Globalization.CultureInfo.InvariantCulture
+        Dim minText As String = CurrentMinSearchDate().ToString(DateInputFormat, inv)
+        Dim maxText As String = Date.Today.ToString(DateInputFormat, inv)
+
+        txtFromDate.Attributes("min") = minText
+        txtFromDate.Attributes("max") = maxText
+        txtToDate.Attributes("min") = minText
+        txtToDate.Attributes("max") = maxText
+        txtToDate.Attributes("data-max-range-days") = MaxSearchRangeDays.ToString(inv)
     End Sub
+
+    'Server-side validation of the search period. Returns False with a user message when the
+    'posted values are missing, malformed, out of the allowed window or too wide.
+    Private Function TryGetSearchDates(ByRef fromDate As Date, ByRef toDate As Date, ByRef message As String) As Boolean
+        Dim inv As System.Globalization.CultureInfo = System.Globalization.CultureInfo.InvariantCulture
+        Dim today As Date = Date.Today
+        Dim minDate As Date = CurrentMinSearchDate()
+        message = String.Empty
+
+        If String.IsNullOrWhiteSpace(txtFromDate.Text) Then
+            message = "Please select From Date."
+            Return False
+        End If
+        If String.IsNullOrWhiteSpace(txtToDate.Text) Then
+            message = "Please select To Date."
+            Return False
+        End If
+        If Not Date.TryParseExact(txtFromDate.Text.Trim(), DateInputFormat, inv, System.Globalization.DateTimeStyles.None, fromDate) Then
+            message = "From Date is not a valid date."
+            Return False
+        End If
+        If Not Date.TryParseExact(txtToDate.Text.Trim(), DateInputFormat, inv, System.Globalization.DateTimeStyles.None, toDate) Then
+            message = "To Date is not a valid date."
+            Return False
+        End If
+        If fromDate < minDate Then
+            message = "From Date cannot be earlier than " & minDate.ToString(DateDisplayFormat, inv) & "."
+            Return False
+        End If
+        If toDate > today Then
+            message = "To Date cannot be later than today (" & today.ToString(DateDisplayFormat, inv) & ")."
+            Return False
+        End If
+        If fromDate > today Then
+            message = "From Date cannot be later than today (" & today.ToString(DateDisplayFormat, inv) & ")."
+            Return False
+        End If
+        If fromDate > toDate Then
+            message = "From Date cannot be later than To Date."
+            Return False
+        End If
+        Dim days As Integer = CInt((toDate - fromDate).TotalDays) + 1
+        If days > MaxSearchRangeDays Then
+            message = "Please search a period of at most " & MaxSearchRangeDays.ToString(inv) & " days (selected: " & days.ToString(inv) & ")."
+            Return False
+        End If
+        Return True
+    End Function
     Public Sub PopulateRegion()
         CheckLogin()
         Dim commonObj As New Common
@@ -445,14 +635,25 @@ Partial Class VendorChallanList
     Private Sub BindGrid()
         Dim DespatchDS As DataSet
         Dim DespatchObj As New UnitDespatchClassVr1
-        Dim chalanNo As Integer
-        If txtChallanNo.Text.Trim <> "" Then
-            chalanNo = CType(txtChallanNo.Text.Trim, Integer)
-        Else
-            chalanNo = Integer.MinValue
+        'Modified-by MUKESH BHAGAT on 18-09-2026 : the search period comes from the From / To date
+        'inputs. An invalid period never reaches the SP - the grid is emptied and the reason shown.
+        Dim fromDate As Date
+        Dim toDate As Date
+        Dim periodError As String = String.Empty
+        If Not TryGetSearchDates(fromDate, toDate, periodError) Then
+            lblSearchError.Text = periodError
+            gvChallanDetails.DataSource = Nothing
+            gvChallanDetails.DataBind()
+            btnAprove.Enabled = False
+            Return
         End If
+        lblSearchError.Text = String.Empty
+
         'Modified-by MUKESH BHAGAT on 11-09-2026 : _Vr2 -> SP _vr4, adds GRN No / GRN Date / SKU NOP columns
-        DespatchDS = DespatchObj.GetChallanDetails_Vr2(ddlUnit.SelectedValue, ddlLocation.SelectedValue, ddlYear.SelectedValue, ddlMonth.SelectedValue, chalanNo, "A", userInfo.userIDEntity, ddlType.SelectedValue)
+        'Modified-by MUKESH BHAGAT on 18-09-2026 : _Vr3 -> SP _vr5, same columns, From / To date instead of year / month
+        'Modified-by MUKESH BHAGAT on 28-09-2026 : _Vr4 -> SP _vr6, Challan No. search replaced by
+        'Vendor Invoice No. (partial match done inside the SP)
+        DespatchDS = DespatchObj.GetChallanDetails_Vr4(ddlUnit.SelectedValue, ddlLocation.SelectedValue, fromDate, toDate, txtSearchInvoiceNo.Text, "A", userInfo.userIDEntity, ddlType.SelectedValue)
         If (Not (DespatchDS Is Nothing) AndAlso DespatchDS.Tables.Count > 0 AndAlso Not (DespatchDS.Tables(0) Is Nothing) AndAlso DespatchDS.Tables(0).Rows.Count > 0) Then
             gvChallanDetails.DataSource = DespatchDS
             gvChallanDetails.DataBind()

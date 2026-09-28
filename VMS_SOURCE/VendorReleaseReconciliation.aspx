@@ -6,6 +6,9 @@
 </asp:Content>--%>
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
 
+    <%-- Modified-by MUKESH BHAGAT on 28-09-2026 : the CalendarExtender day-overlap fix that was
+         page-scoped here has been folded into includes/upgrad-style.css (in place of the two
+         rules that caused it), so it now applies site-wide - removed from here. --%>
     <script type="text/javascript">var cal1 = new CalendarPopup();</script>
     <script src="Scripts/FunctionValidator.js" type="text/javascript"></script>
     <%--<asp:ScriptManager ID="ScriptManager1" runat="server"></asp:ScriptManager>--%>
@@ -83,7 +86,11 @@
                         <div class="col-md-3 form-btn-mt">
                             <div class="form-group">
                                 <%--<asp:ImageButton CssClass="btn btn-primary btn-sm" ID="ImgbtnSearch" runat="server" ImageUrl="images/ic_search.gif" ToolTip="Search" AlternateText="Search" />--%>
-                                <asp:LinkButton CssClass="btn btn-primary btn-sm" ID="ImgbtnSearch" runat="server" OnClick="ImgbtnSearch_Click" ToolTip="Search" Text="Search"></asp:LinkButton>
+                                <%-- Modified-by MUKESH BHAGAT on 28-09-2026 : removed the OnClick="ImgbtnSearch_Click"
+                                     attribute - the code-behind already wires this event with
+                                     "Handles ImgbtnSearch.Click". Both together fired ImgbtnSearch_Click
+                                     (and BindGrid) TWICE per Search click, within one async postback. --%>
+                                <asp:LinkButton CssClass="btn btn-primary btn-sm" ID="ImgbtnSearch" runat="server" ToolTip="Search" Text="Search"></asp:LinkButton>
                                 <asp:LinkButton CssClass="btn btn-success btn-sm" ID="btndownload" runat="server" OnClick="btndownload_Click" Text="Download" ToolTip="Download" />
                                 <asp:LinkButton CssClass="btn btn-secondary btn-sm" ID="btnBack" runat="server" OnClick="btnBack_Click" Text="Back" ToolTip="Back" />
                             </div>
@@ -414,6 +421,60 @@
                    /* $('.selectpicker').selectpicker();*/
 
                 }
+
+                <%-- Modified-by MUKESH BHAGAT on 28-09-2026 : the site already shows a full-screen
+                     loading overlay on every async postback (updProgress in MasterPage.master), but
+                     it was easy to miss while the Dispatched / GRN Not Done / Paid list was querying -
+                     the page looked unresponsive during the wait, and a second click on Search or
+                     Back (while the first request was still in flight) appeared to do nothing. This
+                     puts a clear, page-local cue directly on the Search button itself: it disables
+                     and shows "Searching..." for the duration of that one request, and restores
+                     itself when the response comes back - success or error. Scoped to ImgbtnSearch
+                     only, via the postback element's id, so Back / Download / grid paging are
+                     unaffected. --%>
+                (function () {
+                    var searchBtnId = "ctl00_ContentPlaceHolder1_ImgbtnSearch";
+                    var savedText = "";
+
+                    <%-- Modified-by MUKESH BHAGAT on 28-09-2026 : wrapped in try/catch - a handler
+                         registered on Sys.WebForms.PageRequestManager that throws could, depending on
+                         the framework's internal event-raising, stop a later-registered handler on the
+                         same event (e.g. the site's own updProgress show/hide) from running for that
+                         request. Both handlers were already null-guarded so this shouldn't fire, but it
+                         removes the possibility entirely while the updProgress "second click" issue is
+                         being looked at separately. --%>
+                    function onBegin(sender, args) {
+                        try {
+                            var el = args.get_postBackElement();
+                            if (!el || el.id !== searchBtnId) { return; }
+
+                            savedText = el.innerHTML;
+                            el.innerHTML = "Searching...";
+                            el.setAttribute("disabled", "disabled");
+                            el.classList.add("disabled");
+                        } catch (ex) { /* never let this block other beginRequest handlers */ }
+                    }
+
+                    function onEnd(sender, args) {
+                        try {
+                            var el = document.getElementById(searchBtnId);
+                            if (!el) { return; }
+
+                            if (savedText !== "") {
+                                el.innerHTML = savedText;
+                                savedText = "";
+                            }
+                            el.removeAttribute("disabled");
+                            el.classList.remove("disabled");
+                        } catch (ex) { /* never let this block other endRequest handlers */ }
+                    }
+
+                    if (typeof Sys !== "undefined") {
+                        var prm = Sys.WebForms.PageRequestManager.getInstance();
+                        prm.add_beginRequest(onBegin);
+                        prm.add_endRequest(onEnd);
+                    }
+                })();
 
 
                 $(document).ready(function () {

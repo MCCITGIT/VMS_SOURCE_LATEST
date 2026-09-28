@@ -93,7 +93,7 @@ Partial Class RawMaterialRequisitionDtls
         End If
 
         'txtreqVendor.Text =Convert.ToString(firstRow("vendor_name")).Trim()
-        ddlVendor.SelectedValue = ds.Tables(0).Rows(0)("vendor_code").ToString()
+        ddlUnit.SelectedValue = ds.Tables(0).Rows(0)("vendor_code").ToString()
 
         Dim rawMatVendorCode As String = Convert.ToString(firstRow("rawmat_vendor_code")).Trim()
         If rawMatVendorCode <> "" AndAlso ddlVendor.Items.FindByValue(rawMatVendorCode) IsNot Nothing Then

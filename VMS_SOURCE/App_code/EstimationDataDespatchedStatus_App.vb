@@ -65,7 +65,11 @@ Namespace VMS.Web
             sqlParams(1).Direction = Data.ParameterDirection.Input
             sqlParams(1).Value = Active
 
-            DepotDS = DBFactory.GetHelper().ExecuteDataSet("[Estimation_Data_Get_Depot]", Data.CommandType.StoredProcedure, sqlParams)
+            'Modified-by MUKESH BHAGAT on 21-09-2026 : _vr1 SP - same list without the depot_rdc_yn='No'
+            'condition, so RDCs (e.g. 116 RDC - Devla) can be selected; the report itself already carries
+            'RDC rows. The shared [Estimation_Data_Get_Depot] is untouched (used by four other screens).
+            'Roll-back = use "[Estimation_Data_Get_Depot]" again.
+            DepotDS = DBFactory.GetHelper().ExecuteDataSet("[Estimation_Data_Get_Depot_vr1]", Data.CommandType.StoredProcedure, sqlParams)
             Return DepotDS
         End Function
 
@@ -136,7 +140,10 @@ Namespace VMS.Web
             sqlParams(6).Direction = Data.ParameterDirection.Input
             sqlParams(6).Value = Active
 
-            DsptchdStatDetailsDS = DBFactory.GetHelper().ExecuteDataSet("[Estimation_Data_Get_Details]", Data.CommandType.StoredProcedure, sqlParams)
+            'Modified-by MUKESH BHAGAT on 21-09-2026 : _vr1 SP - INTRANSIT / RECEIVED now test the GRN on the
+            'unique release id (release number + PO number as fallback); the release number alone matched
+            'other POs' releases. Roll-back = use "[Estimation_Data_Get_Details]" again.
+            DsptchdStatDetailsDS = DBFactory.GetHelper().ExecuteDataSet("[Estimation_Data_Get_Details_vr1]", Data.CommandType.StoredProcedure, sqlParams)
             Return DsptchdStatDetailsDS
         End Function
 
@@ -186,7 +193,9 @@ Namespace VMS.Web
             sqlParams(6).Direction = Data.ParameterDirection.Input
             sqlParams(6).Value = Active
 
-            ExcelDsptchdStatDS = DBFactory.GetHelper().ExecuteDataSet("[Estimation_Data_Get_Details_Report_ForExcel]", Data.CommandType.StoredProcedure, sqlParams)
+            'Modified-by MUKESH BHAGAT on 21-09-2026 : _vr1 SP (same INTRANSIT / RECEIVED fix as the grid).
+            'Roll-back = use "[Estimation_Data_Get_Details_Report_ForExcel]" again.
+            ExcelDsptchdStatDS = DBFactory.GetHelper().ExecuteDataSet("[Estimation_Data_Get_Details_Report_ForExcel_vr1]", Data.CommandType.StoredProcedure, sqlParams)
             Return ExcelDsptchdStatDS
         End Function
 

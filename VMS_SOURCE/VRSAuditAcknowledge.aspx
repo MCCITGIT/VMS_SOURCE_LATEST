@@ -117,16 +117,16 @@
         }
     </style>
     <%-- <asp:ScriptManager ID="ScriptManager1" runat="server"></asp:ScriptManager>--%>
-    <asp:UpdateProgress ID="updProgress" runat="server" DisplayAfter="0">
+   <%-- <asp:UpdateProgress ID="updProgress" runat="server" DisplayAfter="0">
         <ProgressTemplate>
             <div class="pageLoader">
                 <div class="innerLoader">
                     <img class="loaderImg" alt="progress" src="images/ajax-loader.gif" />
-                    <p class="loaderTx">Processing... Please Wait.</p>
+                    <p class="loaderTx">Processing... Please Wait.</p>\
                 </div>
             </div>
         </ProgressTemplate>
-    </asp:UpdateProgress>
+    </asp:UpdateProgress>--%>
 
     <div class="breadcrumbs">
         <div class="leftFung">

@@ -147,15 +147,37 @@ Partial Class VendorReleaseReconciliation
     End Sub
 #End Region
 #Region "BindGrid"
+    'Modified-by MUKESH BHAGAT on 28-09-2026 : FromDate/ToDate parsing used to happen BEFORE the
+    'Try block, and the Catch below did Server.Transfer("~/ExceptionPage.aspx"). Search
+    '(ImgbtnSearch) and paging both fire as ASYNC postbacks (UpdatePanel1) - an unhandled
+    'FormatException, or a full HTML page sent back via Server.Transfer, both break the MS AJAX
+    'partial-postback response ("the message received from the server could not be parsed").
+    'Once that happens PageRequestManager gets stuck thinking a request is still in flight, and
+    'silently ignores every further async click on the page - Search again, paging, even the
+    'in-page Back button (btnBack) - until a full page reload. This is why editing the date and
+    'searching again "did nothing": a bad/unparseable date (or any other error) was crashing the
+    'first attempt, and everything after it went nowhere.
+    'Now: date parsing is inside the Try, a bad date shows a plain message via lblErrorMessage
+    'instead of throwing, and any other error also shows inline instead of transferring to a full
+    'page mid-async-postback.
     Private Sub BindGrid()
         CheckLogin()
-        Dim FromDate As SqlDateTime
-        Dim ToDate As SqlDateTime
-        FromDate = FormatDate(txtFromDate.Text)
-        ToDate = FormatDate(txtTodate.Text)
-        Dim pageNo = gvVendorInvoiceDtls.PageIndex + 1
-        Dim pageSize = gvVendorInvoiceDtls.PageSize
+        lblErrorMessage.Text = String.Empty
         Try
+            Dim FromDate As SqlDateTime
+            Dim ToDate As SqlDateTime
+            Try
+                FromDate = FormatDate(txtFromDate.Text)
+                ToDate = FormatDate(txtTodate.Text)
+            Catch fx As FormatException
+                lblErrorMessage.Text = "Please enter a valid From Date / To Date (dd/mm/yyyy)."
+                gvVendorInvoiceDtls.DataSource = Nothing
+                gvVendorInvoiceDtls.DataBind()
+                Return
+            End Try
+
+            Dim pageNo = gvVendorInvoiceDtls.PageIndex + 1
+            Dim pageSize = gvVendorInvoiceDtls.PageSize
             Dim obj As New POLinkingRequestClass
             Dim ds As New DataSet
             If Not String.IsNullOrEmpty(SelectedFlag) Then
@@ -193,9 +215,13 @@ Partial Class VendorReleaseReconciliation
                 gvVendorInvoiceDtls.DataBind()
             End If
         Catch ex As Exception
-            Dim returnUrl As String = "~/ExceptionPage.aspx"
-            Session(Constant.SessionKeys.ErrMessage) = Constant.ErrorMessages.GeneralError
-            Server.Transfer(returnUrl)
+            'Modified-by MUKESH BHAGAT on 28-09-2026 : no Server.Transfer here any more - Search and
+            'paging are async (UpdatePanel1); transferring to a full page mid-async-postback breaks
+            'the MS AJAX response and wedges the client for every further click on this page (see
+            'the note above BindGrid). Shown inline instead, same as every other message on this page.
+            lblErrorMessage.Text = Constant.ErrorMessages.GeneralError
+            gvVendorInvoiceDtls.DataSource = Nothing
+            gvVendorInvoiceDtls.DataBind()
         End Try
     End Sub
 
@@ -223,6 +249,12 @@ Partial Class VendorReleaseReconciliation
 
     End Sub
 
+    'Modified-by MUKESH BHAGAT on 28-09-2026 : From Date / To Date were disabled here, so a user
+    'who opened this page from a VprDashboard tile (Dispatched / Delivered / GRN Not Done /
+    'Manual GRN / Paid) could not widen or move the date range - the dashboard's From/To were
+    'locked in for good. The vendor itself (ddlUnit) and the Status/Depot/Type filters stay
+    'locked, since those come from the tile that was clicked; only the dates - and Search, so a
+    'changed date range can actually be applied - are left enabled.
     Private Sub DisableFilterControls()
 
         'Disable dropdowns
@@ -231,14 +263,6 @@ Partial Class VendorReleaseReconciliation
         divDepot.Visible = False
         divType.Visible = False
 
-
-        'Disable date textbox
-        txtFromDate.Enabled = False
-        txtTodate.Enabled = False
-
-
-        'Hide search button
-        ImgbtnSearch.Visible = False
         btndownload.Visible = False
 
     End Sub
@@ -557,9 +581,21 @@ Partial Class VendorReleaseReconciliation
         End Set
     End Property
 
-    'Only Admin and HO users may mark / undo a cancellation. Everyone can see the status
-    'and download the documents.
+    'Modified-by MUKESH BHAGAT on 28-09-2026 : explicit user-id deny-list, checked before the
+    'group check below. These two named logins (both HO-MARKETING) must NOT get the "Cancelled
+    'by Vendor" action, although their group otherwise has it - everything else on this page and
+    'every other HO-MARKETING screen/data access is unaffected; only this one action is blocked
+    'for them. Add / remove usp_user_id values here as business asks for named exceptions.
+    Private Shared ReadOnly CancellationDeniedUserIds As String() = {"14563", "14564"}
+
+    'Only Admin and HO users may mark / undo a cancellation - except the named exceptions above,
+    'who are blocked regardless of group. Everyone can see the status and download the documents.
     Private Function CanManageCancellation() As Boolean
+        Dim userId As String = Convert.ToString(userInfo.userIDEntity).Trim()
+        If CancellationDeniedUserIds.Contains(userId) Then
+            Return False
+        End If
+
         Dim g As String = Convert.ToString(userInfo.userGroupCodeEntity)
         Return g = Constant.UserFormAccess.SYSADMIN OrElse
                g = Constant.UserFormAccess.HO OrElse

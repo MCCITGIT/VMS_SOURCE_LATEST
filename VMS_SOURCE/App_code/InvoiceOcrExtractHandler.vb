@@ -21,6 +21,9 @@ End Class
 'flattens the fields the screens read (invoice_no, invoice_date, amount, total_quantity,
 'supplier_gstn, recipient_gstn, eway_bill_no) so every consuming page keeps working with
 'the same flat JSON contract as before.
+'Modified-by MUKESH BHAGAT on 17-09-2026 : freight_amount (tax.freight_amount) added to the flat
+'contract - the challan page needs it because the bill total = SKU taxable + freight + GST, and
+'freight is not part of the SKU grid.
 Public Class InvoiceOcrExtractHandler
     Implements IHttpHandler
     Implements IRequiresSessionState
@@ -171,6 +174,7 @@ Public Class InvoiceOcrExtractHandler
             {"invoice_date", Convert.ToString(If(GetNested(apiResult, "invoice", "invoice_date"), String.Empty))},
             {"eway_bill_no", Convert.ToString(If(GetNested(apiResult, "invoice", "eway_bill_no"), String.Empty))},
             {"amount", GetNested(apiResult, "tax", "total_amount")},
+            {"freight_amount", GetNested(apiResult, "tax", "freight_amount")},
             {"supplier_gstn", Convert.ToString(If(GetNested(apiResult, "party", "vendor_gstin"), String.Empty))},
             {"recipient_gstn", Convert.ToString(If(GetNested(apiResult, "party", "buyer_gstin"), String.Empty))}
         }
