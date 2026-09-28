@@ -24,7 +24,6 @@ Partial Class VendorChallanList
             PopulateUnit()
             PageSizeDropdown()
             BindGrid()
-            txtChallanNo.Attributes.Add("onkeypress", "KeyPressNumeric();")
         Else
             'Modified-by MUKESH BHAGAT on 18-09-2026 : re-stamp min / max on every postback so "today"
             'stays correct for a page left open past midnight (the inputs sit inside the UpdatePanel,
@@ -318,6 +317,70 @@ Partial Class VendorChallanList
         BindGrid()
     End Sub
 
+    'Modified-by MUKESH BHAGAT on 28-09-2026 : Excel download of the current search. Same validation
+    'and the same SP call as BindGrid ([Unit_Dspatch_Get_Challan_Detail_vr6]) so the file holds exactly
+    'what the grid would show - every row, not only the current page. Built with GridExcelExport
+    '(NPOI .xlsx, saved under Excel_Reports\ like the other exports).
+    Protected Sub btnExcel_Click(sender As Object, e As EventArgs)
+        Dim fromDate As Date
+        Dim toDate As Date
+        Dim periodError As String = String.Empty
+        If Not TryGetSearchDates(fromDate, toDate, periodError) Then
+            lblSearchError.Text = periodError
+            Return
+        End If
+        lblSearchError.Text = String.Empty
+
+        Try
+            Dim DespatchObj As New UnitDespatchClassVr1
+            Dim ds As DataSet = DespatchObj.GetChallanDetails_Vr4(ddlUnit.SelectedValue, ddlLocation.SelectedValue, fromDate, toDate, txtSearchInvoiceNo.Text, "A", userInfo.userIDEntity, ddlType.SelectedValue)
+            If ds Is Nothing OrElse ds.Tables.Count = 0 OrElse ds.Tables(0) Is Nothing OrElse ds.Tables(0).Rows.Count = 0 Then
+                lblSearchError.Text = "No records found for the selected criteria - nothing to download."
+                Return
+            End If
+            Dim table As DataTable = ds.Tables(0).Copy()
+            'the grid shows Approved / Pending, not Y / N
+            If table.Columns.Contains("desph_approved_yn") Then
+                For Each r As DataRow In table.Rows
+                    r("desph_approved_yn") = If(Convert.ToString(r("desph_approved_yn")) = "Y", "Approved", "Pending")
+                Next
+            End If
+
+            Dim cols As New List(Of GridExcelExport.ExportColumn) From {
+                New GridExcelExport.ExportColumn("S.No", Nothing, GridExcelExport.ColumnKind.SerialNo, 7),
+                New GridExcelExport.ExportColumn("Despatch Type", "despatch_type", GridExcelExport.ColumnKind.Text, 16),
+                New GridExcelExport.ExportColumn("Source", "desph_desp_unit", GridExcelExport.ColumnKind.Text, 10),
+                New GridExcelExport.ExportColumn("Region", "region", GridExcelExport.ColumnKind.Text, 9),
+                New GridExcelExport.ExportColumn("Depot", "desph_desp_depot", GridExcelExport.ColumnKind.Text, 9),
+                New GridExcelExport.ExportColumn("Name", "depotName", GridExcelExport.ColumnKind.Text, 26),
+                New GridExcelExport.ExportColumn("Challan No.", "desph_challan_no", GridExcelExport.ColumnKind.Text, 12),
+                New GridExcelExport.ExportColumn("Challan Date", "desph_challan_date", GridExcelExport.ColumnKind.Text, 14),
+                New GridExcelExport.ExportColumn("SKU List", "skuList", GridExcelExport.ColumnKind.Text, 60),
+                New GridExcelExport.ExportColumn("Vendor Invoice No", "vendor_invoice_no", GridExcelExport.ColumnKind.Text, 20),
+                New GridExcelExport.ExportColumn("Vendor Invoice Date", "vendor_invoice_dt", GridExcelExport.ColumnKind.Text, 14),
+                New GridExcelExport.ExportColumn("GRN No", "GRN_No", GridExcelExport.ColumnKind.Text, 16),
+                New GridExcelExport.ExportColumn("GRN Date", "GRN_Date", GridExcelExport.ColumnKind.Text, 14),
+                New GridExcelExport.ExportColumn("SKU NOP (Pcs)", "sku_nop", GridExcelExport.ColumnKind.Number, 14),
+                New GridExcelExport.ExportColumn("Approved/Pending", "desph_approved_yn", GridExcelExport.ColumnKind.Text, 16)
+            }
+
+            Dim filterLine As String = "From : " & fromDate.ToString(DateDisplayFormat) & "   To : " & toDate.ToString(DateDisplayFormat) &
+                "   Type : " & If(ddlType.SelectedItem Is Nothing, "", ddlType.SelectedItem.Text) &
+                "   Source : " & If(ddlUnit.SelectedValue = "", "All", ddlUnit.SelectedItem.Text) &
+                "   Region : " & If(ddlRegion.SelectedValue = "", "All", ddlRegion.SelectedItem.Text) &
+                "   Depot : " & If(ddlLocation.SelectedValue = "", "All", ddlLocation.SelectedItem.Text) &
+                If(txtSearchInvoiceNo.Text.Trim() <> "", "   Vendor Invoice No : " & txtSearchInvoiceNo.Text.Trim(), "")
+
+            GridExcelExport.Export(table, cols, "Vendor Challan List", filterLine, userInfo.userCompanyEntity,
+                                   "Vendor_Challan_List", AppDomain.CurrentDomain.BaseDirectory, Response)
+        Catch ex As Threading.ThreadAbortException
+            'Response.End() - normal
+        Catch ex As Exception
+            Session(Constant.SessionKeys.ErrMessage) = Constant.ErrorMessages.ErrorExporttoExcel
+            Server.Transfer("~/ExceptionPage.aspx")
+        End Try
+    End Sub
+
     'Modified-by MUKESH BHAGAT on 07-09-2026 : Results Per Page / pagination were present in the
     'markup but had no handlers - changing the page size did nothing and clicking a pager link
     'threw "PageIndexChanging which wasn't handled". Wired the same pattern as
@@ -572,12 +635,6 @@ Partial Class VendorChallanList
     Private Sub BindGrid()
         Dim DespatchDS As DataSet
         Dim DespatchObj As New UnitDespatchClassVr1
-        Dim chalanNo As Integer
-        If txtChallanNo.Text.Trim <> "" Then
-            chalanNo = CType(txtChallanNo.Text.Trim, Integer)
-        Else
-            chalanNo = Integer.MinValue
-        End If
         'Modified-by MUKESH BHAGAT on 18-09-2026 : the search period comes from the From / To date
         'inputs. An invalid period never reaches the SP - the grid is emptied and the reason shown.
         Dim fromDate As Date
@@ -594,7 +651,9 @@ Partial Class VendorChallanList
 
         'Modified-by MUKESH BHAGAT on 11-09-2026 : _Vr2 -> SP _vr4, adds GRN No / GRN Date / SKU NOP columns
         'Modified-by MUKESH BHAGAT on 18-09-2026 : _Vr3 -> SP _vr5, same columns, From / To date instead of year / month
-        DespatchDS = DespatchObj.GetChallanDetails_Vr3(ddlUnit.SelectedValue, ddlLocation.SelectedValue, fromDate, toDate, chalanNo, "A", userInfo.userIDEntity, ddlType.SelectedValue)
+        'Modified-by MUKESH BHAGAT on 28-09-2026 : _Vr4 -> SP _vr6, Challan No. search replaced by
+        'Vendor Invoice No. (partial match done inside the SP)
+        DespatchDS = DespatchObj.GetChallanDetails_Vr4(ddlUnit.SelectedValue, ddlLocation.SelectedValue, fromDate, toDate, txtSearchInvoiceNo.Text, "A", userInfo.userIDEntity, ddlType.SelectedValue)
         If (Not (DespatchDS Is Nothing) AndAlso DespatchDS.Tables.Count > 0 AndAlso Not (DespatchDS.Tables(0) Is Nothing) AndAlso DespatchDS.Tables(0).Rows.Count > 0) Then
             gvChallanDetails.DataSource = DespatchDS
             gvChallanDetails.DataBind()
