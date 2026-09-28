@@ -246,6 +246,10 @@
                                         </div>
                                         <asp:Button ID="btnSubmit" ClientIDMode="Static" runat="server" Text="Search" CssClass="btn btn-primary btn-sm" OnClick="btnSubmit_Click" OnClientClick="return validateDateRange();" />
                                         <asp:Button ID="btnReset" runat="server" Text="Reset" CssClass="btn btn-outline-danger btn-sm" OnClick="btnReset_Click" />
+                                        <%-- Modified-by MUKESH BHAGAT on 28-09-2026 : Excel download of the vendor list for the
+                                             current filters (all rows). PostBackTrigger below - a file cannot be streamed
+                                             through an async partial postback. --%>
+                                        <asp:Button ID="btnExcel" ClientIDMode="Static" runat="server" Text="Download Excel" CssClass="btn btn-success btn-sm" OnClick="btnExcel_Click" OnClientClick="return validateDateRange();" ToolTip="Download the vendor list as Excel" />
                                     </div>
                                     <div id="dateError" class="date-error"></div>
                                     <asp:Label ID="valBrandName" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
@@ -430,6 +434,9 @@
                 <asp:AsyncPostBackTrigger
                     ControlID="btnReset"
                     EventName="Click" />
+
+                <%-- Modified-by MUKESH BHAGAT on 28-09-2026 : Excel download needs a full postback --%>
+                <asp:PostBackTrigger ControlID="btnExcel" />
 
                 <%--<asp:AsyncPostBackTrigger
                     ControlID="ddlPageNumber"

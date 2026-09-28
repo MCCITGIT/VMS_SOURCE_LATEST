@@ -3875,16 +3875,36 @@ body {
             color: #2563eb;
         }
 
-.ajax__calendar_container TABLE {
+/* Modified-by MUKESH BHAGAT on 28-09-2026 : the previous two rules here -
+   .ajax__calendar_container TABLE { width: 100% !important; }
+   .ajax__calendar_container { width: 175px !important; }
+   stretched all three tables inside the CalendarExtender popup (month/year header, day-name
+   row, AND the day-number grid) to the same fixed 175px. Combined with the site-wide Bootstrap
+   reset (*{box-sizing:border-box}), that shrank the toolkit's own cell padding out of the
+   available width - fine for a single-digit day, too narrow for two digits (10-31), so the day
+   number wrapped onto a second line and visually overlapped the row below. Confirmed on
+   VendorReleaseReconciliation.aspx and Monthly_Unit_Despatch_vr2.aspx; same markup, same fix,
+   on all 16 pages using CalendarExtender.
+   Fix: let the header/day-name tables size themselves (width: auto on the container), cancel
+   border-box only inside the popup so the toolkit's fixed cell padding renders as designed, and
+   keep width:100% only on the day-number grid (.ajax__calendar_days), which is the one table
+   that is actually meant to fill the container. */
+.ajax__calendar_container {
+    width: auto !important;
+    box-sizing: content-box !important;
+}
+
+.ajax__calendar_container table,
+.ajax__calendar_container table * {
+    box-sizing: content-box !important;
+}
+
+.ajax__calendar_days table {
     width: 100% !important;
 }
 
 .ajax__calendar_dayname {
     white-space: nowrap;
-}
-
-.ajax__calendar_container {
-    width: 175px !important;
 }
 
 .PagerGrid {

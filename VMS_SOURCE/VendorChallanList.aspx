@@ -139,8 +139,11 @@
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label class="form-control-label">Challan No.:</label>
-                                <asp:TextBox ID="txtChallanNo" CssClass="form-control" runat="server"></asp:TextBox>
+                                <%-- Modified-by MUKESH BHAGAT on 28-09-2026 : search by Vendor Invoice Number instead of
+                                     Challan No. Partial, case-insensitive match on the vendor_invoice_no column of the
+                                     result (typing 3644 finds CPPL/26-27/3644); applied in the code-behind, no SP change. --%>
+                                <label class="form-control-label">Vendor Invoice No.:</label>
+                                <asp:TextBox ID="txtSearchInvoiceNo" CssClass="form-control" runat="server" MaxLength="50" placeholder="Full or part of the invoice number"></asp:TextBox>
                             </div>
                         </div>
                         <div class="col-md-3" style="display: none;">
@@ -157,6 +160,10 @@
                                 <%--<asp:ImageButton CssClass="btn btn-primary btn-sm" ID="ImgbtnSearch" runat="server" ImageUrl="images/ic_search.gif" />
                                 <asp:ImageButton CssClass="btn btn-success btn-sm" ID="ImgbtnAdd" runat="server" ImageUrl="images/ic_add.gif" PostBackUrl="~/UnitDespatchPlanAddUpdateVr1.aspx" Visible="false" />--%>
                                 <asp:LinkButton CssClass="btn btn-primary btn-sm" ID="ImgbtnSearch" runat="server" OnClick="ImgbtnSearch_Click" OnClientClick="return validateChallanSearch();">Search</asp:LinkButton>
+                                <%-- Modified-by MUKESH BHAGAT on 28-09-2026 : Excel download of the current search
+                                     (all rows, not just the visible page). Registered as a PostBackTrigger below -
+                                     a file cannot be streamed through an async partial postback. --%>
+                                <asp:LinkButton CssClass="btn btn-success btn-sm" ID="btnExcel" runat="server" OnClick="btnExcel_Click" OnClientClick="return validateChallanSearch();" ToolTip="Download the search result as Excel"><i class="fa fa-file-excel"></i>&nbsp;Download Excel</asp:LinkButton>
                                 <asp:LinkButton CssClass="btn btn-success btn-sm" ID="ImgbtnAdd" runat="server" PostBackUrl="~/UnitDespatchPlanAddUpdateVr1.aspx" Visible="false"></asp:LinkButton>
                             </div>
                         </div>
@@ -557,6 +564,7 @@
         </ContentTemplate>
        <Triggers>
             <asp:PostBackTrigger ControlID="gvChallanDetails" />
+            <asp:PostBackTrigger ControlID="btnExcel" />
         </Triggers>
     </asp:UpdatePanel>
 </asp:Content>
