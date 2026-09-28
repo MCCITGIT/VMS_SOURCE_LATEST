@@ -6,6 +6,9 @@
 </asp:Content>--%>
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
 
+    <%-- Modified-by MUKESH BHAGAT on 28-09-2026 : the CalendarExtender day-overlap fix that was
+         page-scoped here has been folded into includes/upgrad-style.css (in place of the two
+         rules that caused it), so it now applies site-wide - removed from here. --%>
     <script type="text/javascript">var cal1 = new CalendarPopup();</script>
     <script src="Scripts/FunctionValidator.js" type="text/javascript"></script>
     <%--<asp:ScriptManager ID="ScriptManager1" runat="server"></asp:ScriptManager>--%>
