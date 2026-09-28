@@ -223,6 +223,12 @@ Partial Class VendorReleaseReconciliation
 
     End Sub
 
+    'Modified-by MUKESH BHAGAT on 28-09-2026 : From Date / To Date were disabled here, so a user
+    'who opened this page from a VprDashboard tile (Dispatched / Delivered / GRN Not Done /
+    'Manual GRN / Paid) could not widen or move the date range - the dashboard's From/To were
+    'locked in for good. The vendor itself (ddlUnit) and the Status/Depot/Type filters stay
+    'locked, since those come from the tile that was clicked; only the dates - and Search, so a
+    'changed date range can actually be applied - are left enabled.
     Private Sub DisableFilterControls()
 
         'Disable dropdowns
@@ -231,14 +237,6 @@ Partial Class VendorReleaseReconciliation
         divDepot.Visible = False
         divType.Visible = False
 
-
-        'Disable date textbox
-        txtFromDate.Enabled = False
-        txtTodate.Enabled = False
-
-
-        'Hide search button
-        ImgbtnSearch.Visible = False
         btndownload.Visible = False
 
     End Sub
@@ -557,9 +555,21 @@ Partial Class VendorReleaseReconciliation
         End Set
     End Property
 
-    'Only Admin and HO users may mark / undo a cancellation. Everyone can see the status
-    'and download the documents.
+    'Modified-by MUKESH BHAGAT on 28-09-2026 : explicit user-id deny-list, checked before the
+    'group check below. These two named logins (both HO-MARKETING) must NOT get the "Cancelled
+    'by Vendor" action, although their group otherwise has it - everything else on this page and
+    'every other HO-MARKETING screen/data access is unaffected; only this one action is blocked
+    'for them. Add / remove usp_user_id values here as business asks for named exceptions.
+    Private Shared ReadOnly CancellationDeniedUserIds As String() = {"14563", "14564"}
+
+    'Only Admin and HO users may mark / undo a cancellation - except the named exceptions above,
+    'who are blocked regardless of group. Everyone can see the status and download the documents.
     Private Function CanManageCancellation() As Boolean
+        Dim userId As String = Convert.ToString(userInfo.userIDEntity).Trim()
+        If CancellationDeniedUserIds.Contains(userId) Then
+            Return False
+        End If
+
         Dim g As String = Convert.ToString(userInfo.userGroupCodeEntity)
         Return g = Constant.UserFormAccess.SYSADMIN OrElse
                g = Constant.UserFormAccess.HO OrElse

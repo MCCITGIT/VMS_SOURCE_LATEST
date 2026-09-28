@@ -208,6 +208,59 @@ Partial Class VprDashboard
         BindGrid()
     End Sub
 
+    'Modified-by MUKESH BHAGAT on 28-09-2026 : Excel download of the vendor list. Same SP call as
+    'BindGrid ([payment_reconciliation_dashboard_dtls], table 1) for the same filters, so the file
+    'holds exactly what the grid shows - every vendor, not only the current page. Built with
+    'GridExcelExport (NPOI .xlsx, saved under Excel_Reports\ like the other exports).
+    Protected Sub btnExcel_Click(sender As Object, e As EventArgs)
+        Try
+            Dim vendorName As String = txtVendorName.Text.Trim()
+            Dim fromDate As Nullable(Of DateTime) = GetDateValue(txtFromDate.Text)
+            Dim toDate As Nullable(Of DateTime) = GetDateValue(txtToDate.Text)
+
+            Dim obj As New POLinkingRequestClass()
+            Dim ds As DataSet = obj.GetVendorPaymentDashboardDetails(vendorName, fromDate, toDate, userInfo.userIDEntity)
+
+            'the SP resolves blank dates to the current month - show the resolved period in the file
+            Dim fromText As String = txtFromDate.Text.Trim()
+            Dim toText As String = txtToDate.Text.Trim()
+            If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0).Rows.Count > 0 Then
+                Dim dateRow As DataRow = ds.Tables(0).Rows(0)
+                If Not IsDBNull(dateRow("from_date")) Then fromText = Convert.ToDateTime(dateRow("from_date")).ToString("dd-MM-yyyy")
+                If Not IsDBNull(dateRow("to_date")) Then toText = Convert.ToDateTime(dateRow("to_date")).ToString("dd-MM-yyyy")
+            End If
+
+            If ds Is Nothing OrElse ds.Tables.Count < 2 OrElse ds.Tables(1) Is Nothing OrElse ds.Tables(1).Rows.Count = 0 Then
+                lblErrorMessage.Text = "No records found for the selected criteria - nothing to download."
+                Return
+            End If
+            lblErrorMessage.Text = String.Empty
+
+            Dim cols As New List(Of GridExcelExport.ExportColumn) From {
+                New GridExcelExport.ExportColumn("Sl No", Nothing, GridExcelExport.ColumnKind.SerialNo, 7),
+                New GridExcelExport.ExportColumn("Vendor Code", "unit_code", GridExcelExport.ColumnKind.Text, 12),
+                New GridExcelExport.ExportColumn("Vendor Name", "unit_name", GridExcelExport.ColumnKind.Text, 40),
+                New GridExcelExport.ExportColumn("Dispatched", "approved_challan_count", GridExcelExport.ColumnKind.Number, 12),
+                New GridExcelExport.ExportColumn("Delivered", "delivered_count", GridExcelExport.ColumnKind.Number, 12),
+                New GridExcelExport.ExportColumn("GRN Not Done", "grn_not_done", GridExcelExport.ColumnKind.Number, 14),
+                New GridExcelExport.ExportColumn("Manual GRN", "manual_grn", GridExcelExport.ColumnKind.Number, 12),
+                New GridExcelExport.ExportColumn("Paid", "paid_status", GridExcelExport.ColumnKind.Number, 10)
+            }
+
+            Dim filterLine As String = "From : " & fromText & "   To : " & toText &
+                If(vendorName <> "", "   Vendor : " & vendorName, "   Vendor : All")
+
+            GridExcelExport.Export(ds.Tables(1), cols, "Payment Reconciliation Dashboard - Vendor List", filterLine,
+                                   userInfo.userCompanyEntity, "Payment_Reconciliation_Dashboard",
+                                   AppDomain.CurrentDomain.BaseDirectory, Response)
+        Catch ex As Threading.ThreadAbortException
+            'Response.End() - normal
+        Catch ex As Exception
+            Session(Constant.SessionKeys.ErrMessage) = Constant.ErrorMessages.ErrorExporttoExcel
+            Server.Transfer("~/ExceptionPage.aspx")
+        End Try
+    End Sub
+
     Protected Sub gvFgVendorlist_PageIndexChanging(sender As Object, e As GridViewPageEventArgs)
         gvFgVendorlist.PageIndex = e.NewPageIndex
         SaveSearchCriteria()

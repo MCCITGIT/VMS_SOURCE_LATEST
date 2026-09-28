@@ -935,10 +935,15 @@ Partial Class Dispatch_Details
                     HiddenField
                 )
 
-                Dim lblRmCode As Label =
+                'Modified-by MUKESH BHAGAT on 25-09-2026 : the raw material CODE for the TVP comes from
+                'hdnRmCode (ord_rawmaterial_code). Since the grid redesign of 28-08-2026 lblRmCode shows
+                'the material NAME (rmm_material_name), so sending lblRmCode.Text as rawmatcode matched
+                'nothing in opc_request_dtls and [opc_insert_dispatch_dtls] rejected every dispatch with
+                '"Can't Dispatch More Than Pending Quantity".
+                Dim hdnRmCode As HiddenField =
                 CType(
-                    row.FindControl("lblRmCode"),
-                    Label
+                    row.FindControl("hdnRmCode"),
+                    HiddenField
                 )
 
                 Dim lblRequestedQty As Label =
@@ -974,7 +979,7 @@ Partial Class Dispatch_Details
                     Convert.ToInt32(
                         hdnOrdID.Value
                     ),
-                    lblRmCode.Text.Trim(),
+                    hdnRmCode.Value.Trim(),
                     Convert.ToDecimal(
                         lblRequestedQty.Text
                     ),
