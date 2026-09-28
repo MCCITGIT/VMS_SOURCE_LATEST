@@ -147,15 +147,37 @@ Partial Class VendorReleaseReconciliation
     End Sub
 #End Region
 #Region "BindGrid"
+    'Modified-by MUKESH BHAGAT on 28-09-2026 : FromDate/ToDate parsing used to happen BEFORE the
+    'Try block, and the Catch below did Server.Transfer("~/ExceptionPage.aspx"). Search
+    '(ImgbtnSearch) and paging both fire as ASYNC postbacks (UpdatePanel1) - an unhandled
+    'FormatException, or a full HTML page sent back via Server.Transfer, both break the MS AJAX
+    'partial-postback response ("the message received from the server could not be parsed").
+    'Once that happens PageRequestManager gets stuck thinking a request is still in flight, and
+    'silently ignores every further async click on the page - Search again, paging, even the
+    'in-page Back button (btnBack) - until a full page reload. This is why editing the date and
+    'searching again "did nothing": a bad/unparseable date (or any other error) was crashing the
+    'first attempt, and everything after it went nowhere.
+    'Now: date parsing is inside the Try, a bad date shows a plain message via lblErrorMessage
+    'instead of throwing, and any other error also shows inline instead of transferring to a full
+    'page mid-async-postback.
     Private Sub BindGrid()
         CheckLogin()
-        Dim FromDate As SqlDateTime
-        Dim ToDate As SqlDateTime
-        FromDate = FormatDate(txtFromDate.Text)
-        ToDate = FormatDate(txtTodate.Text)
-        Dim pageNo = gvVendorInvoiceDtls.PageIndex + 1
-        Dim pageSize = gvVendorInvoiceDtls.PageSize
+        lblErrorMessage.Text = String.Empty
         Try
+            Dim FromDate As SqlDateTime
+            Dim ToDate As SqlDateTime
+            Try
+                FromDate = FormatDate(txtFromDate.Text)
+                ToDate = FormatDate(txtTodate.Text)
+            Catch fx As FormatException
+                lblErrorMessage.Text = "Please enter a valid From Date / To Date (dd/mm/yyyy)."
+                gvVendorInvoiceDtls.DataSource = Nothing
+                gvVendorInvoiceDtls.DataBind()
+                Return
+            End Try
+
+            Dim pageNo = gvVendorInvoiceDtls.PageIndex + 1
+            Dim pageSize = gvVendorInvoiceDtls.PageSize
             Dim obj As New POLinkingRequestClass
             Dim ds As New DataSet
             If Not String.IsNullOrEmpty(SelectedFlag) Then
@@ -193,9 +215,13 @@ Partial Class VendorReleaseReconciliation
                 gvVendorInvoiceDtls.DataBind()
             End If
         Catch ex As Exception
-            Dim returnUrl As String = "~/ExceptionPage.aspx"
-            Session(Constant.SessionKeys.ErrMessage) = Constant.ErrorMessages.GeneralError
-            Server.Transfer(returnUrl)
+            'Modified-by MUKESH BHAGAT on 28-09-2026 : no Server.Transfer here any more - Search and
+            'paging are async (UpdatePanel1); transferring to a full page mid-async-postback breaks
+            'the MS AJAX response and wedges the client for every further click on this page (see
+            'the note above BindGrid). Shown inline instead, same as every other message on this page.
+            lblErrorMessage.Text = Constant.ErrorMessages.GeneralError
+            gvVendorInvoiceDtls.DataSource = Nothing
+            gvVendorInvoiceDtls.DataBind()
         End Try
     End Sub
 
