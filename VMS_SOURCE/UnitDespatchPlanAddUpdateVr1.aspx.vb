@@ -298,7 +298,21 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             'GRN. Business asked to let such challans through for now. An invoice HIGHER than the
             'PO-rate total (Result <= lowerBound, vendor billing above PO rate) is still blocked.
             'The upperBound message / GridSummation() re-run below are unchanged for that case.
-            If Result <= lowerBound Then
+            '
+            'Modified-by MUKESH BHAGAT on 30-09-2026 : TEMPORARY, one-day exception for unit V02 only.
+            'V02's SKU rate was revised DOWN this month; GEMINI PAINTS invoice TL/0728/26-27 (Rs.
+            '4,08,217.46, GSTIN 36AAAFG0571A1Z3) was raised at the OLD, higher rate and is now above
+            'the new, lower PO-rate total (grid 3,95,865.22) by more than the band, blocking save at
+            'month end. Business asked for a narrow window so V02 alone can save today while the rate
+            'correction is sorted out. Scoped to unit V02 and to TODAY'S DATE ONLY (30-09-2026) - it
+            'goes inert on its own from tomorrow even if this block is not removed; no other unit is
+            'exempted, and V02 itself is exempted only for today, only on this one check.
+            'REMOVE this block once no longer needed - do not leave it in past 30-09-2026.
+            Dim isTemporaryV02Exception As Boolean =
+                String.Equals(userInfo.userBranchEntity, "V02", StringComparison.OrdinalIgnoreCase) AndAlso
+                DateTime.Today = New DateTime(2026, 9, 30)
+
+            If Result <= lowerBound AndAlso Not isTemporaryV02Exception Then
                 'Modified-by MUKESH BHAGAT on 17-09-2026 : say when freight was included, so the user
                 'can see why the grid footer total and this figure differ.
                 Dim freightNote As String = If(freightIncGst > 0, " (incl. freight " & ocrFreight.ToString("N2") & " + GST " & maxGst.ToString("N2") & "% = " & freightIncGst.ToString("N2") & ")", "")
