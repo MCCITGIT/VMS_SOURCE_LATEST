@@ -160,43 +160,63 @@ Partial Class VendorReleaseReconciliation
     'Now: date parsing is inside the Try, a bad date shows a plain message via lblErrorMessage
     'instead of throwing, and any other error also shows inline instead of transferring to a full
     'page mid-async-postback.
+    'Modified-by MUKESH BHAGAT on 01-10-2026 : pulled out of BindGrid so the Excel download
+    '(btndownload_Click) fetches exactly the same data the grid is showing - same SP, same
+    'SelectedFlag branch, same filters - instead of duplicating this branching a second time.
+    'Also sets lblPanelTitle, same as before.
+    Private Function GetCurrentListDataSet(ByVal fromDate As SqlDateTime, ByVal toDate As SqlDateTime, ByVal pageNo As Integer, ByVal pageSize As Integer) As DataSet
+        Dim obj As New POLinkingRequestClass
+        Dim ds As New DataSet
+        If SelectedFlag = "GRNNOTDONE" Then
+            lblPanelTitle.Text = "Grn Not Done List"
+            ds = obj.GetGrnNotDoneList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize)
+        ElseIf SelectedFlag = "MANUALGRN" Then
+            lblPanelTitle.Text = "Manual Grn List"
+            ds = obj.GetManualGrnList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize)
+        ElseIf SelectedFlag = "PAID" Then
+            lblPanelTitle.Text = "Payment List"
+            ds = obj.GetInvPaymentList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize)
+        ElseIf SelectedFlag = "DISPATCHED" Then
+            lblPanelTitle.Text = "Dispatched List"
+            ds = obj.GetDispatchList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize)
+        ElseIf SelectedFlag = "DELIVERED" Then
+            lblPanelTitle.Text = "Delivered List"
+            ds = obj.GetDeliveredList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize)
+        End If
+        Return ds
+    End Function
+
+    'Returns a friendly validation message, or empty if the dates are fine. Shared by BindGrid and
+    'the Excel download so both fail the same way on a bad date.
+    Private Function TryGetSearchDates(ByRef fromDate As SqlDateTime, ByRef toDate As SqlDateTime) As String
+        Try
+            fromDate = FormatDate(txtFromDate.Text)
+            toDate = FormatDate(txtTodate.Text)
+            Return String.Empty
+        Catch fx As FormatException
+            Return "Please enter a valid From Date / To Date (dd/mm/yyyy)."
+        End Try
+    End Function
+
     Private Sub BindGrid()
         CheckLogin()
         lblErrorMessage.Text = String.Empty
         Try
             Dim FromDate As SqlDateTime
             Dim ToDate As SqlDateTime
-            Try
-                FromDate = FormatDate(txtFromDate.Text)
-                ToDate = FormatDate(txtTodate.Text)
-            Catch fx As FormatException
-                lblErrorMessage.Text = "Please enter a valid From Date / To Date (dd/mm/yyyy)."
+            Dim dateError As String = TryGetSearchDates(FromDate, ToDate)
+            If dateError <> "" Then
+                lblErrorMessage.Text = dateError
                 gvVendorInvoiceDtls.DataSource = Nothing
                 gvVendorInvoiceDtls.DataBind()
                 Return
-            End Try
+            End If
 
             Dim pageNo = gvVendorInvoiceDtls.PageIndex + 1
             Dim pageSize = gvVendorInvoiceDtls.PageSize
-            Dim obj As New POLinkingRequestClass
-            Dim ds As New DataSet
+
             If Not String.IsNullOrEmpty(SelectedFlag) Then
-                If SelectedFlag = "GRNNOTDONE" Then
-                    lblPanelTitle.Text = "Grn Not Done List"
-                    ds = obj.GetGrnNotDoneList(ddlUnit.SelectedValue, FromDate, ToDate, pageNo, pageSize)
-                ElseIf SelectedFlag = "MANUALGRN" Then
-                    lblPanelTitle.Text = "Manual Grn List"
-                    ds = obj.GetManualGrnList(ddlUnit.SelectedValue, FromDate, ToDate, pageNo, pageSize)
-                ElseIf SelectedFlag = "PAID" Then
-                    lblPanelTitle.Text = "Payment List"
-                    ds = obj.GetInvPaymentList(ddlUnit.SelectedValue, FromDate, ToDate, pageNo, pageSize)
-                ElseIf SelectedFlag = "DISPATCHED" Then
-                    lblPanelTitle.Text = "Dispatched List"
-                    ds = obj.GetDispatchList(ddlUnit.SelectedValue, FromDate, ToDate, pageNo, pageSize)
-                ElseIf SelectedFlag = "DELIVERED" Then
-                    lblPanelTitle.Text = "Delivered List"
-                    ds = obj.GetDeliveredList(ddlUnit.SelectedValue, FromDate, ToDate, pageNo, pageSize)
-                End If
+                Dim ds As DataSet = GetCurrentListDataSet(FromDate, ToDate, pageNo, pageSize)
                 Dim totalRecords As Integer = 0
 
                 If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
@@ -255,6 +275,9 @@ Partial Class VendorReleaseReconciliation
     'locked in for good. The vendor itself (ddlUnit) and the Status/Depot/Type filters stay
     'locked, since those come from the tile that was clicked; only the dates - and Search, so a
     'changed date range can actually be applied - are left enabled.
+    'Modified-by MUKESH BHAGAT on 01-10-2026 : btndownload is no longer hidden here - Excel
+    'download now lives on this page (moved from VprDashboard.aspx) and must stay visible when
+    'the page is opened from a dashboard tile, which is the main way users reach this page.
     Private Sub DisableFilterControls()
 
         'Disable dropdowns
@@ -262,8 +285,6 @@ Partial Class VendorReleaseReconciliation
         divStatus.Visible = False
         divDepot.Visible = False
         divType.Visible = False
-
-        btndownload.Visible = False
 
     End Sub
 #End Region
@@ -305,23 +326,84 @@ Partial Class VendorReleaseReconciliation
     '        End If
     '    End If
     'End Sub
+    'Modified-by MUKESH BHAGAT on 01-10-2026 : moved here from VprDashboard.aspx (client wants the
+    'Excel download on this detail page - Dispatched/Delivered/GRN Not Done/Manual GRN/Paid - not
+    'on the dashboard). Rewritten to use the SAME data as the grid (GetCurrentListDataSet /
+    'SelectedFlag), not the old GetVendorInvoice_ReleaseList_vr1 search, which never matched what
+    'gvVendorInvoiceDtls actually shows (ddlStatus/ddltype/ddldepot are not read by BindGrid at all).
     Protected Sub btndownload_Click(sender As Object, e As EventArgs)
         CheckLogin()
-        Dim FromDate As SqlDateTime
-        Dim ToDate As SqlDateTime
-        Dim obj As New VendorInvoice_ReleaseClass
-        Dim ds As New DataSet
+        lblErrorMessage.Text = String.Empty
         Try
-            FromDate = FormatDate(txtFromDate.Text)
-            ToDate = FormatDate(txtTodate.Text)
-            ds = obj.GetVendorInvoice_ReleaseList_vr1(ddlUnit.SelectedValue, ddlStatus.SelectedValue, FromDate, ToDate, ddldepot.SelectedValue, ddltype.SelectedValue)
-            If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0) Then
-                If (Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
-                    ExportToExcelSheet1(ds)
-                End If
+            Dim FromDate As SqlDateTime
+            Dim ToDate As SqlDateTime
+            Dim dateError As String = TryGetSearchDates(FromDate, ToDate)
+            If dateError <> "" Then
+                lblErrorMessage.Text = dateError
+                Return
             End If
+
+            If String.IsNullOrEmpty(SelectedFlag) Then Return
+
+            'Full dataset - these SPs take no paging parameters and always return every matching row.
+            Dim ds As DataSet = GetCurrentListDataSet(FromDate, ToDate, 1, Integer.MaxValue)
+            If ds Is Nothing OrElse ds.Tables.Count = 0 OrElse ds.Tables(0) Is Nothing OrElse ds.Tables(0).Rows.Count = 0 Then
+                lblErrorMessage.Text = "No data to export."
+                Return
+            End If
+
+            Dim table As DataTable = ds.Tables(0).Copy()
+            If Not table.Columns.Contains("ExportStatus") Then
+                table.Columns.Add("ExportStatus", GetType(String))
+            End If
+            For Each row As DataRow In table.Rows
+                'Same fallback logic as gvVendorInvoiceDtls_RowDataBound, so the exported Status
+                'column always matches what's on screen.
+                Dim status As String = String.Empty
+                If table.Columns.Contains("status") Then
+                    status = Convert.ToString(row("status"))
+                End If
+                If String.IsNullOrEmpty(status) Then
+                    status = If(SelectedFlag = "PAID", "Paid", If(SelectedFlag = "DISPATCHED", "Dispatched", String.Empty))
+                End If
+                row("ExportStatus") = status
+            Next
+
+            Dim cols As New List(Of GridExcelExport.ExportColumn) From {
+                New GridExcelExport.ExportColumn("S.No", Nothing, GridExcelExport.ColumnKind.SerialNo, 7),
+                New GridExcelExport.ExportColumn("Depot", "depot_name", GridExcelExport.ColumnKind.Text, 20),
+                New GridExcelExport.ExportColumn("Invoice No", "Invoice_No", GridExcelExport.ColumnKind.Text, 16),
+                New GridExcelExport.ExportColumn("Invoice Date", "Invoice_Date", GridExcelExport.ColumnKind.Text, 14),
+                New GridExcelExport.ExportColumn("Invoice Value", "Invoice_Value", GridExcelExport.ColumnKind.Amount, 14),
+                New GridExcelExport.ExportColumn("Release No", "Release_No", GridExcelExport.ColumnKind.Text, 16),
+                New GridExcelExport.ExportColumn("Release Date", "Release_Date", GridExcelExport.ColumnKind.Text, 14),
+                New GridExcelExport.ExportColumn("GRN No", "GRN_No", GridExcelExport.ColumnKind.Text, 16),
+                New GridExcelExport.ExportColumn("GRN Date", "GRN_Date", GridExcelExport.ColumnKind.Text, 14),
+                New GridExcelExport.ExportColumn("Voucher No", "Voucher_No", GridExcelExport.ColumnKind.Text, 16),
+                New GridExcelExport.ExportColumn("Amount Paid", "Payment_Status", GridExcelExport.ColumnKind.Amount, 14),
+                New GridExcelExport.ExportColumn("Amount Due", "PendingAmount", GridExcelExport.ColumnKind.Amount, 14),
+                New GridExcelExport.ExportColumn("PO No", "po_number", GridExcelExport.ColumnKind.Text, 16),
+                New GridExcelExport.ExportColumn("Rtv Qty", "rtv_qty", GridExcelExport.ColumnKind.Number, 10),
+                New GridExcelExport.ExportColumn("Rtv Reason", "rtv_reason", GridExcelExport.ColumnKind.Text, 20),
+                New GridExcelExport.ExportColumn("Deliver Qty", "deliver_qty", GridExcelExport.ColumnKind.Number, 12),
+                New GridExcelExport.ExportColumn("Grn Status", "grn_status", GridExcelExport.ColumnKind.Text, 14),
+                New GridExcelExport.ExportColumn("Status", "ExportStatus", GridExcelExport.ColumnKind.Text, 16)
+            }
+
+            Dim filterLine As String = "From : " & txtFromDate.Text.Trim() & "   To : " & txtTodate.Text.Trim() &
+                "   Unit : " & If(ddlUnit.SelectedItem Is Nothing, "", ddlUnit.SelectedItem.Text)
+
+            'Modified-by MUKESH BHAGAT on 01-10-2026 : file name was hardcoded to
+            '"Vendor_Release_Reconciliation" for every view, so Dispatched/Delivered/GRN Not
+            'Done/Manual GRN/Paid all downloaded with the same file name. Now derived from
+            'SelectedFlag so each view gets its own name.
+            Dim fileBaseName As String = "Vendor_Release_Reconciliation_" &
+                If(String.IsNullOrEmpty(SelectedFlag), "List", SelectedFlag)
+
+            GridExcelExport.Export(table, cols, lblPanelTitle.Text, filterLine, userInfo.userCompanyEntity,
+                                   fileBaseName, AppDomain.CurrentDomain.BaseDirectory, Response)
         Catch ex As Exception
-            Dim MSG As String = ex.Message
+            lblErrorMessage.Text = Constant.ErrorMessages.GeneralError
         End Try
     End Sub
     Private Sub ExportToExcelSheet1(ByVal dset As DataSet)
