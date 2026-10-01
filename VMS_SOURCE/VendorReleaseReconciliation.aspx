@@ -404,6 +404,11 @@
             <asp:PostBackTrigger ControlID="btnSaveCancel" />
             <asp:PostBackTrigger ControlID="gvCancelDocs" />
 
+            <%-- Modified-by MUKESH BHAGAT on 01-10-2026 : Excel download, moved here from VprDashboard.aspx
+                 (client wants it on the detail page, not the dashboard). Same reason as btnSaveCancel above -
+                 streaming a file during an async postback corrupts the MS AJAX response. --%>
+            <asp:PostBackTrigger ControlID="btndownload" />
+
 
             <%--<asp:AsyncPostBackTrigger
                 ControlID="ddlPageNumber"
