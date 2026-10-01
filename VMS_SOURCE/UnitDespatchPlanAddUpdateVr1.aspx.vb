@@ -298,7 +298,25 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             'GRN. Business asked to let such challans through for now. An invoice HIGHER than the
             'PO-rate total (Result <= lowerBound, vendor billing above PO rate) is still blocked.
             'The upperBound message / GridSummation() re-run below are unchanged for that case.
-            If Result <= lowerBound Then
+            '
+            'Modified-by MUKESH BHAGAT on 30-09-2026 : the TEMPORARY, one-day exception for unit V02
+            '(month-end SKU rate correction) that sat here was removed after 30-09-2026 - deployed to
+            'production and used that day only, then reverted.
+            '
+            'Modified-by MUKESH BHAGAT on 01-10-2026 : re-added. V02 did not get the despatch challan
+            'entered on 30-09-2026 (same month-end SKU rate correction, still unresolved), so the
+            'challan still cannot save. Business asked for the same exception again, this time through
+            '02-10-2026. Scoped to unit V02 and to 01-10-2026 through 02-10-2026 ONLY (date range, not
+            'time-of-day) - it goes inert on its own from 03-10-2026 even if this block is not removed;
+            'no other unit is exempted, and V02 itself is exempted only in this window, only on this
+            'one check.
+            'REMOVE this block once no longer needed - do not leave it in past 02-10-2026.
+            Dim isTemporaryV02Exception As Boolean =
+                String.Equals(userInfo.userBranchEntity, "V02", StringComparison.OrdinalIgnoreCase) AndAlso
+                DateTime.Today >= New DateTime(2026, 10, 1) AndAlso
+                DateTime.Today <= New DateTime(2026, 10, 2)
+
+            If Result <= lowerBound AndAlso Not isTemporaryV02Exception Then
                 'Modified-by MUKESH BHAGAT on 17-09-2026 : say when freight was included, so the user
                 'can see why the grid footer total and this figure differ.
                 Dim freightNote As String = If(freightIncGst > 0, " (incl. freight " & ocrFreight.ToString("N2") & " + GST " & maxGst.ToString("N2") & "% = " & freightIncGst.ToString("N2") & ")", "")
