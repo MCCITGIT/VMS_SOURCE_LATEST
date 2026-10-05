@@ -487,7 +487,14 @@
                     <p class="pageSubTitle">Despatch, pending load and vendor insights</p>
                 </div>
             </div>
-            <div class="rightFung"></div>
+            <div class="rightFung">
+                <a class="complainBTCCard" id="tblComplainRegistrationLink" runat="server" href="https://bpilsharepoint1.bergerindia.com:97" target="_blank" title="For Product Complaint Click Here">
+                    <div class="newCard">
+                        <i class="fas fa-comment-dots cbtcImg"></i>
+                        <p>Complain/BTC</p>
+                    </div>
+                </a>
+            </div>
         </div>
 
         <asp:UpdatePanel ID="UpdatePanel" runat="server">
@@ -495,71 +502,72 @@
                 <asp:Literal ID="litPending" runat="server" Visible="false"></asp:Literal>
                 <asp:Literal ID="litDespatch" runat="server" Visible="false">></asp:Literal>
 
-                <div id="divSearch" class="card" runat="server">
-                    <div class="card-body">
-                        <div runat="server">
-                            <div class="row align-items-center">
-                                <div id="divVendor" class="col-md-3" runat="server">
-                                    <div class="form-group">
-                                        <label class="form-control-label">Vendor:</label>
-                                        <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server"></asp:DropDownList>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label class="form-control-label">Process Year:</label>
-                                        <asp:DropDownList ID="ddlProcessYr" runat="server" CssClass="form-control select2"></asp:DropDownList>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label class="form-control-label">Process Month:</label>
-                                        <asp:DropDownList ID="ddlProcessMnth" CssClass="form-control select2" runat="server">
-                                            <asp:ListItem>01</asp:ListItem>
-                                            <asp:ListItem>02</asp:ListItem>
-                                            <asp:ListItem>03</asp:ListItem>
-                                            <asp:ListItem>04</asp:ListItem>
-                                            <asp:ListItem>05</asp:ListItem>
-                                            <asp:ListItem>06</asp:ListItem>
-                                            <asp:ListItem>07</asp:ListItem>
-                                            <asp:ListItem>08</asp:ListItem>
-                                            <asp:ListItem>09</asp:ListItem>
-                                            <asp:ListItem>10</asp:ListItem>
-                                            <asp:ListItem>11</asp:ListItem>
-                                            <asp:ListItem>12</asp:ListItem>
-                                        </asp:DropDownList>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <%--<asp:Button ID="btnSearch" runat="server"
+                <div class="row">
+                    <div class="col-md-7">
+                        <div id="divSearch" class="card" runat="server">
+                            <div class="card-body">
+                                <div runat="server">
+                                    <div class="row align-items-center">
+                                        <div id="divVendor" class="col-md-4" runat="server">
+                                            <div class="form-group">
+                                                <label class="form-control-label">Vendor:</label>
+                                                <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server"></asp:DropDownList>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label class="form-control-label">Process Year:</label>
+                                                <asp:DropDownList ID="ddlProcessYr" runat="server" CssClass="form-control select2"></asp:DropDownList>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label class="form-control-label">Process Month:</label>
+                                                <asp:DropDownList ID="ddlProcessMnth" CssClass="form-control select2" runat="server">
+                                                    <asp:ListItem>01</asp:ListItem>
+                                                    <asp:ListItem>02</asp:ListItem>
+                                                    <asp:ListItem>03</asp:ListItem>
+                                                    <asp:ListItem>04</asp:ListItem>
+                                                    <asp:ListItem>05</asp:ListItem>
+                                                    <asp:ListItem>06</asp:ListItem>
+                                                    <asp:ListItem>07</asp:ListItem>
+                                                    <asp:ListItem>08</asp:ListItem>
+                                                    <asp:ListItem>09</asp:ListItem>
+                                                    <asp:ListItem>10</asp:ListItem>
+                                                    <asp:ListItem>11</asp:ListItem>
+                                                    <asp:ListItem>12</asp:ListItem>
+                                                </asp:DropDownList>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 mt-2">
+                                            <%--<asp:Button ID="btnSearch" runat="server"
                                 Text="Search"
                                 CssClass="btn btn-primary btn-sm mt-2"
                                 OnClick="btnSearch_Click" />--%>
-                                    <asp:LinkButton ID="btnSearch" runat="server" CssClass="btn btn-primary btn-sm rmp-btn-icon" ToolTip="Search" OnClick="btnSearch_Click"><i class="fas fa-search"></i></asp:LinkButton>
+                                            <asp:LinkButton ID="btnSearch" runat="server" CssClass="btn btn-primary btn-sm rmp-btn-icon" ToolTip="Search" OnClick="btnSearch_Click"><i class="fas fa-search"></i></asp:LinkButton>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div id="divNewsCard" class="card" runat="server">
-                    <div class="card-body">
-                        <div class="row" runat="server">
-                            <div class="col-md-12">
-                                <div class="flashComplainBTCCard">
-                                    <div class="newCard w100 home-card-flash">
-                                        <div class="newCardHead">
-                                            <h3 class="newHeadTitle">Flash News</h3>
-                                        </div>
-                                        <div class="newCardBody">
-                                            <div class="noRecordFnew" id="news_marquee_scroll" runat="server">No new updates at the moment.</div>
+                    <div class="col-md-5">
+                        <div id="divNewsCard" class="card" runat="server">
+                            <div class="card-body">
+                                <div class="row" runat="server">
+                                    <div class="col-md-12">
+                                        <div class="flashComplainBTCCard">
+                                            <div class="newCard w100 home-card-flash">
+                                                <div class="newCardHead">
+                                                    <h3 class="newHeadTitle">Flash News</h3>
+                                                </div>
+                                                <div class="newCardBody">
+                                                    <div class="noRecordFnew" id="news_marquee_scroll" runat="server">No new updates at the moment.</div>
+                                                </div>
+                                            </div>
+
                                         </div>
                                     </div>
-                                    <a class="complainBTCCard" id="tblComplainRegistrationLink" runat="server" href="https://bpilsharepoint1.bergerindia.com:97" target="_blank" title="For Product Complaint Click Here">
-                                        <div class="newCard">
-                                            <i class="fas fa-comment-dots cbtcImg"></i>
-                                            <p>Complain/BTC</p>
-                                        </div>
-                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -588,6 +596,11 @@
                                         <div class="home-stock-chip">
                                             <asp:Label ID="lblLastStockUpdateDate" runat="server" Font-Bold="True" ForeColor="Red"></asp:Label>
                                         </div>
+                                    </div>
+                                    <div class="dbStockAsOn">
+                                        <svg data-dc-tpl="79" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" style="fill: none; stroke: currentcolor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;">
+                                            <rect data-dc-tpl="80" x="3" y="5" width="18" height="16" rx="2"></rect><path data-dc-tpl="81" d="M3 10h18"></path><path data-dc-tpl="82" d="M8 3v4"></path><path data-dc-tpl="83" d="M16 3v4"></path>
+                                        </svg>
                                     </div>
                                 </div>
                             </div>

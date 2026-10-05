@@ -29,6 +29,7 @@ body {
     /*padding-bottom: 40px;*/
     height: 100vh;
     width: 100%;
+    background: rgb(242, 244, 247);
 }
 
 .header {
@@ -93,7 +94,7 @@ body {
     gap: 6px;*/
     padding: 8px 16px !important;
     min-height: 50px;
-    margin-bottom: 1rem !important;
+    margin-bottom: 0.75rem !important;
     border-radius: 14px !important;
     position: relative;
     z-index: 1;
@@ -290,19 +291,20 @@ body {
 }
 
 .card {
-    box-shadow: 0px 2px 6px rgb(0 0 0 / 25%);
-    margin-bottom: 1rem;
+    box-shadow: 0px 2px 6px rgb(0 0 0 / 8%);
+    margin-bottom: 0.75rem;
     border-radius: 16px;
-    /*background-color: #fbfbfb;*/
-    /*background-color: #f8f9fb;*/
-    background-color: #fcfcfd;
-    border-left: 3px solid #375973;
-    padding: 10px;
+    /* background-color: #fbfbfb; */
+    /* background-color: #f8f9fb; */
+    background-color: #ffffff;
+    border-left: 3px solid #375973 !important;
+    padding: 10px 12px;
+    border: 1px solid rgb(225, 230, 236);
 }
 
 .card-body {
-    padding: 10px;
-    background: #F5F9FD;
+    padding: 0px;
+    /* background: #F5F9FD; */
     border-radius: 15px;
 }
 
@@ -387,7 +389,7 @@ body {
 }
 
     .upgradDataGrid .gridBtn {
-        padding: 6px 12px !important;
+        padding: 5px 10px !important;
         font-size: 10px;
         line-height: 12px;
         text-transform: uppercase;
@@ -482,7 +484,7 @@ body {
     }
 
     .upgradDataGrid .tlrowlight {
-        background-color: #ffffff;
+        background-color: #f1f4f7;
         height: auto !important;
         color: #333;
     }
@@ -503,7 +505,7 @@ body {
     .upgradDataGrid td {
         border: 0 !important;
         border-bottom: 1px solid #eef1f5 !important;
-        background: transparent !important;
+        /*background: transparent !important;*/
         vertical-align: middle !important;
     }
 
@@ -513,15 +515,15 @@ body {
         font-weight: 700 !important;
         letter-spacing: 0.04em;
         text-transform: uppercase !important;
-        padding: 11px 8px !important;
+        padding: 8px 8px !important;
         line-height: 13px !important;
         white-space: nowrap;
     }
 
     .upgradDataGrid td {
-        color: #1f2937 !important;
+        color: #001a2f !important;
         font-size: 12px !important;
-        padding: 7px 8px !important;
+        padding: 6px 8px !important;
         line-height: 15px !important;
         transition: background-color 0.18s ease;
     }
@@ -530,9 +532,9 @@ body {
         border-right: 1px;
     }
 
-    .upgradDataGrid tr:hover td {
+    /*.upgradDataGrid tr:hover td {
         background: #fafbfd !important;
-    }
+    }*/
 
     .upgradDataGrid .btn,
     .upgradDataGrid .btn-sm {
@@ -1137,6 +1139,7 @@ body {
     margin-left: 250px;
     padding: 4.6875rem 1rem 1rem 1rem;
     transition: all 0.3s;
+    background: rgb(242, 244, 247);
 }
 
 .sideNavBarView.active + .contentMainBody {
@@ -3149,21 +3152,20 @@ body {
     .upgradDataGrid .tlrowlight {
         border: 1px solid #ededed !important;
         box-shadow: 0 0 2px 0 #00000020 !important;
-        /*background-color: #f9f9f9;*/
     }
 
 /* Hover lift */
-.table-hover > tbody > tr.t1rowlight:hover > td {
+/*.table-hover > tbody > tr.t1rowlight:hover > td {
     background: #fbfcfd !important;
     box-shadow: 0 3px 8px rgba(16, 24, 40, .08);
-}
+}*/
 
 
 /* Hover lift */
-.table-hover > tbody > tr.t1rowlight:hover > td {
+/*.table-hover > tbody > tr.t1rowlight:hover > td {
     background: #fbfcfd !important;
     box-shadow: 0 3px 8px rgba(16, 24, 40, .08);
-}
+}*/
 
 .table-responsive table {
     margin-bottom: 0;
@@ -3894,10 +3896,10 @@ body {
     box-sizing: content-box !important;
 }
 
-.ajax__calendar_container table,
-.ajax__calendar_container table * {
-    box-sizing: content-box !important;
-}
+    .ajax__calendar_container table,
+    .ajax__calendar_container table * {
+        box-sizing: content-box !important;
+    }
 
 .ajax__calendar_days table {
     width: 100% !important;
@@ -3916,4 +3918,18 @@ body {
     justify-content: left;
     width: 100%;
     left: 0;
+}
+.dbStockAsOn {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: rgb(242, 244, 247);
+    color: rgb(16, 36, 58);
+    position: absolute;
+    top: 9px;
+    right: 18px;
 }
