@@ -7,7 +7,8 @@
 'Description	    :Code behind file for user logout
 '
 'Modified By       Modified On       Version         Reason
-'
+' Mukesh Bhagat     05-October-2026   R01.02.00       Clear session and auth cookie so the
+'                                                     next login is not filtered by the previous user.
 '****************************************************************************************
 Imports VMS.Web
 Partial Class Logout
@@ -22,40 +23,36 @@ Partial Class Logout
 #End Region
 #Region "SignOut Activities"
 
-    ' Kill the Session. Reset the appropriate session variables and expire the cookie
+    ' Drop the current user's session and auth cookie, then send the browser to login.
     Private Sub SignOut()
         Try
+            Session.Clear()
             Session.Abandon()
-            FormsAuthentication.SignOut()
-            FormsAuthentication.Initialize()
-            Dim context As HttpContext = HttpContext.Current
-            'Session(Constant.SessionKeys.GetServerTime) = Nothing
-            'Session(Constant.SessionKeys.UserLogged) = False
-            'Session(Constant.SessionKeys.UserLogged) = Nothing
-            'Session("PartyId") = Nothing
-            Dim cookie As New HttpCookie(FormsAuthentication.FormsCookieName, String.Empty)
-            cookie.Path = FormsAuthentication.FormsCookiePath
-            cookie.Expires = DateTime.Now
-            context.Response.Cookies.Remove(FormsAuthentication.FormsCookieName)
-            context.Response.Cookies.Add(cookie)
-
-
         Catch ex As Exception
-
         End Try
 
-        Dim nextpage As String = "../VMS"
-        Response.Write("<Script language=javaScript >")
-        Response.Write("{")
-        Response.Write("var backhistory=history.length;")
-        Response.Write("history.go(-(backhistory+backhistory+backhistory));")
-        Response.Write(" window.location.href='" & nextpage & "'; ")
+        ExpireCookie("ASP.NET_SessionId")
+        FormsAuthentication.SignOut()
+        ExpireCookie(FormsAuthentication.FormsCookieName)
 
+        Response.Redirect("~/Login.aspx", True)
+    End Sub
 
-        Response.Write("}")
-        Response.Write("</script>")
+    Private Sub ExpireCookie(ByVal cookieName As String)
+        Dim expired As New HttpCookie(cookieName, String.Empty)
+        expired.Expires = DateTime.Now.AddDays(-1)
+        expired.HttpOnly = True
+        expired.Path = "/"
+        Response.Cookies.Add(expired)
 
-        Response.Redirect("~/Login.aspx")
+        Dim appPath As String = Request.ApplicationPath
+        If Not String.IsNullOrEmpty(appPath) AndAlso Not appPath.Equals("/", StringComparison.OrdinalIgnoreCase) Then
+            Dim expiredForApp As New HttpCookie(cookieName, String.Empty)
+            expiredForApp.Expires = DateTime.Now.AddDays(-1)
+            expiredForApp.HttpOnly = True
+            expiredForApp.Path = appPath
+            Response.Cookies.Add(expiredForApp)
+        End If
     End Sub
 #End Region
 
