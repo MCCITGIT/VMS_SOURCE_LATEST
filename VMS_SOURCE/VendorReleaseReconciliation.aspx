@@ -27,7 +27,7 @@
 
     <asp:UpdatePanel ID="UpdatePanel1" runat="server" UpdateMode="Conditional">
 
-        <contenttemplate>
+        <ContentTemplate>
             <div class="card">
                 <div class="card-body">
                     <div class="row">
@@ -63,7 +63,7 @@
                                 </asp:DropDownList>
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label class="form-control-label">From Date:</label>
                                 <asp:TextBox ID="txtFromDate" CssClass="form-control" runat="server" MaxLength="10"></asp:TextBox>
@@ -73,7 +73,7 @@
                                 <asp:CalendarExtender ID="CalendarExtender1" runat="server" TargetControlID="txtFromDate" Format="dd/MM/yyyy" />
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label class="form-control-label">To Date:</label>
                                 <asp:TextBox ID="txtTodate" CssClass="form-control" runat="server" MaxLength="10"></asp:TextBox>
@@ -83,7 +83,7 @@
                                 <asp:CalendarExtender ID="CalendarExtender2" runat="server" TargetControlID="txtTodate" Format="dd/MM/yyyy" />
                             </div>
                         </div>
-                        <div class="col-md-3 form-btn-mt">
+                        <div class="col-md-2 form-btn-mt">
                             <div class="form-group">
                                 <%--<asp:ImageButton CssClass="btn btn-primary btn-sm" ID="ImgbtnSearch" runat="server" ImageUrl="images/ic_search.gif" ToolTip="Search" AlternateText="Search" />--%>
                                 <%-- Modified-by MUKESH BHAGAT on 28-09-2026 : removed the OnClick="ImgbtnSearch_Click"
@@ -91,6 +91,10 @@
                                      "Handles ImgbtnSearch.Click". Both together fired ImgbtnSearch_Click
                                      (and BindGrid) TWICE per Search click, within one async postback. --%>
                                 <asp:LinkButton CssClass="btn btn-primary btn-sm" ID="ImgbtnSearch" runat="server" ToolTip="Search" Text="Search"></asp:LinkButton>
+                            </div>
+                        </div>
+                        <div class="col-md-12" style="text-align: center;">
+                            <div class="form-group">
                                 <asp:LinkButton CssClass="btn btn-success btn-sm" ID="btndownload" runat="server" OnClick="btndownload_Click" Text="Download" ToolTip="Download" />
                                 <asp:LinkButton CssClass="btn btn-secondary btn-sm" ID="btnBack" runat="server" OnClick="btnBack_Click" Text="Back" ToolTip="Back" />
                             </div>
@@ -113,91 +117,91 @@
                 <div class="card-body">
                     <div class="table-responsive rm-grid-scroll">
                         <asp:GridView ID="gvVendorInvoiceDtls" runat="server" AutoGenerateColumns="false" PageSize="10" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
-                            <rowstyle cssclass="tlrowlight" />
-                            <pagerstyle cssclass="PagerGrid" horizontalalign="left" />
-                            <headerstyle cssclass="headerGrid" />
-                            <footerstyle cssclass="footerGrid" />
-                            <columns>
+                            <RowStyle CssClass="tlrowlight" />
+                            <PagerStyle CssClass="PagerGrid" HorizontalAlign="left" />
+                            <HeaderStyle CssClass="headerGrid" />
+                            <FooterStyle CssClass="footerGrid" />
+                            <Columns>
                                 <asp:BoundField DataField="org_id" Visible="false" />
                                 <asp:BoundField HeaderText="Type" DataField="Type">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="Release ID" DataField="desph_release_id">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="Depot" DataField="depot_name">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="Invoice No" DataField="Invoice_No">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="10%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="10%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="Invoice Date" DataField="Invoice_Date"
                                     DataFormatString="{0:dd-MMM-yyyy}">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="7%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="7%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="7%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="7%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="Invoice Value" DataField="Invoice_Value"
                                     DataFormatString="{0:N2}">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="Release No" DataField="Release_No">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="Release Date" DataField="Release_Date"
                                     DataFormatString="{0:dd-MMM-yyyy}">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="7%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="7%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="7%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="7%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="GRN No" DataField="GRN_No">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="GRN Date" DataField="GRN_Date"
                                     DataFormatString="{0:dd-MMM-yyyy}">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="7%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="7%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="7%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="7%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="Voucher No" DataField="Voucher_No">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="Amount Paid" DataField="Payment_Status"
                                     DataFormatString="{0:N2}">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="Amount Due" DataField="PendingAmount"
                                     DataFormatString="{0:N2}">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="PO No" DataField="po_number">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="Rtv Qty" DataField="rtv_qty"
                                     DataFormatString="{0:N2}">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="Rtv Reason" DataField="rtv_reason">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="Deliver Qty" DataField="deliver_qty"
                                     DataFormatString="{0:N2}">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
                                 <asp:BoundField HeaderText="Grn Status" DataField="grn_status">
-                                    <headerstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
-                                    <itemstyle horizontalalign="Center" verticalalign="Middle" width="8%" />
+                                    <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
+                                    <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                 </asp:BoundField>
                                 <%-- Modified-by MUKESH BHAGAT on 11-09-2026 : Status column. Dispatch List: Admin / HO
                                      can mark a release "Cancelled by Vendor" and attach the credit note; Paid List:
@@ -308,8 +312,10 @@
                             </div>
                             <div class="modal-body">
                                 <p class="mb-2">
-                                    Release ID: <asp:Label ID="lblCancelReleaseId" runat="server" Font-Bold="true"></asp:Label>
-                                    &nbsp;|&nbsp; Invoice No: <asp:Label ID="lblCancelInvoiceNo" runat="server" Font-Bold="true"></asp:Label>
+                                    Release ID:
+                                    <asp:Label ID="lblCancelReleaseId" runat="server" Font-Bold="true"></asp:Label>
+                                    &nbsp;|&nbsp; Invoice No:
+                                    <asp:Label ID="lblCancelInvoiceNo" runat="server" Font-Bold="true"></asp:Label>
                                 </p>
                                 <div class="form-group">
                                     <label class="form-control-label">Credit Note / Supporting Document (PDF):<span class="mandatory">*</span></label>
@@ -342,8 +348,10 @@
                             </div>
                             <div class="modal-body">
                                 <p class="mb-2">
-                                    Release ID: <asp:Label ID="lblDocsReleaseId" runat="server" Font-Bold="true"></asp:Label>
-                                    &nbsp;|&nbsp; Invoice No: <asp:Label ID="lblDocsInvoiceNo" runat="server" Font-Bold="true"></asp:Label>
+                                    Release ID:
+                                    <asp:Label ID="lblDocsReleaseId" runat="server" Font-Bold="true"></asp:Label>
+                                    &nbsp;|&nbsp; Invoice No:
+                                    <asp:Label ID="lblDocsInvoiceNo" runat="server" Font-Bold="true"></asp:Label>
                                 </p>
                                 <div class="table-responsive">
                                     <asp:GridView ID="gvCancelDocs" runat="server" AutoGenerateColumns="false" CssClass="table table-hover upgradDataGrid" EmptyDataText="No document attached.">
@@ -351,26 +359,32 @@
                                         <HeaderStyle CssClass="headerGrid" />
                                         <Columns>
                                             <asp:BoundField HeaderText="#" DataField="vcd_doc_srl_no">
-                                                <HeaderStyle HorizontalAlign="Center" Width="5%" /><ItemStyle HorizontalAlign="Center" Width="5%" />
+                                                <HeaderStyle HorizontalAlign="Center" Width="5%" />
+                                                <ItemStyle HorizontalAlign="Center" Width="5%" />
                                             </asp:BoundField>
                                             <asp:BoundField HeaderText="Document" DataField="vcd_doc_org_filename">
-                                                <HeaderStyle HorizontalAlign="Left" Width="35%" /><ItemStyle HorizontalAlign="Left" Width="35%" />
+                                                <HeaderStyle HorizontalAlign="Left" Width="35%" />
+                                                <ItemStyle HorizontalAlign="Left" Width="35%" />
                                             </asp:BoundField>
                                             <asp:BoundField HeaderText="Remarks" DataField="vcd_remarks">
-                                                <HeaderStyle HorizontalAlign="Left" Width="30%" /><ItemStyle HorizontalAlign="Left" Width="30%" />
+                                                <HeaderStyle HorizontalAlign="Left" Width="30%" />
+                                                <ItemStyle HorizontalAlign="Left" Width="30%" />
                                             </asp:BoundField>
                                             <asp:BoundField HeaderText="Uploaded By" DataField="created_user">
-                                                <HeaderStyle HorizontalAlign="Center" Width="10%" /><ItemStyle HorizontalAlign="Center" Width="10%" />
+                                                <HeaderStyle HorizontalAlign="Center" Width="10%" />
+                                                <ItemStyle HorizontalAlign="Center" Width="10%" />
                                             </asp:BoundField>
                                             <asp:BoundField HeaderText="Uploaded On" DataField="created_date" DataFormatString="{0:dd-MMM-yyyy HH:mm}">
-                                                <HeaderStyle HorizontalAlign="Center" Width="12%" /><ItemStyle HorizontalAlign="Center" Width="12%" />
+                                                <HeaderStyle HorizontalAlign="Center" Width="12%" />
+                                                <ItemStyle HorizontalAlign="Center" Width="12%" />
                                             </asp:BoundField>
                                             <asp:TemplateField HeaderText="Download">
                                                 <ItemTemplate>
                                                     <asp:LinkButton ID="lnkDownloadCancelDoc" runat="server" CommandName="DownloadCancelDoc" CommandArgument='<%# Eval("vcd_id") %>'
                                                         CssClass="btn btn-outline-success btn-sm" ToolTip="Download"><i class="fa fa-download"></i></asp:LinkButton>
                                                 </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Center" Width="8%" /><ItemStyle HorizontalAlign="Center" Width="8%" />
+                                                <HeaderStyle HorizontalAlign="Center" Width="8%" />
+                                                <ItemStyle HorizontalAlign="Center" Width="8%" />
                                             </asp:TemplateField>
                                         </Columns>
                                     </asp:GridView>
@@ -389,7 +403,7 @@
         </ContentTemplate>
 
 
-        <triggers>
+        <Triggers>
 
             <asp:AsyncPostBackTrigger
                 ControlID="ddlUnit"
@@ -413,19 +427,19 @@
             <%--<asp:AsyncPostBackTrigger
                 ControlID="ddlPageNumber"
                 EventName="SelectedIndexChanged" />--%>
-        </triggers>
+        </Triggers>
 
 
     </asp:UpdatePanel>
     <%--</div>--%>
-          <%--  </div>--%>
-            <script type="text/javascript">
+    <%--  </div>--%>
+    <script type="text/javascript">
 
-                function initializePageDropdown() {
+        function initializePageDropdown() {
 
-                   /* $('.selectpicker').selectpicker();*/
+            /* $('.selectpicker').selectpicker();*/
 
-                }
+        }
 
                 <%-- Modified-by MUKESH BHAGAT on 28-09-2026 : the site already shows a full-screen
                      loading overlay on every async postback (updProgress in MasterPage.master), but
@@ -437,9 +451,9 @@
                      itself when the response comes back - success or error. Scoped to ImgbtnSearch
                      only, via the postback element's id, so Back / Download / grid paging are
                      unaffected. --%>
-                (function () {
-                    var searchBtnId = "ctl00_ContentPlaceHolder1_ImgbtnSearch";
-                    var savedText = "";
+        (function () {
+            var searchBtnId = "ctl00_ContentPlaceHolder1_ImgbtnSearch";
+            var savedText = "";
 
                     <%-- Modified-by MUKESH BHAGAT on 28-09-2026 : wrapped in try/catch - a handler
                          registered on Sys.WebForms.PageRequestManager that throws could, depending on
@@ -501,5 +515,5 @@
 
                 }
 
-            </script>
+    </script>
 </asp:Content>

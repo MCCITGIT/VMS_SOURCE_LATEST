@@ -473,7 +473,7 @@ body {
         }*/
 
         .upgradDataGrid tr th a i, .upgradDataGrid tr td a i {
-            font-size: 12px;
+            font-size: 16px;
             margin: 0px 1px;
             font-weight: 600;
         }
@@ -526,6 +526,7 @@ body {
         padding: 6px 8px !important;
         line-height: 15px !important;
         transition: background-color 0.18s ease;
+        text-align: center;
     }
 
     .upgradDataGrid tr td:last-child {
