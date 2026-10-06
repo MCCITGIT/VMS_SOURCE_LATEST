@@ -244,6 +244,17 @@ Partial Class UnitDespatchPlanAddUpdateVr1
                 End If
             Next
 
+            'Modified-by MUKESH BHAGAT on 02-10-2026 : no SKU ticked used to fall through to the
+            'Final Invoice Value check below with a Total Rate of 0.00, so the vendor got "Final
+            'Invoice Value ... is higher than the Total Rate of 0.00" instead of being told to pick
+            'a SKU (the "select atleast one SKU" message further down was never reached). Same
+            'message, same behaviour, just raised before the rate check.
+            If ChkCount = 0 Then
+                ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('Please select atleast one SKU');", True)
+                ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
+                Exit Sub
+            End If
+
             'Modified-by MUKESH BHAGAT on 17-09-2026 : freight. The bill total is SKU taxable + freight
             '+ GST (GST is charged on the freight too - verified on Soujanya bill DS2627102720: line items
             '1,033,524 + freight 15,708 = taxable 1,049,232, IGST 18% on that = 188,861.76, total
@@ -313,8 +324,8 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             'REMOVE this block once no longer needed - do not leave it in past 02-10-2026.
             Dim isTemporaryV02Exception As Boolean =
                 String.Equals(userInfo.userBranchEntity, "V02", StringComparison.OrdinalIgnoreCase) AndAlso
-                DateTime.Today >= New DateTime(2026, 10, 1) AndAlso
-                DateTime.Today <= New DateTime(2026, 10, 2)
+                DateTime.Today >= New DateTime(2026, 10, 4) AndAlso
+                DateTime.Today <= New DateTime(2026, 10, 6)
 
             If Result <= lowerBound AndAlso Not isTemporaryV02Exception Then
                 'Modified-by MUKESH BHAGAT on 17-09-2026 : say when freight was included, so the user
