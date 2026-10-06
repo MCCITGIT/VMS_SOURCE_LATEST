@@ -213,8 +213,8 @@
         <ContentTemplate>
             <div class="card">
                 <div class="card-body">
-                    <div class="row" style="flex-wrap: nowrap;">
-                        <div class="col-md-2">
+                    <div class="row">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <asp:UpdatePanel runat="server" ID="UpdatePanel12">
                                     <ContentTemplate>
@@ -224,7 +224,7 @@
                                 </asp:UpdatePanel>
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <asp:UpdatePanel runat="server" ID="UpdatePanel4">
                                     <ContentTemplate>
@@ -260,7 +260,7 @@
                                 <asp:FileUpload runat="server" class="form-control" ID="FileUpload1" />
                             </div>
                         </div>
-                        <div class="col-md-3 form-btn-mt">
+                        <div class="col-md-12" style="text-align: center;">
                             <asp:UpdatePanel runat="server" ID="UpdatePanel3">
                                 <ContentTemplate>
                                     <asp:Button ID="btnUpload" runat="server" ToolTip="Click to Upload File" Text="Upload" CssClass="btn btn-primary btn-sm" Visible="false" />

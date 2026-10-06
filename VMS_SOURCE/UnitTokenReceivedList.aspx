@@ -73,7 +73,7 @@
                 </div>
                 <div class="col-md-2 form-btn-mt">
                     <div class="form-group">
-                        <asp:ImageButton ImageUrl="images/ic_search.gif" CssClass="btn btn-primary btn-sm" ID="imgbtnSearch" runat="server" />
+                        <asp:ImageButton ImageUrl="images/p-search.png" title="Search" CssClass="btn btn-primary btn-sm py-2" ID="imgbtnSearch" runat="server" />
                     </div>
                 </div>
             </div>
@@ -82,6 +82,15 @@
     </div>
 
     <div class="card">
+        <div class="mst-panel-header" style="padding-top: 0;">
+            <div class="mst-panel-header-left">
+                <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
+                <div>
+                    <h5 class="mst-panel-title">Token Despatches List</h5>
+                    <p class="mst-panel-subtitle">Browse and manage user profiles</p>
+                </div>
+            </div>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <asp:UpdatePanel ID="UpdatePanel1" runat="server">
@@ -187,10 +196,9 @@
                                     <asp:TemplateField HeaderText="View" ControlStyle-Width="100%">
                                         <HeaderTemplate>
                                             <span>View</span>
-
                                         </HeaderTemplate>
                                         <ItemTemplate>
-                                            <asp:ImageButton ID="imgBtnSubmit" ImageUrl="~/images/ic_view.gif" CommandArgument='<%# Bind("tdh_despatch_id")%>' CommandName="EditRequisition" Style="width: 27%" ToolTip="View" runat="server" />
+                                            <asp:ImageButton ID="imgBtnSubmit" ImageUrl="~/images/p-view.png" title="View" CommandArgument='<%# Bind("tdh_despatch_id")%>' CommandName="EditRequisition" Style="width: 27%" ToolTip="View" runat="server" />
                                         </ItemTemplate>
 
                                         <ControlStyle Width="100%"></ControlStyle>

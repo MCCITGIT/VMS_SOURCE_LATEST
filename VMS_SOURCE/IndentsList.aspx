@@ -106,6 +106,15 @@
             </div>
 
             <div class="card">
+                <div class="mst-panel-header">
+                    <div class="mst-panel-header-left">
+                        <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
+                        <div>
+                            <h5 class="mst-panel-title">Depot Indents List</h5>
+                            <p class="mst-panel-subtitle">Browse and manage user profiles</p>
+                        </div>
+                    </div>
+                </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <asp:UpdatePanel ID="UpdatePanel1" runat="server">
