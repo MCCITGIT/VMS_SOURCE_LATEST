@@ -57,8 +57,8 @@
                             <div class="form-group">
                                 <label class="form-control-label">Challan Date:<span id="Span1" class="mandatory">*</span></label>
                                 <asp:TextBox ID="txtChallanDate" ClientIDMode="Static" runat="server" CssClass="form-control" MaxLength="10"></asp:TextBox>
-                                <a class="formCalndIcon" href="javascript:cal1.select(document.forms[0].txtChallanDate,'ChallanDate','dd/MM/yyyy');">
-                                    <img src="images/date_icon.gif" id="ChallanDate" alt="Calender" style="border: 0" />
+                                <a class="formCalndIcon" href="javascript:cal1.select(document.forms[0].txtChallanDate,'ChallanDate','dd/MM/yyyy');" style="top: 26px; right: 7px;">
+                                    <img src="images/p-calendar.png" id="ChallanDate" alt="Calender" style="border: 0" />
                                 </a>
                             </div>
                         </div>
@@ -137,8 +137,8 @@
                             <div class="form-group">
                                 <label class="form-control-label">Vednor Challan Date:<span id="Span11" class="mandatory">*</span></label>
                                 <asp:TextBox ID="txtCenvatDate" ClientIDMode="Static" CssClass="form-control" runat="server" MaxLength="10"></asp:TextBox>
-                                <a class="formCalndIcon" href="javascript:cal1.select(document.forms[0].txtCenvatDate,'CenvatDate','dd/MM/yyyy');">
-                                    <img src="images/date_icon.gif" id="CenvatDate" alt="Calender" style="border: 0" />
+                                <a class="formCalndIcon" href="javascript:cal1.select(document.forms[0].txtCenvatDate,'CenvatDate','dd/MM/yyyy');" style="top: 26px; right: 7px;">
+                                    <img src="images/p-calendar.png" id="CenvatDate" alt="Calender" style="border: 0" />
                                 </a>
                             </div>
                         </div>
@@ -158,8 +158,8 @@
                             <div class="form-group">
                                 <label class="form-control-label">Receipt Date:<span id="Span14" class="mandatory">*</span></label>
                                 <asp:TextBox ID="txtReceiptDate" ClientIDMode="Static" CssClass="form-control" runat="server" MaxLength="10"></asp:TextBox>
-                                <a class="formCalndIcon" href="javascript:cal1.select(document.forms[0].txtReceiptDate,'ReceiptDate','dd/MM/yyyy');">
-                                    <img src="images/date_icon.gif" id="ReceiptDate" alt="Calender" style="border: 0" />
+                                <a class="formCalndIcon" href="javascript:cal1.select(document.forms[0].txtReceiptDate,'ReceiptDate','dd/MM/yyyy');" style="top: 26px; right: 7px;">
+                                    <img src="images/p-calendar.png" id="ReceiptDate" alt="Calender" style="border: 0" />
                                 </a>
                             </div>
                         </div>

@@ -28,12 +28,20 @@
     padding-right: 6px;
 }
 
+.vms-home .card {
+    /*margin-bottom: 0.5rem;*/
+}
+
+.vms-home .card-body {
+    /*padding: 8px 10px;*/
+}
+
 .vms-home .newCard {
-    border-radius: var(--home-radius);
+    border-radius: 12px;
     border: 1px solid var(--home-line);
     background: var(--home-surface);
     box-shadow: var(--home-shadow);
-    margin: 0 0 10px 0;
+    margin-bottom: 8px;
     overflow: hidden;
 }
 
@@ -41,14 +49,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    padding: 10px 14px 8px;
+    gap: 6px;
+    padding: 6px 10px 4px;
     border-bottom: 0;
     background: transparent;
 }
 
 .vms-home .newCardBody {
-    padding: 0 14px 12px;
+    padding: 0 10px 8px;
 }
 
 .vms-home .newHeadTitle {
@@ -66,7 +74,7 @@
     align-items: stretch;
     gap: 10px;
     width: 100%;
-    margin-bottom: 10px;
+    margin: 9px 0px;
 }
 
 .vms-home .flashComplainBTCCard > .newCard {
@@ -76,8 +84,8 @@
     width: auto !important;
     display: flex;
     align-items: center;
-    min-height: 48px;
-    padding: 0 14px;
+    min-height: 40px;
+    padding: 0 10px;
     background: #eef4fa;
     border-color: #d7e4f0;
     box-shadow: none;
@@ -132,8 +140,8 @@
 
 .vms-home .complainBTCCard .newCard {
     height: 100%;
-    min-height: 48px;
-    min-width: 132px;
+    min-height: 34px;
+    min-width: 156px;
     margin: 0;
     padding: 0 16px;
     display: flex;
@@ -144,7 +152,7 @@
     border: 0;
     border-radius: 999px;
     background: linear-gradient(180deg, #2270ad 0%, #10385a 100%);
-    box-shadow: 0 6px 14px rgba(16, 56, 90, 0.22);
+    box-shadow: 0 2px 6px rgba(16, 56, 90, 0.22);
     transition: transform 0.12s ease, filter 0.18s ease;
 }
 
@@ -180,9 +188,9 @@
 .vms-home .home-action-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
     align-items: stretch;
-    min-height: 36px;
+    min-height: 30px;
 }
 
 .vms-home .home-action-list br {
@@ -192,8 +200,8 @@
 .vms-home .home-action-list a {
     display: inline-flex;
     align-items: center;
-    min-height: 36px;
-    padding: 6px 12px;
+    min-height: 30px;
+    padding: 4px 10px;
     border-radius: 999px;
     border: 1px solid #f3e4c4;
     background: #fff8eb;
@@ -227,8 +235,8 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    min-height: 36px;
-    padding: 6px 4px;
+    min-height: 28px;
+    padding: 2px 2px;
 }
 
 .vms-home .home-stock-chip [id$="lblLastStockUpdateDate"] {
@@ -241,7 +249,7 @@
 
 .vms-home .home-card-action,
 .vms-home .home-card-stock {
-    margin-bottom: 10px;
+    margin-bottom: 0px;
 }
 
 .vms-home .home-card-action .newCardHead,
@@ -251,7 +259,7 @@
 
 /* ---- Chart (primary left card) ---- */
 .vms-home .home-card-chart .newCardHead {
-    padding: 12px 14px 4px;
+    padding: 6px 10px 2px;
 }
 
 .vms-home .home-chart-frame {
@@ -277,17 +285,17 @@
 .vms-home .dbQuikCardList {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    margin: 0 0 10px 0;
+    gap: 8px;
+    margin: 0 0 8px 0;
     align-items: stretch;
 }
 
 .vms-home .loopQuikCars {
     width: auto;
     height: auto;
-    min-height: 118px;
+    min-height: 96px;
     margin: 0;
-    padding: 12px 12px 8px;
+    padding: 8px 10px 6px;
     border-radius: 16px;
     border: 1px solid var(--home-line);
     background: var(--home-surface);
@@ -308,8 +316,8 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 6px;
+    gap: 6px;
+    margin-bottom: 2px;
 }
 
 .vms-home .qk-top .quikName {
@@ -390,8 +398,8 @@
 .vms-home .quikLink {
     position: static;
     margin: auto 0 0 auto;
-    padding: 8px 0 2px;
-    min-height: 28px;
+    padding: 4px 0 0;
+    min-height: 22px;
     width: auto;
     display: inline-flex;
     align-items: center;
@@ -479,7 +487,7 @@
 .vms-home .menu {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
 }
 
 .vms-home .menu:empty {
@@ -498,8 +506,8 @@
 .vms-home .menu-item {
     width: auto;
     margin: 0;
-    padding: 7px 12px;
-    min-height: 36px;
+    padding: 4px 10px;
+    min-height: 30px;
     border: 1px solid var(--home-line);
     border-radius: 999px;
     background: var(--home-soft);
@@ -590,9 +598,9 @@
     border-bottom: 0 !important;
 }
 
-.vms-home .upgradDataGrid tr:hover td {
+/*.vms-home .upgradDataGrid tr:hover td {
     background: #f7fafc;
-}
+}*/
 
 .vms-home .home-card-vendor-ty td:nth-child(2),
 .vms-home .home-card-vendor-ly td:nth-child(2) {
