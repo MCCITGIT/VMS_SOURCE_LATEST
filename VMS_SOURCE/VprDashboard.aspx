@@ -268,7 +268,7 @@
                 </div>
 
                 <div class="card rm-list-fill">
-                    <div class="mst-panel-header">
+                    <div class="mst-panel-header" style="margin-bottom: 0;">
                         <div class="mst-panel-header-left">
                             <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
                             <div>
