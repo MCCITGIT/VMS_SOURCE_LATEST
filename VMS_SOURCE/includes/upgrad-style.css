@@ -303,8 +303,8 @@ body {
 }
 
 .card-body {
-    padding: 0px;
-    /* background: #F5F9FD; */
+    padding: 0;
+    /*background: #F5F9FD;*/
     border-radius: 15px;
 }
 
@@ -335,7 +335,7 @@ body {
 }
 
 .card .card-body .btn {
-    padding: .25rem .95rem;
+    padding: 6px 20px;
     border-radius: 16px;
 }
 
@@ -473,7 +473,7 @@ body {
         }*/
 
         .upgradDataGrid tr th a i, .upgradDataGrid tr td a i {
-            font-size: 12px;
+            font-size: 16px;
             margin: 0px 1px;
             font-weight: 600;
         }
@@ -526,6 +526,7 @@ body {
         padding: 6px 8px !important;
         line-height: 15px !important;
         transition: background-color 0.18s ease;
+        text-align: center;
     }
 
     .upgradDataGrid tr td:last-child {

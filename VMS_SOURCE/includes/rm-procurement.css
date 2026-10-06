@@ -1017,7 +1017,7 @@ body:has(.rm-module) .bootstrapModal .modal-title {
 }
 
 .rm-compact .mst-panel-header {
-    padding: 10px 16px 0 !important;
+    padding: 0 !important;
 }
 
 .rm-compact .mst-panel-icon {
@@ -1037,7 +1037,7 @@ body:has(.rm-module) .bootstrapModal .modal-title {
 }
 
 .rm-compact .card-body {
-    padding: 10px 16px 12px !important;
+    padding: 0 !important;
 }
 
 .rm-compact .form-control-label {
