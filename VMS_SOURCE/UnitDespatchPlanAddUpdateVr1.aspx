@@ -1685,12 +1685,10 @@
         // If the OCR service itself is unreachable the save proceeds (fail-open) so a
         // service outage can never stop despatches - flip OCR_FAIL_OPEN to change that.
         var OCR_FAIL_OPEN = true;
-        // Modified-by MUKESH BHAGAT on 06-10-2026 : COLOURANT_INV_AI
-        // (invoice-data?use_ai=true&fast_mode=false) is down, so Submit must not call it
-        // and must not block the challan. Set this back to true when the service is up.
-        // While it is true, a response that takes longer than OCR_API_TIMEOUT_MS, or no
-        // response at all, is treated the same way: the bill check is skipped and the save continues.
-        var OCR_VALIDATION_ENABLED = false;
+        // Modified-by MUKESH BHAGAT on 06-10-2026 : COLOURANT_INV_AI is live again, so Submit
+        // checks the uploaded bill. If the call fails or does not answer within
+        // OCR_API_TIMEOUT_MS, the bill check is skipped and the save continues.
+        var OCR_VALIDATION_ENABLED = true;
         var OCR_API_TIMEOUT_MS = 30000;
         var ocrPassThrough = false;
 
@@ -1716,8 +1714,8 @@
                         return;
                     }
 
-                    // Modified-by MUKESH BHAGAT on 06-10-2026 : service is down. 'S' is accepted by
-                    // the server as "uploaded, not validated", so the challan can be saved.
+                    // Used only if OCR_VALIDATION_ENABLED is turned off. 'S' is accepted by the
+                    // server as "uploaded, not validated", so the challan can still be saved.
                     if (!OCR_VALIDATION_ENABLED) {
                         ocrSetVerified('S');
                         return;
