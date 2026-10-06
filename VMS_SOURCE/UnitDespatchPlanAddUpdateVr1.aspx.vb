@@ -375,6 +375,8 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             'Modified-by MUKESH BHAGAT on 09-09-2026 : "S" is also accepted - the browser sets it when the
             'bill could not be validated (OCR service down / unreadable PDF) and the user explicitly
             'chose to save anyway after the warning. Only an unchecked submit ("N") is refused.
+            'Modified-by MUKESH BHAGAT on 06-10-2026 : "S" is also set when COLOURANT_INV_AI is switched
+            'off, or when it does not answer within OCR_API_TIMEOUT_MS. Those saves are not blocked.
             If sch_fld1.HasFile Then
                 Dim ocrFlag As String = Convert.ToString(hdnOcrVerified.Value).Trim().ToUpperInvariant()
                 If ocrFlag <> "Y" AndAlso ocrFlag <> "S" Then
