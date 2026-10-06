@@ -69,9 +69,9 @@
                         </div>
                         <div class="col-md-12 text-center">
                             <div class="form-group">
-                                <asp:ImageButton ImageUrl="images/ic_search.gif" CssClass="btn btn-primary btn-sm" ID="imgbtnSearch" runat="server" />
-                                <asp:ImageButton ImageUrl="~/images/ic_add.gif" CssClass="btn btn-success btn-sm" ID="imgbtnAdd" runat="server" PostBackUrl="~/OC_Specification_Dtls.aspx" />
-                                <asp:ImageButton ImageUrl="~/images/ic_download.png" CssClass="btn btn-info btn-sm" ID="imgDownload" runat="server" PostBackUrl="~/OCSpecificationUpload.aspx" />
+                                <asp:ImageButton ImageUrl="images/p-search.png" CssClass="btn btn-primary btn-sm" ID="imgbtnSearch" runat="server" />
+                                <asp:ImageButton ImageUrl="~/images/p-plus.png" CssClass="btn btn-success btn-sm" ID="imgbtnAdd" runat="server" PostBackUrl="~/OC_Specification_Dtls.aspx" />
+                                <asp:ImageButton ImageUrl="~/images/p-downloads.png" CssClass="btn btn-info btn-sm" ID="imgDownload" runat="server" PostBackUrl="~/OCSpecificationUpload.aspx" />
                             </div>
                         </div>
                     </div>

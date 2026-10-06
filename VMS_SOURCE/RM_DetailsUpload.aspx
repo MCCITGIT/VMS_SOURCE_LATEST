@@ -3,7 +3,7 @@
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
 
 
-    <asp:UpdateProgress ID="updProgress" runat="server" DisplayAfter="0">
+   <%-- <asp:UpdateProgress ID="updProgress" runat="server" DisplayAfter="0">
         <ProgressTemplate>
             <div class="pageLoader">
                 <div class="innerLoader">
@@ -12,7 +12,7 @@
                 </div>
             </div>
         </ProgressTemplate>
-    </asp:UpdateProgress>
+    </asp:UpdateProgress>--%>
 
 
     <div class="breadcrumbs">

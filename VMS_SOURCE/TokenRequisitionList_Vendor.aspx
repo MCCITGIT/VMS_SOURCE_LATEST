@@ -63,8 +63,8 @@
                 </div>
                 <div class="col-md-3 form-btn-mt">
                     <div class="form-group">
-                        <asp:ImageButton CssClass="btn btn-primary btn-sm" ImageUrl="images/ic_search.gif" ID="imgbtnSearch" ToolTip="Search" runat="server" />
-                        <asp:ImageButton CssClass="btn btn-info btn-sm" ImageUrl="~/images/ic_add.gif" Visible="false" ToolTip="Make a new despatch" ID="imgbtnAdd" runat="server" />
+                        <asp:ImageButton CssClass="btn btn-primary btn-sm py-2" ImageUrl="images/p-search.png" ID="imgbtnSearch" ToolTip="Search" runat="server" />
+                        <asp:ImageButton CssClass="btn btn-info btn-sm" ImageUrl="~/images/p-add.png" Visible="false" ToolTip="Make a new despatch" ID="imgbtnAdd" runat="server" />
                     </div>
                 </div>
             </div>
