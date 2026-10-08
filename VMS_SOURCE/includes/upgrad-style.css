@@ -389,7 +389,7 @@ body {
 }
 
     .upgradDataGrid .gridBtn {
-        padding: 5px 10px !important;
+        padding: 4px 8px !important;
         font-size: 10px;
         line-height: 12px;
         text-transform: uppercase;
@@ -523,7 +523,7 @@ body {
     .upgradDataGrid td {
         color: #001a2f !important;
         font-size: 12px !important;
-        padding: 6px 8px !important;
+        padding: 4px 8px !important;
         line-height: 15px !important;
         transition: background-color 0.18s ease;
         /*text-align: center;*/
@@ -3139,7 +3139,7 @@ body {
 .upgradDataGrid {
     width: 100%;
     border-collapse: separate !important;
-    border-spacing: 0 6px;
+    border-spacing: 0 4px;
     background: transparent !important;
     border: 0 !important;
 }
