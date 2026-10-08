@@ -94,7 +94,7 @@ body {
     gap: 6px;*/
     padding: 8px 16px !important;
     min-height: 50px;
-    margin-bottom: 0.75rem !important;
+    margin-bottom: 0.5rem !important;
     border-radius: 14px !important;
     position: relative;
     z-index: 1;
@@ -526,7 +526,7 @@ body {
         padding: 6px 8px !important;
         line-height: 15px !important;
         transition: background-color 0.18s ease;
-        text-align: center;
+        /*text-align: center;*/
     }
 
     .upgradDataGrid tr td:last-child {
@@ -1138,7 +1138,7 @@ body {
 /* Content */
 .contentMainBody {
     margin-left: 250px;
-    padding: 4.6875rem 1rem 1rem 1rem;
+    padding: 4.5rem 1rem 1rem 1rem;
     transition: all 0.3s;
     background: rgb(242, 244, 247);
 }
