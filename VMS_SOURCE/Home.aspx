@@ -176,9 +176,9 @@
     <style>
         .legend {
             display: flex;
-            gap: 20px;
-            margin: 12px 0;
-            font-size: 13px;
+            gap: 12px;
+            margin: 6px 0;
+            font-size: 12px;
             color: #333;
         }
 
@@ -212,8 +212,8 @@
         .sku-row {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 10px 0;
+            gap: 8px;
+            padding: 6px 0;
             border-bottom: 1px solid #f0f0f0;
         }
 
@@ -305,7 +305,7 @@
         .sku-panel-row {
             display: flex;
             align-items: stretch;
-            gap: 24px;
+            gap: 14px;
         }
 
         .sku-list-col {
@@ -320,14 +320,14 @@
             align-items: center;
             justify-content: center;
             border-left: 1px solid #f0f0f0;
-            padding-left: 20px;
+            padding-left: 12px;
         }
 
         .sku-summary-inner {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 14px;
+            gap: 8px;
             width: 100%;
         }
 
@@ -381,8 +381,8 @@
         .sku-summary-stats {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            font-size: 13px;
+            gap: 4px;
+            font-size: 12px;
             color: #444;
             width: 100%;
         }
@@ -423,7 +423,7 @@
     <%-- For Lazy Loading --%>
     <style>
         .rm-grid-scroll {
-            max-height: 400px;
+            max-height: 320px;
             overflow-y: auto;
         }
 
@@ -474,6 +474,18 @@
         .mst-acc-card.is-open .mst-acc-body {
             max-height: 1200px;
         }
+
+        .card .card-body .btn-cust {
+            padding: 1px 8px;
+        }
+
+            .card .card-body .btn-cust i {
+                font-size: 10px;
+            }
+
+        .card .card-body .btn {
+            padding: 2px 20px;
+        }
     </style>
 
     <div class="vms-home">
@@ -502,244 +514,246 @@
                 <asp:Literal ID="litPending" runat="server" Visible="false"></asp:Literal>
                 <asp:Literal ID="litDespatch" runat="server" Visible="false">></asp:Literal>
 
-                <div class="row">
-                    <div class="col-md-7">
-                        <div id="divSearch" class="card" runat="server">
-                            <div class="card-body">
-                                <div runat="server">
-                                    <div class="row align-items-center">
-                                        <div id="divVendor" class="col-md-4" runat="server">
-                                            <div class="form-group">
-                                                <label class="form-control-label">Vendor:</label>
-                                                <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server"></asp:DropDownList>
+                <div class="home-dash">
+                    <div class="row">
+                        <div class="col-md-7">
+                            <div id="divSearch" class="card" runat="server">
+                                <div class="card-body">
+                                    <div runat="server">
+                                        <div class="row align-items-center">
+                                            <div id="divVendor" class="col-md-4" runat="server">
+                                                <div class="form-group">
+                                                    <label class="form-control-label">Vendor:</label>
+                                                    <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server"></asp:DropDownList>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label class="form-control-label">Process Year:</label>
-                                                <asp:DropDownList ID="ddlProcessYr" runat="server" CssClass="form-control select2"></asp:DropDownList>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label class="form-control-label">Process Year:</label>
+                                                    <asp:DropDownList ID="ddlProcessYr" runat="server" CssClass="form-control select2"></asp:DropDownList>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label class="form-control-label">Process Month:</label>
-                                                <asp:DropDownList ID="ddlProcessMnth" CssClass="form-control select2" runat="server">
-                                                    <asp:ListItem>01</asp:ListItem>
-                                                    <asp:ListItem>02</asp:ListItem>
-                                                    <asp:ListItem>03</asp:ListItem>
-                                                    <asp:ListItem>04</asp:ListItem>
-                                                    <asp:ListItem>05</asp:ListItem>
-                                                    <asp:ListItem>06</asp:ListItem>
-                                                    <asp:ListItem>07</asp:ListItem>
-                                                    <asp:ListItem>08</asp:ListItem>
-                                                    <asp:ListItem>09</asp:ListItem>
-                                                    <asp:ListItem>10</asp:ListItem>
-                                                    <asp:ListItem>11</asp:ListItem>
-                                                    <asp:ListItem>12</asp:ListItem>
-                                                </asp:DropDownList>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label class="form-control-label">Process Month:</label>
+                                                    <asp:DropDownList ID="ddlProcessMnth" CssClass="form-control select2" runat="server">
+                                                        <asp:ListItem>01</asp:ListItem>
+                                                        <asp:ListItem>02</asp:ListItem>
+                                                        <asp:ListItem>03</asp:ListItem>
+                                                        <asp:ListItem>04</asp:ListItem>
+                                                        <asp:ListItem>05</asp:ListItem>
+                                                        <asp:ListItem>06</asp:ListItem>
+                                                        <asp:ListItem>07</asp:ListItem>
+                                                        <asp:ListItem>08</asp:ListItem>
+                                                        <asp:ListItem>09</asp:ListItem>
+                                                        <asp:ListItem>10</asp:ListItem>
+                                                        <asp:ListItem>11</asp:ListItem>
+                                                        <asp:ListItem>12</asp:ListItem>
+                                                    </asp:DropDownList>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="col-md-2 mt-2">
-                                            <%--<asp:Button ID="btnSearch" runat="server"
+                                            <div class="col-md-2 mt-2">
+                                                <%--<asp:Button ID="btnSearch" runat="server"
                                 Text="Search"
                                 CssClass="btn btn-primary btn-sm mt-2"
                                 OnClick="btnSearch_Click" />--%>
-                                            <asp:LinkButton ID="btnSearch" runat="server" CssClass="btn btn-primary btn-sm rmp-btn-icon" ToolTip="Search" OnClick="btnSearch_Click"><i class="fas fa-search"></i></asp:LinkButton>
+                                                <asp:LinkButton ID="btnSearch" runat="server" CssClass="btn btn-primary btn-sm rmp-btn-icon" ToolTip="Search" OnClick="btnSearch_Click"><i class="fas fa-search"></i></asp:LinkButton>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-5">
-                        <div id="divNewsCard" class="card" runat="server">
-                            <div class="card-body">
-                                <div class="row" runat="server">
-                                    <div class="col-md-12">
-                                        <div class="flashComplainBTCCard">
-                                            <div class="newCard w100 home-card-flash">
-                                                <div class="newCardHead">
-                                                    <h3 class="newHeadTitle">Flash News</h3>
+                        <div class="col-md-5">
+                            <div id="divNewsCard" class="card" runat="server">
+                                <div class="card-body">
+                                    <div class="row" runat="server">
+                                        <div class="col-md-12">
+                                            <div class="flashComplainBTCCard">
+                                                <div class="newCard w100 home-card-flash">
+                                                    <div class="newCardHead">
+                                                        <h3 class="newHeadTitle">Flash News</h3>
+                                                    </div>
+                                                    <div class="newCardBody">
+                                                        <div class="noRecordFnew" id="news_marquee_scroll" runat="server">No new updates at the moment.</div>
+                                                    </div>
                                                 </div>
-                                                <div class="newCardBody">
-                                                    <div class="noRecordFnew" id="news_marquee_scroll" runat="server">No new updates at the moment.</div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="divAction" class="card" runat="server">
+                        <div class="card-body">
+                            <div class="row" runat="server">
+                                <div class="col-md-8">
+                                    <div class="newCard w100 home-card-action">
+                                        <div class="newCardHead">
+                                            <h3 class="newHeadTitle">Action Required</h3>
+                                        </div>
+                                        <div class="newCardBody">
+                                            <div id="tdActionReq" runat="server" class="home-action-list"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="newCard w100 home-card-stock">
+                                        <div class="newCardHead">
+                                            <h3 class="newHeadTitle">Stock As On</h3>
+                                        </div>
+                                        <div class="newCardBody">
+                                            <div class="home-stock-chip">
+                                                <asp:Label ID="lblLastStockUpdateDate" runat="server" Font-Bold="True" ForeColor="Red"></asp:Label>
+                                            </div>
+                                        </div>
+                                        <div class="dbStockAsOn">
+                                            <svg data-dc-tpl="79" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" style="fill: none; stroke: currentcolor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;">
+                                                <rect data-dc-tpl="80" x="3" y="5" width="18" height="16" rx="2"></rect><path data-dc-tpl="81" d="M3 10h18"></path><path data-dc-tpl="82" d="M8 3v4"></path><path data-dc-tpl="83" d="M16 3v4"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="divSumData" class="card" runat="server">
+                        <div class="card-body">
+                            <div class="row" runat="server">
+                                <div class="col-6">
+                                    <div class="newCard w100 home-card-action mst-acc-card">
+                                        <div class="newCardHead mst-acc-header" data-acc-group="sumdata" data-acc-target="accBrandBody">
+                                            <h3 class="newHeadTitle">Brand Wise</h3>
+                                            <span class="mst-acc-chevron"><i class="fas fa-chevron-down"></i></span>
+                                        </div>
+                                        <div id="accBrandBody" class="mst-acc-body">
+                                            <div class="newCardBody">
+                                                <div class="table-responsive rm-grid-scroll">
+                                                    <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0" ClientIDMode="Static"
+                                                        ID="gvBrandList" runat="server" AutoGenerateColumns="false" PageSize="10" Visible="true" OnRowCommand="gvBrandList_RowCommand"
+                                                        ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
+                                                        PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
+                                                        <RowStyle CssClass="tlrowlight" />
+                                                        <PagerStyle CssClass="PagerGrid" HorizontalAlign="Left" />
+                                                        <HeaderStyle CssClass="headerGrid" />
+                                                        <FooterStyle CssClass="footerGrid" />
+                                                        <Columns>
+                                                            <asp:TemplateField HeaderText="Sl No">
+                                                                <ItemTemplate>
+                                                                    <asp:Label ID="lblbrandid" runat="server" Text='<%# (gvBrandList.PageIndex * gvBrandList.PageSize) + Container.DataItemIndex + 1 %>'></asp:Label>
+                                                                </ItemTemplate>
+                                                                <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
+                                                                <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
+                                                            </asp:TemplateField>
+                                                            <asp:TemplateField HeaderText="Brand Name">
+                                                                <ItemTemplate>
+                                                                    <asp:Label ID="lblBrandName" runat="server" Text='<%# Bind("brand_name") %>'></asp:Label>
+                                                                </ItemTemplate>
+                                                                <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
+                                                                <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
+                                                            </asp:TemplateField>
+                                                            <asp:TemplateField HeaderText="Total">
+                                                                <ItemTemplate>
+                                                                    <asp:Label ID="lblTotalLoad" runat="server" Text='<%# Bind("total_load") %>'></asp:Label>
+                                                                </ItemTemplate>
+                                                            </asp:TemplateField>
+                                                            <asp:TemplateField HeaderText="Despatched">
+                                                                <ItemTemplate>
+                                                                    <asp:Label ID="lblTotalDes" runat="server" Text='<%# Bind("total_despatched") %>'></asp:Label>
+                                                                </ItemTemplate>
+                                                            </asp:TemplateField>
+                                                            <asp:TemplateField HeaderText="Serviceability(%)">
+                                                                <ItemTemplate>
+                                                                    <asp:Label ID="lblKg" runat="server" Text='<%# Bind("serviceability_percentage") %>'></asp:Label>
+                                                                </ItemTemplate>
+                                                            </asp:TemplateField>
+                                                            <asp:TemplateField HeaderText="Action">
+                                                                <ItemTemplate>
+                                                                    <asp:LinkButton ID="lbView"
+                                                                        runat="server"
+                                                                        Text="View"
+                                                                        CssClass="btn btn-sm btn-primary btn-cust"
+                                                                        CommandName="ViewBrand">
+                                                    <i class="fa fa-arrow-right"></i>
+                                                                    </asp:LinkButton>
+                                                                </ItemTemplate>
+                                                                <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
+                                                                <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
+                                                            </asp:TemplateField>
+                                                        </Columns>
+                                                    </asp:GridView>
                                                 </div>
                                             </div>
-
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="divAction" class="card" runat="server">
-                    <div class="card-body">
-                        <div class="row" runat="server">
-                            <div class="col-md-8">
-                                <div class="newCard w100 home-card-action">
-                                    <div class="newCardHead">
-                                        <h3 class="newHeadTitle">Action Required</h3>
-                                    </div>
-                                    <div class="newCardBody">
-                                        <div id="tdActionReq" runat="server" class="home-action-list"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="newCard w100 home-card-stock">
-                                    <div class="newCardHead">
-                                        <h3 class="newHeadTitle">Stock As On</h3>
-                                    </div>
-                                    <div class="newCardBody">
-                                        <div class="home-stock-chip">
-                                            <asp:Label ID="lblLastStockUpdateDate" runat="server" Font-Bold="True" ForeColor="Red"></asp:Label>
+                                <div class="col-6">
+                                    <div class="newCard w100 home-card-stock mst-acc-card">
+                                        <div class="newCardHead mst-acc-header" data-acc-group="sumdata" data-acc-target="accVendorBody">
+                                            <h3 class="newHeadTitle">Vendor Wise</h3>
+                                            <span class="mst-acc-chevron"><i class="fas fa-chevron-down"></i></span>
                                         </div>
-                                    </div>
-                                    <div class="dbStockAsOn">
-                                        <svg data-dc-tpl="79" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" style="fill: none; stroke: currentcolor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;">
-                                            <rect data-dc-tpl="80" x="3" y="5" width="18" height="16" rx="2"></rect><path data-dc-tpl="81" d="M3 10h18"></path><path data-dc-tpl="82" d="M8 3v4"></path><path data-dc-tpl="83" d="M16 3v4"></path>
-                                        </svg>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="divSumData" class="card" runat="server">
-                    <div class="card-body">
-                        <div class="row" runat="server">
-                            <div class="col-6">
-                                <div class="newCard w100 home-card-action mst-acc-card">
-                                    <div class="newCardHead mst-acc-header" data-acc-group="sumdata" data-acc-target="accBrandBody">
-                                        <h3 class="newHeadTitle">Brand Wise</h3>
-                                        <span class="mst-acc-chevron"><i class="fas fa-chevron-down"></i></span>
-                                    </div>
-                                    <div id="accBrandBody" class="mst-acc-body">
-                                        <div class="newCardBody">
-                                            <div class="table-responsive rm-grid-scroll">
-                                                <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0" ClientIDMode="Static"
-                                                    ID="gvBrandList" runat="server" AutoGenerateColumns="false" PageSize="10" Visible="true" OnRowCommand="gvBrandList_RowCommand"
-                                                    ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
-                                                    PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
-                                                    <RowStyle CssClass="tlrowlight" />
-                                                    <PagerStyle CssClass="PagerGrid" HorizontalAlign="Left" />
-                                                    <HeaderStyle CssClass="headerGrid" />
-                                                    <FooterStyle CssClass="footerGrid" />
-                                                    <Columns>
-                                                        <asp:TemplateField HeaderText="Sl No">
-                                                            <ItemTemplate>
-                                                                <asp:Label ID="lblbrandid" runat="server" Text='<%# (gvBrandList.PageIndex * gvBrandList.PageSize) + Container.DataItemIndex + 1 %>'></asp:Label>
-                                                            </ItemTemplate>
-                                                            <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
-                                                            <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
-                                                        </asp:TemplateField>
-                                                        <asp:TemplateField HeaderText="Brand Name">
-                                                            <ItemTemplate>
-                                                                <asp:Label ID="lblBrandName" runat="server" Text='<%# Bind("brand_name") %>'></asp:Label>
-                                                            </ItemTemplate>
-                                                            <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
-                                                            <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
-                                                        </asp:TemplateField>
-                                                        <asp:TemplateField HeaderText="Total">
-                                                            <ItemTemplate>
-                                                                <asp:Label ID="lblTotalLoad" runat="server" Text='<%# Bind("total_load") %>'></asp:Label>
-                                                            </ItemTemplate>
-                                                        </asp:TemplateField>
-                                                        <asp:TemplateField HeaderText="Despatched">
-                                                            <ItemTemplate>
-                                                                <asp:Label ID="lblTotalDes" runat="server" Text='<%# Bind("total_despatched") %>'></asp:Label>
-                                                            </ItemTemplate>
-                                                        </asp:TemplateField>
-                                                        <asp:TemplateField HeaderText="Serviceability(%)">
-                                                            <ItemTemplate>
-                                                                <asp:Label ID="lblKg" runat="server" Text='<%# Bind("serviceability_percentage") %>'></asp:Label>
-                                                            </ItemTemplate>
-                                                        </asp:TemplateField>
-                                                        <asp:TemplateField HeaderText="Action">
-                                                            <ItemTemplate>
-                                                                <asp:LinkButton ID="lbView"
-                                                                    runat="server"
-                                                                    Text="View"
-                                                                    CssClass="btn btn-sm btn-primary"
-                                                                    CommandName="ViewBrand">
+                                        <div id="accVendorBody" class="mst-acc-body">
+                                            <div class="newCardBody">
+                                                <div class="table-responsive rm-grid-scroll">
+                                                    <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0" ClientIDMode="Static"
+                                                        ID="gvVendorList" runat="server" AutoGenerateColumns="false" PageSize="10" Visible="true" OnRowCommand="gvVendorList_RowCommand"
+                                                        ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
+                                                        PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
+                                                        <RowStyle CssClass="tlrowlight" />
+                                                        <PagerStyle CssClass="PagerGrid" HorizontalAlign="Left" />
+                                                        <HeaderStyle CssClass="headerGrid" />
+                                                        <FooterStyle CssClass="footerGrid" />
+                                                        <Columns>
+                                                            <asp:TemplateField HeaderText="Sl No">
+                                                                <ItemTemplate>
+                                                                    <asp:Label ID="lblbrandid" runat="server" Text='<%# (gvVendorList.PageIndex * gvVendorList.PageSize) + Container.DataItemIndex + 1 %>'></asp:Label>
+                                                                </ItemTemplate>
+                                                                <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
+                                                                <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
+                                                            </asp:TemplateField>
+                                                            <asp:TemplateField HeaderText="Vendor Name">
+                                                                <ItemTemplate>
+                                                                    <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vendor_name") %>'></asp:Label>
+                                                                    <asp:HiddenField ID="hdnVednorCode" runat="server" Value='<%# Bind("vendor_unit")%>' />
+                                                                </ItemTemplate>
+                                                                <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
+                                                                <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
+                                                            </asp:TemplateField>
+                                                            <asp:TemplateField HeaderText="Total">
+                                                                <ItemTemplate>
+                                                                    <asp:Label ID="lblTotalLoad" runat="server" Text='<%# Bind("Total_Load_NOP") %>'></asp:Label>
+                                                                </ItemTemplate>
+                                                            </asp:TemplateField>
+                                                            <asp:TemplateField HeaderText="Despatched">
+                                                                <ItemTemplate>
+                                                                    <asp:Label ID="lblTotalDes" runat="server" Text='<%# Bind("Total_Despatched_NOP") %>'></asp:Label>
+                                                                </ItemTemplate>
+                                                            </asp:TemplateField>
+                                                            <asp:TemplateField HeaderText="Serviceability(%)">
+                                                                <ItemTemplate>
+                                                                    <asp:Label ID="lblKg" runat="server" Text='<%# Bind("Dispatch_Percentage") %>'></asp:Label>
+                                                                </ItemTemplate>
+                                                            </asp:TemplateField>
+                                                            <asp:TemplateField HeaderText="Action">
+                                                                <ItemTemplate>
+                                                                    <asp:LinkButton ID="lbViewVendor"
+                                                                        runat="server"
+                                                                        Text="View"
+                                                                        CssClass="btn btn-sm btn-primary btn-cust"
+                                                                        CommandName="ViewVendor">
                                                     <i class="fa fa-arrow-right"></i>
-                                                                </asp:LinkButton>
-                                                            </ItemTemplate>
-                                                            <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                                            <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                                        </asp:TemplateField>
-                                                    </Columns>
-                                                </asp:GridView>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="newCard w100 home-card-stock mst-acc-card">
-                                    <div class="newCardHead mst-acc-header" data-acc-group="sumdata" data-acc-target="accVendorBody">
-                                        <h3 class="newHeadTitle">Vendor Wise</h3>
-                                        <span class="mst-acc-chevron"><i class="fas fa-chevron-down"></i></span>
-                                    </div>
-                                    <div id="accVendorBody" class="mst-acc-body">
-                                        <div class="newCardBody">
-                                            <div class="table-responsive rm-grid-scroll">
-                                                <asp:GridView CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0" ClientIDMode="Static"
-                                                    ID="gvVendorList" runat="server" AutoGenerateColumns="false" PageSize="10" Visible="true" OnRowCommand="gvVendorList_RowCommand"
-                                                    ShowFooter="false" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
-                                                    PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
-                                                    <RowStyle CssClass="tlrowlight" />
-                                                    <PagerStyle CssClass="PagerGrid" HorizontalAlign="Left" />
-                                                    <HeaderStyle CssClass="headerGrid" />
-                                                    <FooterStyle CssClass="footerGrid" />
-                                                    <Columns>
-                                                        <asp:TemplateField HeaderText="Sl No">
-                                                            <ItemTemplate>
-                                                                <asp:Label ID="lblbrandid" runat="server" Text='<%# (gvVendorList.PageIndex * gvVendorList.PageSize) + Container.DataItemIndex + 1 %>'></asp:Label>
-                                                            </ItemTemplate>
-                                                            <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
-                                                            <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" CssClass="text-center" />
-                                                        </asp:TemplateField>
-                                                        <asp:TemplateField HeaderText="Vendor Name">
-                                                            <ItemTemplate>
-                                                                <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vendor_name") %>'></asp:Label>
-                                                                <asp:HiddenField ID="hdnVednorCode" runat="server" Value='<%# Bind("vendor_unit")%>' />
-                                                            </ItemTemplate>
-                                                            <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
-                                                            <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" CssClass="text-left" />
-                                                        </asp:TemplateField>
-                                                        <asp:TemplateField HeaderText="Total">
-                                                            <ItemTemplate>
-                                                                <asp:Label ID="lblTotalLoad" runat="server" Text='<%# Bind("Total_Load_NOP") %>'></asp:Label>
-                                                            </ItemTemplate>
-                                                        </asp:TemplateField>
-                                                        <asp:TemplateField HeaderText="Despatched">
-                                                            <ItemTemplate>
-                                                                <asp:Label ID="lblTotalDes" runat="server" Text='<%# Bind("Total_Despatched_NOP") %>'></asp:Label>
-                                                            </ItemTemplate>
-                                                        </asp:TemplateField>
-                                                        <asp:TemplateField HeaderText="Serviceability(%)">
-                                                            <ItemTemplate>
-                                                                <asp:Label ID="lblKg" runat="server" Text='<%# Bind("Dispatch_Percentage") %>'></asp:Label>
-                                                            </ItemTemplate>
-                                                        </asp:TemplateField>
-                                                        <asp:TemplateField HeaderText="Action">
-                                                            <ItemTemplate>
-                                                                <asp:LinkButton ID="lbViewVendor"
-                                                                    runat="server"
-                                                                    Text="View"
-                                                                    CssClass="btn btn-sm btn-primary"
-                                                                    CommandName="ViewVendor">
-                                                    <i class="fa fa-arrow-right"></i>
-                                                                </asp:LinkButton>
-                                                            </ItemTemplate>
-                                                            <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                                            <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
-                                                        </asp:TemplateField>
-                                                    </Columns>
-                                                </asp:GridView>
+                                                                    </asp:LinkButton>
+                                                                </ItemTemplate>
+                                                                <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
+                                                                <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="12%" CssClass="text-center" />
+                                                            </asp:TemplateField>
+                                                        </Columns>
+                                                    </asp:GridView>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -747,12 +761,11 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <asp:HiddenField ID="HiddenField3" ClientIDMode="Static" runat="server" Value="" />
-                <asp:HiddenField ID="hdnAccState" ClientIDMode="Static" runat="server" Value="" />
+                    <asp:HiddenField ID="HiddenField3" ClientIDMode="Static" runat="server" Value="" />
+                    <asp:HiddenField ID="hdnAccState" ClientIDMode="Static" runat="server" Value="" />
 
-                <%--<div id="divData" runat="server">
+                    <%--<div id="divData" runat="server">
                     <div class="mst-panel-header">
                         <div class="mst-panel-header-left">
                             <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
@@ -808,421 +821,422 @@
                         </div>
                     </div>
                 </div>--%>
-                <div id="divSkuChart" class="card mst-acc-card" clientidmode="Static" runat="server">
-                    <div class="card-body">
-                        <div class="dashboard" runat="server">
-                            <div class="mst-panel-header mst-acc-header" data-acc-target="accSkuBody">
-                                <div class="mst-panel-header-left">
-                                    <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
-                                    <div>
-                                        <h5 id="ChartTitle" class="mst-panel-title">SKU List</h5>
-                                    </div>
-                                </div>
-                                <span class="mst-acc-chevron"><i class="fas fa-chevron-down"></i></span>
-                            </div>
-
-                            <div id="accSkuBody" class="mst-acc-body">
-                                <div class="legend">
-                                    <div><span class="dot total-load"></span>Total Load</div>
-                                    <div><span class="dot total-dispatch"></span>Total Dispatch</div>
-                                </div>
-                                <div class="sku-panel-row">
-                                    <div class="sku-list-col">
-                                        <div id="chartContainer" style="height: 250px; overflow-y: auto;">
-                                            <asp:Literal ID="litSkuRows" runat="server"></asp:Literal>
+                    <div id="divSkuChart" class="card mst-acc-card" clientidmode="Static" runat="server">
+                        <div class="card-body">
+                            <div class="dashboard" runat="server">
+                                <div class="mst-panel-header mst-acc-header" data-acc-target="accSkuBody">
+                                    <div class="mst-panel-header-left">
+                                        <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
+                                        <div>
+                                            <h5 id="ChartTitle" class="mst-panel-title">SKU List</h5>
                                         </div>
-                                    </div>
-                                    <div class="sku-summary-col">
-                                        <asp:Literal ID="litSkuSummary" runat="server"></asp:Literal>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="divDespatch" class="card mst-acc-card" clientidmode="Static" runat="server">
-                    <div class="card-body">
-                        <div runat="server">
-                            <div class="mst-panel-header mst-acc-header" data-acc-target="accDespatchBody">
-                                <div class="mst-panel-header-left">
-                                    <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
-                                    <div>
-                                        <h5 id="DespatchTitle" class="mst-panel-title">Pending Despatch List</h5>
-                                    </div>
-                                </div>
-                                <div class="mst-acc-header-right">
-                                    <div class="p-pdl-select-box mst-acc-noclick" style="display: flex; align-items: center; column-gap: 5px;">
-                                        <asp:DropDownList ID="ddlVendorList" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlVendorList_SelectedIndexChanged"></asp:DropDownList>
-                                        <asp:Button ID="btnResetVendorFilter" runat="server" Text="Reset"
-                                            CssClass="btn btn-sm btn-outline-secondary" OnClick="btnResetVendorFilter_Click" />
                                     </div>
                                     <span class="mst-acc-chevron"><i class="fas fa-chevron-down"></i></span>
                                 </div>
-                            </div>
 
-                            <div id="accDespatchBody" class="mst-acc-body">
-                                <div class="table-responsive rm-grid-scroll">
-                                    <asp:GridView ID="gvVendorDispatch" runat="server" AutoGenerateColumns="false" OnRowCommand="gvVendorDispatch_RowCommand" ClientIDMode="Static"
-                                        Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
-                                        <RowStyle CssClass="tlrowlight" />
-                                        <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
-                                        <HeaderStyle CssClass="headerGrid" />
-                                        <FooterStyle CssClass="footerGrid" />
-                                        <Columns>
-                                            <asp:TemplateField HeaderText="Vendor Name" HeaderStyle-HorizontalAlign="Center">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vm_vendor_name") %>'></asp:Label>
-                                                    <asp:HiddenField ID="hdnVednorCode" runat="server" Value='<%# Bind("ddrh_vendor_id")%>' />
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                                <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                            </asp:TemplateField>
-                                            <asp:TemplateField HeaderText="Depot" HeaderStyle-HorizontalAlign="Center">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lblDepot" runat="server" Text='<%# Bind("depot_name") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                                <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                            </asp:TemplateField>
-                                            <asp:TemplateField HeaderText="Order Sl No." HeaderStyle-HorizontalAlign="Center">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lblOrderId" runat="server" Text='<%# Bind("ddrh_order_sl_no") %>'></asp:Label>
-                                                    <asp:Label ID="lblRequestId" Visible="false" runat="server" Text='<%# Bind("ddrh_hdr_req_id") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                                <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                            </asp:TemplateField>
-                                            <asp:TemplateField HeaderText="Request Date" HeaderStyle-HorizontalAlign="Center">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lblRequestDate" runat="server" Text='<%# Bind("ReqDate") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                                <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                            </asp:TemplateField>
-                                            <asp:TemplateField HeaderText="Despatch To" HeaderStyle-HorizontalAlign="Center">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="Label1" runat="server" Text='<%# Bind("vom_org_name") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                                <ItemStyle HorizontalAlign="Center" Width="15%"></ItemStyle>
-                                            </asp:TemplateField>
-                                            <asp:TemplateField HeaderText="Truck" HeaderStyle-HorizontalAlign="Center">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lbllm_desc" runat="server" Text='<%# Bind("lm_desc") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                                                <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
-                                            </asp:TemplateField>
-                                        </Columns>
-                                    </asp:GridView>
+                                <div id="accSkuBody" class="mst-acc-body">
+                                    <div class="legend">
+                                        <div><span class="dot total-load"></span>Total Load</div>
+                                        <div><span class="dot total-dispatch"></span>Total Dispatch</div>
+                                    </div>
+                                    <div class="sku-panel-row">
+                                        <div class="sku-list-col">
+                                            <div id="chartContainer" style="height: 210px; overflow-y: auto;">
+                                                <asp:Literal ID="litSkuRows" runat="server"></asp:Literal>
+                                            </div>
+                                        </div>
+                                        <div class="sku-summary-col">
+                                            <asp:Literal ID="litSkuSummary" runat="server"></asp:Literal>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <asp:HiddenField ID="hdnOpenPanel" ClientIDMode="Static" runat="server" Value="accSkuBody" />
-
-                <div class="row" runat="server" id="divUnit"></div>
-                <div class="row" runat="server" id="divDepot"></div>
-
-                <div class="row" runat="server" id="divHo">
-                    <div class="col-md-8">
-                        <div class="dbQuikCardList">
-                            <div class="loopQuikCars qk-despatch">
-                                <div class="qk-top">
-                                    <h3 class="quikName">Total Despatch (Vol)</h3>
-                                    <span class="qk-gauge" aria-hidden="true"></span>
-                                </div>
-                                <div class="quikFungView">
-                                    <div class="quikImgView">
-                                        <i class="fas fa-box-open quikImg"></i>
+                    <div id="divDespatch" class="card mst-acc-card" clientidmode="Static" runat="server">
+                        <div class="card-body">
+                            <div runat="server">
+                                <div class="mst-panel-header mst-acc-header" data-acc-target="accDespatchBody">
+                                    <div class="mst-panel-header-left">
+                                        <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
+                                        <div>
+                                            <h5 id="DespatchTitle" class="mst-panel-title">Pending Despatch List</h5>
+                                        </div>
                                     </div>
-                                    <div class="quikDtls">
-                                        <asp:Label class="quikNo" runat="server" ID="lblTotalDespatch">0</asp:Label>
+                                    <div class="mst-acc-header-right">
+                                        <div class="p-pdl-select-box mst-acc-noclick" style="display: flex; align-items: center; column-gap: 5px;">
+                                            <asp:DropDownList ID="ddlVendorList" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlVendorList_SelectedIndexChanged"></asp:DropDownList>
+                                            <asp:Button ID="btnResetVendorFilter" runat="server" Text="Reset"
+                                                CssClass="btn btn-sm btn-outline-secondary" OnClick="btnResetVendorFilter_Click" />
+                                        </div>
+                                        <span class="mst-acc-chevron"><i class="fas fa-chevron-down"></i></span>
                                     </div>
                                 </div>
-                                <asp:LinkButton ID="lnkViewDetails" runat="server" CssClass="quikLink" OnClick="lnkViewDetails_Click">
+
+                                <div id="accDespatchBody" class="mst-acc-body">
+                                    <div class="table-responsive rm-grid-scroll">
+                                        <asp:GridView ID="gvVendorDispatch" runat="server" AutoGenerateColumns="false" OnRowCommand="gvVendorDispatch_RowCommand" ClientIDMode="Static"
+                                            Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
+                                            <RowStyle CssClass="tlrowlight" />
+                                            <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
+                                            <HeaderStyle CssClass="headerGrid" />
+                                            <FooterStyle CssClass="footerGrid" />
+                                            <Columns>
+                                                <asp:TemplateField HeaderText="Vendor Name" HeaderStyle-HorizontalAlign="Center">
+                                                    <ItemTemplate>
+                                                        <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vm_vendor_name") %>'></asp:Label>
+                                                        <asp:HiddenField ID="hdnVednorCode" runat="server" Value='<%# Bind("ddrh_vendor_id")%>' />
+                                                    </ItemTemplate>
+                                                    <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                                    <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                                </asp:TemplateField>
+                                                <asp:TemplateField HeaderText="Depot" HeaderStyle-HorizontalAlign="Center">
+                                                    <ItemTemplate>
+                                                        <asp:Label ID="lblDepot" runat="server" Text='<%# Bind("depot_name") %>'></asp:Label>
+                                                    </ItemTemplate>
+                                                    <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                                    <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                                </asp:TemplateField>
+                                                <asp:TemplateField HeaderText="Order Sl No." HeaderStyle-HorizontalAlign="Center">
+                                                    <ItemTemplate>
+                                                        <asp:Label ID="lblOrderId" runat="server" Text='<%# Bind("ddrh_order_sl_no") %>'></asp:Label>
+                                                        <asp:Label ID="lblRequestId" Visible="false" runat="server" Text='<%# Bind("ddrh_hdr_req_id") %>'></asp:Label>
+                                                    </ItemTemplate>
+                                                    <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                                    <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                                </asp:TemplateField>
+                                                <asp:TemplateField HeaderText="Request Date" HeaderStyle-HorizontalAlign="Center">
+                                                    <ItemTemplate>
+                                                        <asp:Label ID="lblRequestDate" runat="server" Text='<%# Bind("ReqDate") %>'></asp:Label>
+                                                    </ItemTemplate>
+                                                    <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                                    <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                                </asp:TemplateField>
+                                                <asp:TemplateField HeaderText="Despatch To" HeaderStyle-HorizontalAlign="Center">
+                                                    <ItemTemplate>
+                                                        <asp:Label ID="Label1" runat="server" Text='<%# Bind("vom_org_name") %>'></asp:Label>
+                                                    </ItemTemplate>
+                                                    <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                                    <ItemStyle HorizontalAlign="Center" Width="15%"></ItemStyle>
+                                                </asp:TemplateField>
+                                                <asp:TemplateField HeaderText="Truck" HeaderStyle-HorizontalAlign="Center">
+                                                    <ItemTemplate>
+                                                        <asp:Label ID="lbllm_desc" runat="server" Text='<%# Bind("lm_desc") %>'></asp:Label>
+                                                    </ItemTemplate>
+                                                    <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
+                                                    <ItemStyle HorizontalAlign="Center" Width="10%"></ItemStyle>
+                                                </asp:TemplateField>
+                                            </Columns>
+                                        </asp:GridView>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <asp:HiddenField ID="hdnOpenPanel" ClientIDMode="Static" runat="server" Value="accSkuBody" />
+
+                    <div class="row" runat="server" id="divUnit"></div>
+                    <div class="row" runat="server" id="divDepot"></div>
+
+                    <div class="row" runat="server" id="divHo">
+                        <div class="col-md-8">
+                            <div class="dbQuikCardList">
+                                <div class="loopQuikCars qk-despatch">
+                                    <div class="qk-top">
+                                        <h3 class="quikName">Total Despatch (Vol)</h3>
+                                        <span class="qk-gauge" aria-hidden="true"></span>
+                                    </div>
+                                    <div class="quikFungView">
+                                        <div class="quikImgView">
+                                            <i class="fas fa-box-open quikImg"></i>
+                                        </div>
+                                        <div class="quikDtls">
+                                            <asp:Label class="quikNo" runat="server" ID="lblTotalDespatch">0</asp:Label>
+                                        </div>
+                                    </div>
+                                    <asp:LinkButton ID="lnkViewDetails" runat="server" CssClass="quikLink" OnClick="lnkViewDetails_Click">
                                    View Details <i class="fas fa-chevron-right"></i>
-                                </asp:LinkButton>
-                            </div>
+                                    </asp:LinkButton>
+                                </div>
 
-                            <div class="loopQuikCars qk-pending">
-                                <div class="qk-top">
-                                    <h3 class="quikName">Pending load (Vol)</h3>
-                                    <span class="qk-gauge" aria-hidden="true"></span>
-                                </div>
-                                <div class="quikFungView">
-                                    <div class="quikImgView">
-                                        <i class="fas fa-hourglass-start quikImg"></i>
+                                <div class="loopQuikCars qk-pending">
+                                    <div class="qk-top">
+                                        <h3 class="quikName">Pending load (Vol)</h3>
+                                        <span class="qk-gauge" aria-hidden="true"></span>
                                     </div>
-                                    <div class="quikDtls">
-                                        <asp:Label class="quikNo" runat="server" ID="lblPendingLoad">0</asp:Label>
+                                    <div class="quikFungView">
+                                        <div class="quikImgView">
+                                            <i class="fas fa-hourglass-start quikImg"></i>
+                                        </div>
+                                        <div class="quikDtls">
+                                            <asp:Label class="quikNo" runat="server" ID="lblPendingLoad">0</asp:Label>
+                                        </div>
                                     </div>
-                                </div>
-                                <asp:LinkButton ID="lnkPendingLoadDetails" runat="server" CssClass="quikLink" OnClick="lnkPendingLoadDetails_Click">
+                                    <asp:LinkButton ID="lnkPendingLoadDetails" runat="server" CssClass="quikLink" OnClick="lnkPendingLoadDetails_Click">
                                  View Details <i class="fas fa-chevron-right"></i>
-                                </asp:LinkButton>
-                            </div>
+                                    </asp:LinkButton>
+                                </div>
 
-                            <div class="loopQuikCars qk-complaints">
-                                <div class="qk-top">
-                                    <h3 class="quikName">Vendor Complaints</h3>
-                                    <span class="qk-gauge" aria-hidden="true"></span>
-                                </div>
-                                <div class="quikFungView">
-                                    <div class="quikImgView">
-                                        <i class="fas fa-vector-square quikImg"></i>
+                                <div class="loopQuikCars qk-complaints">
+                                    <div class="qk-top">
+                                        <h3 class="quikName">Vendor Complaints</h3>
+                                        <span class="qk-gauge" aria-hidden="true"></span>
                                     </div>
-                                    <div class="quikDtls">
-                                        <asp:Label class="quikNo" runat="server" ID="lblVendorComplaints">0</asp:Label>
+                                    <div class="quikFungView">
+                                        <div class="quikImgView">
+                                            <i class="fas fa-vector-square quikImg"></i>
+                                        </div>
+                                        <div class="quikDtls">
+                                            <asp:Label class="quikNo" runat="server" ID="lblVendorComplaints">0</asp:Label>
+                                        </div>
                                     </div>
-                                </div>
-                                <asp:LinkButton ID="lnkVendorComplaintDetails" runat="server" CssClass="quikLink" OnClick="lnkVendorComplaintDetails_Click">
+                                    <asp:LinkButton ID="lnkVendorComplaintDetails" runat="server" CssClass="quikLink" OnClick="lnkVendorComplaintDetails_Click">
     View Details <i class="fas fa-chevron-right"></i>
-                                </asp:LinkButton>
-                            </div>
+                                    </asp:LinkButton>
+                                </div>
 
-                            <div class="loopQuikCars qk-docs" style="display: none;">
-                                <div class="qk-top">
-                                    <h3 class="quikName">New Documents</h3>
-                                    <span class="qk-gauge" aria-hidden="true"></span>
-                                </div>
-                                <div class="quikFungView">
-                                    <div class="quikImgView">
-                                        <i class="fas fa-campground quikImg"></i>
+                                <div class="loopQuikCars qk-docs" style="display: none;">
+                                    <div class="qk-top">
+                                        <h3 class="quikName">New Documents</h3>
+                                        <span class="qk-gauge" aria-hidden="true"></span>
                                     </div>
-                                    <div class="quikDtls">
-                                        <asp:Label class="quikNo" runat="server" ID="lblNewDoc">0</asp:Label>
+                                    <div class="quikFungView">
+                                        <div class="quikImgView">
+                                            <i class="fas fa-campground quikImg"></i>
+                                        </div>
+                                        <div class="quikDtls">
+                                            <asp:Label class="quikNo" runat="server" ID="lblNewDoc">0</asp:Label>
+                                        </div>
                                     </div>
+                                    <a class="quikLink">View Details <i class="fas fa-chevron-right"></i></a>
                                 </div>
-                                <a class="quikLink">View Details <i class="fas fa-chevron-right"></i></a>
-                            </div>
 
-                            <div class="loopQuikCars qk-expired">
-                                <div class="qk-top">
-                                    <h3 class="quikName">Expired Documents</h3>
-                                    <span class="qk-gauge" aria-hidden="true"></span>
-                                </div>
-                                <div class="quikFungView">
-                                    <div class="quikImgView">
-                                        <i class="fas fa-folder-minus quikImg"></i>
+                                <div class="loopQuikCars qk-expired">
+                                    <div class="qk-top">
+                                        <h3 class="quikName">Expired Documents</h3>
+                                        <span class="qk-gauge" aria-hidden="true"></span>
                                     </div>
-                                    <div class="quikDtls">
-                                        <asp:Label class="quikNo" runat="server" ID="lblExpDoc">0</asp:Label>
+                                    <div class="quikFungView">
+                                        <div class="quikImgView">
+                                            <i class="fas fa-folder-minus quikImg"></i>
+                                        </div>
+                                        <div class="quikDtls">
+                                            <asp:Label class="quikNo" runat="server" ID="lblExpDoc">0</asp:Label>
+                                        </div>
                                     </div>
-                                </div>
-                                <asp:LinkButton ID="lnkExpieredDoc" runat="server" CssClass="quikLink" OnClick="lnkExpieredDoc_Click">
+                                    <asp:LinkButton ID="lnkExpieredDoc" runat="server" CssClass="quikLink" OnClick="lnkExpieredDoc_Click">
     View Details <i class="fas fa-chevron-right"></i>
-                                </asp:LinkButton>
-                            </div>
+                                    </asp:LinkButton>
+                                </div>
 
-                            <div class="loopQuikCars qk-indent">
-                                <div class="qk-top">
-                                    <h3 class="quikName">Unapproved indent</h3>
-                                    <span class="qk-gauge" aria-hidden="true"></span>
-                                </div>
-                                <div class="quikFungView">
-                                    <div class="quikImgView">
-                                        <i class="fas fa-campground quikImg"></i>
+                                <div class="loopQuikCars qk-indent">
+                                    <div class="qk-top">
+                                        <h3 class="quikName">Unapproved indent</h3>
+                                        <span class="qk-gauge" aria-hidden="true"></span>
                                     </div>
-                                    <div class="quikDtls">
-                                        <asp:Label class="quikNo" runat="server" ID="lblUnapprovedIndent">0</asp:Label>
+                                    <div class="quikFungView">
+                                        <div class="quikImgView">
+                                            <i class="fas fa-campground quikImg"></i>
+                                        </div>
+                                        <div class="quikDtls">
+                                            <asp:Label class="quikNo" runat="server" ID="lblUnapprovedIndent">0</asp:Label>
+                                        </div>
                                     </div>
-                                </div>
-                                <asp:LinkButton ID="lnkUnapproveIndent" runat="server" CssClass="quikLink" OnClick="lnkUnapproveIndent_Click">
+                                    <asp:LinkButton ID="lnkUnapproveIndent" runat="server" CssClass="quikLink" OnClick="lnkUnapproveIndent_Click">
                                   View Details <i class="fas fa-chevron-right"></i>
-                                </asp:LinkButton>
-                            </div>
+                                    </asp:LinkButton>
+                                </div>
 
-                            <div class="loopQuikCars qk-challan">
-                                <div class="qk-top">
-                                    <h3 class="quikName">Unapproved Despatch Challans</h3>
-                                    <span class="qk-gauge" aria-hidden="true"></span>
-                                </div>
-                                <div class="quikFungView">
-                                    <div class="quikImgView">
-                                        <i class="fas fa-shekel-sign quikImg"></i>
+                                <div class="loopQuikCars qk-challan">
+                                    <div class="qk-top">
+                                        <h3 class="quikName">Unapproved Despatch Challans</h3>
+                                        <span class="qk-gauge" aria-hidden="true"></span>
                                     </div>
-                                    <div class="quikDtls">
-                                        <asp:Label class="quikNo" runat="server" ID="lblUnapprovedDespatch">0</asp:Label>
+                                    <div class="quikFungView">
+                                        <div class="quikImgView">
+                                            <i class="fas fa-shekel-sign quikImg"></i>
+                                        </div>
+                                        <div class="quikDtls">
+                                            <asp:Label class="quikNo" runat="server" ID="lblUnapprovedDespatch">0</asp:Label>
+                                        </div>
                                     </div>
-                                </div>
-                                <asp:LinkButton ID="lnkUnapprovedDespatch" runat="server" CssClass="quikLink" OnClick="lnkUnapprovedDespatch_Click">
+                                    <asp:LinkButton ID="lnkUnapprovedDespatch" runat="server" CssClass="quikLink" OnClick="lnkUnapprovedDespatch_Click">
                                   View Details <i class="fas fa-chevron-right"></i>
-                                </asp:LinkButton>
-                            </div>
+                                    </asp:LinkButton>
+                                </div>
 
-                            <div class="loopQuikCars qk-legal">
-                                <div class="qk-top">
-                                    <h3 class="quikName">Unapproved Legal/Statutory</h3>
-                                    <span class="qk-gauge" aria-hidden="true"></span>
-                                </div>
-                                <div class="quikFungView">
-                                    <div class="quikImgView">
-                                        <i class="fas fa-weight-hanging quikImg"></i>
+                                <div class="loopQuikCars qk-legal">
+                                    <div class="qk-top">
+                                        <h3 class="quikName">Unapproved Legal/Statutory</h3>
+                                        <span class="qk-gauge" aria-hidden="true"></span>
                                     </div>
-                                    <div class="quikDtls">
-                                        <asp:Label class="quikNo" runat="server" ID="lblUnapprovedLegal">0</asp:Label>
+                                    <div class="quikFungView">
+                                        <div class="quikImgView">
+                                            <i class="fas fa-weight-hanging quikImg"></i>
+                                        </div>
+                                        <div class="quikDtls">
+                                            <asp:Label class="quikNo" runat="server" ID="lblUnapprovedLegal">0</asp:Label>
+                                        </div>
                                     </div>
-                                </div>
-                                <asp:LinkButton ID="lnkUnApprovedDoc" runat="server" CssClass="quikLink" OnClick="lnkUnApprovedDoc_Click">
+                                    <asp:LinkButton ID="lnkUnApprovedDoc" runat="server" CssClass="quikLink" OnClick="lnkUnApprovedDoc_Click">
     View Details <i class="fas fa-chevron-right"></i>
-                                </asp:LinkButton>
-                            </div>
+                                    </asp:LinkButton>
+                                </div>
 
-                            <div class="loopQuikCars qk-audit">
-                                <div class="qk-top">
-                                    <h3 class="quikName">Audited Vendor</h3>
-                                    <span class="qk-gauge" aria-hidden="true"></span>
-                                </div>
-                                <div class="quikFungView">
-                                    <div class="quikImgView">
-                                        <i class="fas fa-stopwatch-20 quikImg"></i>
+                                <div class="loopQuikCars qk-audit">
+                                    <div class="qk-top">
+                                        <h3 class="quikName">Audited Vendor</h3>
+                                        <span class="qk-gauge" aria-hidden="true"></span>
                                     </div>
-                                    <div class="quikDtls">
-                                        <asp:Label class="quikNo" runat="server" ID="lblAuditedVendorCount">0</asp:Label>
+                                    <div class="quikFungView">
+                                        <div class="quikImgView">
+                                            <i class="fas fa-stopwatch-20 quikImg"></i>
+                                        </div>
+                                        <div class="quikDtls">
+                                            <asp:Label class="quikNo" runat="server" ID="lblAuditedVendorCount">0</asp:Label>
+                                        </div>
                                     </div>
-                                </div>
-                                <asp:LinkButton ID="lnkAuditCount" runat="server" CssClass="quikLink" OnClick="lnkAuditCount_Click">
+                                    <asp:LinkButton ID="lnkAuditCount" runat="server" CssClass="quikLink" OnClick="lnkAuditCount_Click">
     View Details <i class="fas fa-chevron-right"></i>
-                                </asp:LinkButton>
-                            </div>
+                                    </asp:LinkButton>
+                                </div>
 
-                            <div class="loopQuikCars qk-sample">
-                                <div class="qk-top">
-                                    <h3 class="quikName">Sample Tested Vendor</h3>
-                                    <span class="qk-gauge" aria-hidden="true"></span>
-                                </div>
-                                <div class="quikFungView">
-                                    <div class="quikImgView">
-                                        <i class="fas fa-universal-access quikImg"></i>
+                                <div class="loopQuikCars qk-sample">
+                                    <div class="qk-top">
+                                        <h3 class="quikName">Sample Tested Vendor</h3>
+                                        <span class="qk-gauge" aria-hidden="true"></span>
                                     </div>
-                                    <div class="quikDtls">
-                                        <asp:Label class="quikNo" runat="server" ID="lblSampleTestedVendorCount">0</asp:Label>
+                                    <div class="quikFungView">
+                                        <div class="quikImgView">
+                                            <i class="fas fa-universal-access quikImg"></i>
+                                        </div>
+                                        <div class="quikDtls">
+                                            <asp:Label class="quikNo" runat="server" ID="lblSampleTestedVendorCount">0</asp:Label>
+                                        </div>
                                     </div>
-                                </div>
-                                <asp:LinkButton ID="lnkSampleTestedCount" runat="server" CssClass="quikLink" OnClick="lnkSampleTestedCount_Click">
+                                    <asp:LinkButton ID="lnkSampleTestedCount" runat="server" CssClass="quikLink" OnClick="lnkSampleTestedCount_Click">
     View Details <i class="fas fa-chevron-right"></i>
-                                </asp:LinkButton>
-                            </div>
-                        </div>
-                        <div class="newCard home-card-chart">
-                            <div class="newCardHead">
-                                <h3 class="newHeadTitle">2025-2026 Despatch and Pending load</h3>
-                            </div>
-                            <div class="newCardBody">
-                                <div id="chart-container" class="home-chart-frame">
-                                    <canvas id="salesChart" style="width: 100% !important; height: 228px !important;"></canvas>
+                                    </asp:LinkButton>
                                 </div>
                             </div>
-                        </div>
+                            <div class="newCard home-card-chart">
+                                <div class="newCardHead">
+                                    <h3 class="newHeadTitle">2025-2026 Despatch and Pending load</h3>
+                                </div>
+                                <div class="newCardBody">
+                                    <div id="chart-container" class="home-chart-frame">
+                                        <canvas id="salesChart" style="width: 100% !important; height: 196px !important;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
 
-                    </div>
-                    <div class="col-md-4">
-                        <div class="newCard home-card-links">
-                            <div class="newCardHead">
-                                <h3 class="newHeadTitle">Quick Links</h3>
-                            </div>
-                            <div class="newCardBody">
-                                <div class="menu" role="menu" aria-label="Quick menu" id="tblQuickMenu" runat="server"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="newCard home-card-links">
+                                <div class="newCardHead">
+                                    <h3 class="newHeadTitle">Quick Links</h3>
+                                </div>
+                                <div class="newCardBody">
+                                    <div class="menu" role="menu" aria-label="Quick menu" id="tblQuickMenu" runat="server"></div>
 
-                                <ul class="qukLinkNav" id="tdQuickLink" runat="server" style="display: none"></ul>
-                            </div>
-                        </div>
-                        <div class="newCard home-card-vendor-ty">
-                            <div class="newCardHead">
-                                <h3 class="newHeadTitle">Top 4 Vendor(TY)</h3>
-                            </div>
-                            <div class="newCardBody">
-                                <div class="table-responsive tvlGridHt">
-                                    <asp:GridView ID="gvTopvendor" runat="server" AutoGenerateColumns="False" EmptyDataText="No records found" CssClass="upgradDataGrid m-0 custGvTopvendorGrid" CellSpacing="0" CellPadding="0">
-                                        <RowStyle CssClass="tlrowlight" />
-                                        <SelectedRowStyle />
-                                        <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
-                                        <HeaderStyle CssClass="headerGrid" />
-                                        <FooterStyle CssClass="footerGrid" />
-                                        <Columns>
-                                            <asp:TemplateField HeaderText="Vendor">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lbl_vendor_name" runat="server" Text='<%# Bind("ty_vendor") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" />
-                                                <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" />
-                                            </asp:TemplateField>
-                                            <asp:TemplateField HeaderText="Position">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lbl_obtain_weightage" runat="server" Text='<%# Bind("ty_vendor_rank") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="15%" />
-                                                <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="15%" />
-                                            </asp:TemplateField>
-                                        </Columns>
-                                    </asp:GridView>
+                                    <ul class="qukLinkNav" id="tdQuickLink" runat="server" style="display: none"></ul>
                                 </div>
                             </div>
-                        </div>
-                        <div class="newCard home-card-vendor-ly">
-                            <div class="newCardHead">
-                                <h3 class="newHeadTitle">Top 4 Vendor(LY)</h3>
-                            </div>
-                            <div class="newCardBody">
-                                <div class="table-responsive tvlGridHt">
-                                    <asp:GridView ID="gvTop3Vend" runat="server" AutoGenerateColumns="False" EmptyDataText="No records found" CssClass="upgradDataGrid m-0 custGvTopvendorGrid" CellSpacing="0" CellPadding="0">
-                                        <RowStyle CssClass="tlrowlight" />
-                                        <SelectedRowStyle />
-                                        <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
-                                        <HeaderStyle CssClass="headerGrid" />
-                                        <FooterStyle CssClass="footerGrid" />
-                                        <Columns>
-                                            <asp:TemplateField HeaderText="Vendor">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lbl_vendor_name" runat="server" Text='<%# Bind("ly_vendor") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" />
-                                                <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" />
-                                            </asp:TemplateField>
-                                            <asp:TemplateField HeaderText="Position">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lbl_obtain_weightage" runat="server" Text='<%# Bind("ly_vendor_rank") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="15%" />
-                                                <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="15%" />
-                                            </asp:TemplateField>
-                                        </Columns>
-                                    </asp:GridView>
+                            <div class="newCard home-card-vendor-ty">
+                                <div class="newCardHead">
+                                    <h3 class="newHeadTitle">Top 4 Vendor(TY)</h3>
+                                </div>
+                                <div class="newCardBody">
+                                    <div class="table-responsive tvlGridHt">
+                                        <asp:GridView ID="gvTopvendor" runat="server" AutoGenerateColumns="False" EmptyDataText="No records found" CssClass="upgradDataGrid m-0 custGvTopvendorGrid" CellSpacing="0" CellPadding="0">
+                                            <RowStyle CssClass="tlrowlight" />
+                                            <SelectedRowStyle />
+                                            <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
+                                            <HeaderStyle CssClass="headerGrid" />
+                                            <FooterStyle CssClass="footerGrid" />
+                                            <Columns>
+                                                <asp:TemplateField HeaderText="Vendor">
+                                                    <ItemTemplate>
+                                                        <asp:Label ID="lbl_vendor_name" runat="server" Text='<%# Bind("ty_vendor") %>'></asp:Label>
+                                                    </ItemTemplate>
+                                                    <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" />
+                                                    <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" />
+                                                </asp:TemplateField>
+                                                <asp:TemplateField HeaderText="Position">
+                                                    <ItemTemplate>
+                                                        <asp:Label ID="lbl_obtain_weightage" runat="server" Text='<%# Bind("ty_vendor_rank") %>'></asp:Label>
+                                                    </ItemTemplate>
+                                                    <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="15%" />
+                                                    <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="15%" />
+                                                </asp:TemplateField>
+                                            </Columns>
+                                        </asp:GridView>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="newCard home-card-vendor-lvl">
-                            <div class="newCardHead">
-                                <h3 class="newHeadTitle">Vendor Level Wsie Despatch</h3>
+                            <div class="newCard home-card-vendor-ly">
+                                <div class="newCardHead">
+                                    <h3 class="newHeadTitle">Top 4 Vendor(LY)</h3>
+                                </div>
+                                <div class="newCardBody">
+                                    <div class="table-responsive tvlGridHt">
+                                        <asp:GridView ID="gvTop3Vend" runat="server" AutoGenerateColumns="False" EmptyDataText="No records found" CssClass="upgradDataGrid m-0 custGvTopvendorGrid" CellSpacing="0" CellPadding="0">
+                                            <RowStyle CssClass="tlrowlight" />
+                                            <SelectedRowStyle />
+                                            <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
+                                            <HeaderStyle CssClass="headerGrid" />
+                                            <FooterStyle CssClass="footerGrid" />
+                                            <Columns>
+                                                <asp:TemplateField HeaderText="Vendor">
+                                                    <ItemTemplate>
+                                                        <asp:Label ID="lbl_vendor_name" runat="server" Text='<%# Bind("ly_vendor") %>'></asp:Label>
+                                                    </ItemTemplate>
+                                                    <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" />
+                                                    <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" />
+                                                </asp:TemplateField>
+                                                <asp:TemplateField HeaderText="Position">
+                                                    <ItemTemplate>
+                                                        <asp:Label ID="lbl_obtain_weightage" runat="server" Text='<%# Bind("ly_vendor_rank") %>'></asp:Label>
+                                                    </ItemTemplate>
+                                                    <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="15%" />
+                                                    <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="15%" />
+                                                </asp:TemplateField>
+                                            </Columns>
+                                        </asp:GridView>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="newCardBody">
-                                <div class="table-responsive tvlGridHt">
-                                    <asp:GridView ID="gvVendorDespatch" runat="server" AutoGenerateColumns="False" EmptyDataText="No records found" CssClass="upgradDataGrid m-0 custGvTopvendorGrid" CellSpacing="0" CellPadding="0">
-                                        <RowStyle CssClass="tlrowlight" />
-                                        <SelectedRowStyle />
-                                        <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
-                                        <HeaderStyle CssClass="headerGrid" />
-                                        <FooterStyle CssClass="footerGrid" />
-                                        <Columns>
-                                            <asp:TemplateField HeaderText="Vendor Level">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lbl_vendor_lvl" runat="server" Text='<%# Bind("vld_level") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" />
-                                                <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" />
-                                            </asp:TemplateField>
-                                            <asp:TemplateField HeaderText="Despatch Vol">
-                                                <ItemTemplate>
-                                                    <asp:Label ID="lbl_despatch_vol" runat="server" Text='<%# Bind("vld_vol") %>'></asp:Label>
-                                                </ItemTemplate>
-                                                <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="15%" />
-                                                <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="15%" />
-                                            </asp:TemplateField>
-                                        </Columns>
-                                    </asp:GridView>
+                            <div class="newCard home-card-vendor-lvl">
+                                <div class="newCardHead">
+                                    <h3 class="newHeadTitle">Vendor Level Wsie Despatch</h3>
+                                </div>
+                                <div class="newCardBody">
+                                    <div class="table-responsive tvlGridHt">
+                                        <asp:GridView ID="gvVendorDespatch" runat="server" AutoGenerateColumns="False" EmptyDataText="No records found" CssClass="upgradDataGrid m-0 custGvTopvendorGrid" CellSpacing="0" CellPadding="0">
+                                            <RowStyle CssClass="tlrowlight" />
+                                            <SelectedRowStyle />
+                                            <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
+                                            <HeaderStyle CssClass="headerGrid" />
+                                            <FooterStyle CssClass="footerGrid" />
+                                            <Columns>
+                                                <asp:TemplateField HeaderText="Vendor Level">
+                                                    <ItemTemplate>
+                                                        <asp:Label ID="lbl_vendor_lvl" runat="server" Text='<%# Bind("vld_level") %>'></asp:Label>
+                                                    </ItemTemplate>
+                                                    <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" />
+                                                    <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="40%" />
+                                                </asp:TemplateField>
+                                                <asp:TemplateField HeaderText="Despatch Vol">
+                                                    <ItemTemplate>
+                                                        <asp:Label ID="lbl_despatch_vol" runat="server" Text='<%# Bind("vld_vol") %>'></asp:Label>
+                                                    </ItemTemplate>
+                                                    <HeaderStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="15%" />
+                                                    <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="15%" />
+                                                </asp:TemplateField>
+                                            </Columns>
+                                        </asp:GridView>
+                                    </div>
                                 </div>
                             </div>
                         </div>
