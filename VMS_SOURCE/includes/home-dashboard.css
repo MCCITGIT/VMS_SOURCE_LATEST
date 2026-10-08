@@ -736,3 +736,153 @@
         transform: none;
     }
 }
+
+/* Selected dashboard block only — slightly tighter spacing, same controls. */
+.vms-home .home-dash .card {
+    margin-bottom: 0.4rem;
+    padding: 6px 8px;
+    border-radius: 12px;
+}
+
+.vms-home .home-dash .form-group {
+    margin-bottom: 0;
+}
+
+.vms-home .home-dash .form-control-label {
+    margin-bottom: 2px;
+    line-height: 14px;
+}
+
+.vms-home .home-dash .select2-container .select2-selection--single,
+.vms-home .home-dash .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 28px !important;
+}
+
+.vms-home .home-dash .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 26px;
+    height: 26px;
+}
+
+.vms-home .home-dash .col-md-2.mt-2 {
+    margin-top: 16px !important;
+}
+
+.vms-home .home-dash .newCard {
+    margin-bottom:6px;
+    border-radius: 10px;
+}
+.vms-home .home-dash .home-card-action, .vms-home .home-dash .home-card-stock {
+     margin-bottom:0px;
+}
+.vms-home .home-dash .newCardHead {
+    padding:4px 8px 8px 8px;
+}
+
+.vms-home .home-dash .newCardBody {
+    padding: 0 8px 6px;
+}
+
+.vms-home .home-dash .flashComplainBTCCard {
+    margin: 5px 0;
+    gap: 6px;
+}
+
+.vms-home .home-dash .flashComplainBTCCard > .newCard {
+    min-height: 34px;
+    margin-bottom: 0px;
+}
+
+.vms-home .home-dash .home-action-list {
+    gap: 4px;
+    min-height: 24px;
+}
+
+.vms-home .home-dash .home-action-list a {
+    min-height: 26px;
+    padding: 2px 8px;
+}
+
+.vms-home .home-dash .home-stock-chip [id$="lblLastStockUpdateDate"] {
+    font-size: 16px;
+}
+
+.vms-home .home-dash .dbStockAsOn {
+    width: 36px;
+    height: 36px;
+}
+
+.vms-home .home-dash .mst-panel-header {
+    margin-bottom: 4px;
+    gap: 8px;
+}
+
+.vms-home .home-dash .mst-panel-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.vms-home .home-dash .mst-panel-title {
+    font-size: 14px;
+}
+
+.vms-home .home-dash .dbQuikCardList {
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.vms-home .home-dash .loopQuikCars {
+    min-height: 80px;
+    padding: 6px 8px 4px;
+    border-radius: 12px;
+}
+
+.vms-home .home-dash .quikNo {
+    font-size: 18px;
+}
+
+.vms-home .home-dash .quikImgView {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+    max-width: 26px;
+    max-height: 26px;
+    border-radius: 8px;
+}
+
+.vms-home .home-dash .quikImgView .quikImg {
+    font-size: 18px !important;
+}
+
+.vms-home .home-dash .home-chart-frame {
+    height: 200px;
+    padding: 4px 6px 0;
+    border-radius: 10px;
+}
+
+.vms-home .home-dash .upgradDataGrid {
+    border-spacing: 0;
+}
+
+.vms-home .home-dash .upgradDataGrid tr th {
+    padding: 3px 4px 4px;
+}
+
+.vms-home .home-dash .upgradDataGrid tr td {
+    padding: 5px 4px;
+}
+
+.vms-home .home-dash .tvlGridHt {
+    max-height: 148px;
+}
+
+.vms-home .home-dash .menu {
+    gap: 4px;
+}
+
+.vms-home .home-dash .menu-item {
+    min-height: 26px;
+    padding: 2px 8px;
+}
