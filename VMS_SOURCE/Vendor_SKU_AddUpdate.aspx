@@ -4,7 +4,7 @@
 <%--<asp:Content ID="Content1" ContentPlaceHolderID="Head1" runat="Server">
 </asp:Content>--%>
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
-    
+
 
     <script src="Scripts/ValidateVendorMaster.js" type="text/javascript"></script>
 
@@ -64,7 +64,8 @@
                 </div>
                 <div class="col-md-2">
                     <div class="form-group">
-                        <asp:Button ID="btnSkuCode" runat="server" Text="Click" CssClass="btn btn-primary btn-sm" />
+                        <asp:LinkButton ID="btnSkuCode" runat="server" CssClass="btn btn-primary btn-sm">Click</asp:LinkButton>
+                        <%--<asp:Button ID="btnSkuCode" runat="server" Text="Click" CssClass="btn btn-primary btn-sm" />--%>
                     </div>
                 </div>
             </div>
@@ -94,7 +95,7 @@
                                                      Value='<%# Bind("") %>' />--%>
                             </ItemTemplate>
                             <HeaderStyle HorizontalAlign="Center"></HeaderStyle>
-                            <ItemStyle Width="5%"  HorizontalAlign="Center"></ItemStyle>
+                            <ItemStyle Width="5%" HorizontalAlign="Center"></ItemStyle>
                         </asp:TemplateField>
                         <asp:TemplateField HeaderText="#" HeaderStyle-HorizontalAlign="Center">
                             <ItemTemplate>
@@ -166,12 +167,12 @@
             </div>
             <div class="row">
                 <div class="col-md-12">
-                    <table style="width:100%; border:0px;margin: 0px 0px 10px 0px;">
+                    <table style="width: 100%; border: 0px; margin: 0px 0px 10px 0px;">
                         <tr>
-                            <td style="text-align:center;">Select from Below Table</td>
+                            <td style="text-align: center;">Select from Below Table</td>
                         </tr>
                         <tr>
-                            <td style="text-align:center;">
+                            <td style="text-align: center;">
                                 <asp:ImageButton ID="ImgbtnTrans" runat="server" Height="35px" ImageUrl="~/images/ic_downbutton.jpg"
                                     Style="position: static" Width="35px" />
                                 <asp:ImageButton ID="ImgbtnTransUp" runat="server" Height="35px" ImageUrl="~/images/ic_Upbutton.jpg"

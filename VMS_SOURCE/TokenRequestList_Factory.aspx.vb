@@ -219,14 +219,22 @@ Partial Class TokenRequestList_Factory
 
     End Sub
 
-    Protected Sub btnSearch_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles imgbtnSearch.Click
+    'Protected Sub btnSearch_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles imgbtnSearch.Click
+    '    gvTokenRequisitionList.PageIndex = 0
+    '    BindGrid()
+    'End Sub
+
+    'Protected Sub btnAdd_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles imgbtnAdd.Click
+    '    Response.Redirect("~/TokenRequestAddUpdate_Factory.aspx")
+    'End Sub
+
+    Protected Sub imgbtnSearch_Click(sender As Object, e As EventArgs) Handles imgbtnSearch.Click
         gvTokenRequisitionList.PageIndex = 0
         BindGrid()
     End Sub
 
-    Protected Sub btnAdd_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles imgbtnAdd.Click
+    Protected Sub imgbtnAdd_Click(sender As Object, e As EventArgs) Handles imgbtnAdd.Click
         Response.Redirect("~/TokenRequestAddUpdate_Factory.aspx")
     End Sub
 
-   
 End Class
