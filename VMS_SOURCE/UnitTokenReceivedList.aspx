@@ -73,7 +73,9 @@
                 </div>
                 <div class="col-md-2 form-btn-mt">
                     <div class="form-group">
-                        <asp:ImageButton ImageUrl="images/p-search.png" title="Search" CssClass="btn btn-primary btn-sm py-2" ID="imgbtnSearch" runat="server" />
+                        <asp:LinkButton ID="imgbtnSearch" runat="server" CssClass="btn btn-primary btn-sm">Search</asp:LinkButton>
+
+                        <%--<asp:ImageButton ImageUrl="images/p-search.png" title="Search" CssClass="btn btn-primary btn-sm py-2" ID="imgbtnSearch" runat="server" />--%>
                     </div>
                 </div>
             </div>

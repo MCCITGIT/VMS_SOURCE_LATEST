@@ -234,10 +234,16 @@ Partial Class UnitTokenReceivedList
     Protected Sub ddlTokenVendor_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlTokenVendor.SelectedIndexChanged
         PopulateRequisition()
     End Sub
-    Protected Sub imgbtnSearch_Click(sender As Object, e As ImageClickEventArgs) Handles imgbtnSearch.Click
+    'Protected Sub imgbtnSearch_Click(sender As Object, e As ImageClickEventArgs) Handles imgbtnSearch.Click
+    '    gvRequistionList.PageIndex = 0
+    '    BindGrid()
+    'End Sub
+
+    Protected Sub imgbtnSearch_Click(sender As Object, e As EventArgs) Handles imgbtnSearch.Click
         gvRequistionList.PageIndex = 0
         BindGrid()
     End Sub
+
     Protected Sub ddlVendorRequisition_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlVendorRequisition.SelectedIndexChanged
         PopulateDespatch()
     End Sub
@@ -249,7 +255,7 @@ Partial Class UnitTokenReceivedList
                     e.Row.BackColor = Drawing.Color.LightGreen
                 End If
             End If
-            End If
+        End If
     End Sub
 
 End Class

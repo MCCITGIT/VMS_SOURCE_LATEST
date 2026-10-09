@@ -69,9 +69,13 @@
                         </div>
                         <div class="col-md-12 text-center">
                             <div class="form-group">
-                                <asp:ImageButton ImageUrl="images/p-search.png" CssClass="btn btn-primary btn-sm" ID="imgbtnSearch" runat="server" />
+                                <asp:LinkButton ID="imgbtnSearch" runat="server" CssClass="btn btn-primary btn-sm">Search</asp:LinkButton>
+                                <asp:LinkButton ID="imgbtnAdd" runat="server" CssClass="btn btn-success btn-sm" PostBackUrl="~/OC_Specification_Dtls.aspx">Add</asp:LinkButton>
+                                <asp:LinkButton ID="imgDownload" runat="server" CssClass="btn btn-info btn-sm" PostBackUrl="~/OCSpecificationUpload.aspx">Download</asp:LinkButton>
+
+                                <%--<asp:ImageButton ImageUrl="images/p-search.png" CssClass="btn btn-primary btn-sm" ID="imgbtnSearch" runat="server" />
                                 <asp:ImageButton ImageUrl="~/images/p-plus.png" CssClass="btn btn-success btn-sm" ID="imgbtnAdd" runat="server" PostBackUrl="~/OC_Specification_Dtls.aspx" />
-                                <asp:ImageButton ImageUrl="~/images/p-downloads.png" CssClass="btn btn-info btn-sm" ID="imgDownload" runat="server" PostBackUrl="~/OCSpecificationUpload.aspx" />
+                                <asp:ImageButton ImageUrl="~/images/p-downloads.png" CssClass="btn btn-info btn-sm" ID="imgDownload" runat="server" PostBackUrl="~/OCSpecificationUpload.aspx" />--%>
                             </div>
                         </div>
                     </div>

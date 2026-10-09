@@ -258,6 +258,7 @@ Partial Class UnitRequisitionReport
         End If
     End Sub
 
+    'Protected Sub imgbtnExport_Click(sender As Object, e As EventArgs) Handles imgbtnExport.Click
     Protected Sub imgbtnExport_Click(sender As Object, e As EventArgs) Handles imgbtnExport.Click
         Dim ds As New DataSet
         CheckLogin()
@@ -271,16 +272,16 @@ Partial Class UnitRequisitionReport
 
             End Try
             If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0) Then
-                    If (Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
-                        ExportToExcel(ds)
-                    Else
-                        lblErrorMessage.Text = "No Data Found..."
-                    End If
+                If (Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
+                    ExportToExcel(ds)
                 Else
                     lblErrorMessage.Text = "No Data Found..."
                 End If
+            Else
+                lblErrorMessage.Text = "No Data Found..."
+            End If
 
-                Else
+        Else
             lblErrorMessage.Text = "You are not allowed to download this report."
         End If
 
@@ -426,7 +427,11 @@ Partial Class UnitRequisitionReport
 
         End If
     End Sub
-    Protected Sub imgbtnSearch_Click(sender As Object, e As ImageClickEventArgs) Handles imgbtnSearch.Click
+    'Protected Sub imgbtnSearch_Click(sender As Object, e As ImageClickEventArgs) Handles imgbtnSearch.Click
+    '    BindGrid()
+    'End Sub
+
+    Protected Sub imgbtnSearch_Click(sender As Object, e As EventArgs) Handles imgbtnSearch.Click
         BindGrid()
     End Sub
     Protected Sub ddlVendorUnit_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlVendorUnit.SelectedIndexChanged
