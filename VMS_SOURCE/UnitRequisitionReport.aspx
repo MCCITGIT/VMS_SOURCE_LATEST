@@ -80,8 +80,11 @@
                 </div>
                 <div class="col-md-4 form-btn-mt">
                     <div class="form-group">
-                        <asp:ImageButton ImageUrl="images/p-search.png" ID="imgbtnSearch" title="Search" runat="server" CssClass="btn btn-primary btn-sm py-2" />
-                        <asp:ImageButton ImageUrl="~/images/p-menu.png" ToolTip="Export To Excel"  title="Menu" ID="imgbtnExport" runat="server" CssClass="btn btn-success btn-sm py-2" />
+                        <asp:LinkButton ID="imgbtnSearch" runat="server" CssClass="btn btn-primary btn-sm">Search</asp:LinkButton>
+                        <asp:LinkButton ID="imgbtnExport" runat="server" CssClass="btn btn-success btn-sm">Export To Excel</asp:LinkButton>
+
+                        <%--<asp:ImageButton ImageUrl="images/p-search.png" ID="imgbtnSearch" title="Search" runat="server" CssClass="btn btn-primary btn-sm py-2" />
+                        <asp:ImageButton ImageUrl="~/images/p-menu.png" ToolTip="Export To Excel"  title="Menu" ID="imgbtnExport" runat="server" CssClass="btn btn-success btn-sm py-2" />--%>
                     </div>
                 </div>
             </div>

@@ -61,8 +61,11 @@
                 </div>
                 <div class="col-md-3 form-btn-mt">
                     <div class="form-group">
-                        <asp:ImageButton ImageUrl="images/p-search.png" ID="imgbtnSearch" runat="server" class="btn btn-primary btn-sm py-2" />
-                        <asp:ImageButton ImageUrl="~/images/p-plus.png" ID="imgbtnAdd" runat="server" class="btn btn-warning btn-sm py-2" />
+                        <asp:LinkButton ID="imgbtnSearch" runat="server" CssClass="btn btn-primary btn-sm">Search</asp:LinkButton>
+                        <asp:LinkButton ID="imgbtnAdd" runat="server" CssClass="btn btn-warning btn-sm">Add</asp:LinkButton>
+
+                        <%--<asp:ImageButton ImageUrl="images/p-search.png" ID="imgbtnSearch" runat="server" class="btn btn-primary btn-sm py-2" />
+                        <asp:ImageButton ImageUrl="~/images/p-plus.png" ID="imgbtnAdd" runat="server" class="btn btn-warning btn-sm py-2" />--%>
                     </div>
                 </div>
             </div>
