@@ -476,7 +476,7 @@
         }
 
         .card .card-body .btn-cust {
-            padding: 1px 8px;
+            padding: 1px 8px !important;
         }
 
             .card .card-body .btn-cust i {

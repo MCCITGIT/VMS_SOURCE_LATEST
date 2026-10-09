@@ -84,13 +84,13 @@
                 </Triggers>
             </asp:UpdatePanel>
             <div class="row">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="form-group">
                         <label class="form-control-label">Indent No.:</label>
                         <asp:Label ID="lblIndentNo" runat="server" Text="(Auto-Generated)" CssClass="labelDataPoint"></asp:Label>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="form-group">
                         <label class="form-control-label">Indent Date:</label>
                         <asp:Label ID="lblIndentDate" runat="server" CssClass="labelDataPoint"></asp:Label>
@@ -164,7 +164,7 @@
                         </asp:UpdatePanel>
                     </div>
                 </div>
-                <div class="col-md-2 form-btn-mt">
+                <div class="col-md-3 form-btn-mt">
                     <div class="form-group">
                         <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" runat="server" id="btnadditional" data-target=".bd-example-modal-lg">
                             PO Linking Request
