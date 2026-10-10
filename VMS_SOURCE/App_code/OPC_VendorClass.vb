@@ -494,10 +494,17 @@ Public Class OPC_VendorClass
     End Function
 
     Public Function Insert_Formulation(ByVal headerid As Integer, ByVal brandCode As String, ByVal UnitCode As String, ByVal productCode As String, ByVal tbl As DataTable, ByVal user_id As String) As Integer
+        Dim ignoredHeaderId As Integer = 0
+        Return Insert_Formulation(headerid, brandCode, UnitCode, productCode, tbl, user_id, ignoredHeaderId)
+    End Function
+
+    ''' <summary>Same as above but also returns the HeaderID emitted by [opc_formulationinsert] (added by MUKESH BHAGAT on 09-Oct-2026 for Product_Formulation).</summary>
+    Public Function Insert_Formulation(ByVal headerid As Integer, ByVal brandCode As String, ByVal UnitCode As String, ByVal productCode As String, ByVal tbl As DataTable, ByVal user_id As String, ByRef headerIdOut As Integer) As Integer
 
         Dim sqlConn As SqlConnection = Nothing
         Dim sqlTrans As SqlTransaction = Nothing
         Dim numRowsAffected As Integer
+        headerIdOut = 0
 
         sqlConn = DBFactory.GetHelper.OpenConnection
         sqlTrans = sqlConn.BeginTransaction
@@ -551,6 +558,12 @@ Public Class OPC_VendorClass
             Using dr As SqlDataReader = sqlCmd.ExecuteReader()
                 If dr.Read() AndAlso Not IsDBNull(dr("Status")) Then
                     numRowsAffected = Convert.ToInt32(dr("Status"))
+                    ' the SP returns HeaderID only on success (Status = 1)
+                    For i As Integer = 0 To dr.FieldCount - 1
+                        If String.Equals(dr.GetName(i), "HeaderID", StringComparison.OrdinalIgnoreCase) AndAlso Not dr.IsDBNull(i) Then
+                            headerIdOut = Convert.ToInt32(dr.GetValue(i))
+                        End If
+                    Next
                 Else
                     numRowsAffected = 0
                 End If
@@ -1073,6 +1086,97 @@ Public Class OPC_VendorClass
         End Try
 
         Return receiveId
+    End Function
+#End Region
+
+#Region "SKU formulation V2 (Product_Formulation: ratio + price + packaging, versioned) - added by MUKESH BHAGAT on 09-Oct-2026"
+    ''' <summary>Result of [opc_sku_formulation_save]: Status 1 saved, 2 no change, 0 error.</summary>
+    Public Class SkuFormulationSaveResult
+        Public Property Status As Integer
+        Public Property Message As String = ""
+        Public Property HeaderId As Integer
+        Public Property Version As Integer
+    End Class
+
+    ''' <summary>Empty TVP tables with the exact column layout of the three table types.</summary>
+    Public Shared Function NewSkuFormulationDtlTable() As DataTable
+        Dim t As New DataTable()
+        t.Columns.Add("srl", GetType(Integer))
+        t.Columns.Add("rawmat_code", GetType(String))
+        t.Columns.Add("ratio", GetType(Decimal))
+        t.Columns.Add("price", GetType(Decimal))
+        t.Columns.Add("uom", GetType(String))
+        Return t
+    End Function
+
+    Public Shared Function NewPackagingPackTable() As DataTable
+        Dim t As New DataTable()
+        t.Columns.Add("pack_key", GetType(Integer))
+        t.Columns.Add("pack_size", GetType(String))
+        t.Columns.Add("processing_fee", GetType(Decimal))
+        t.Columns.Add("labour_charge", GetType(Decimal))
+        t.Columns.Add("margin_pct", GetType(Decimal))
+        Return t
+    End Function
+
+    Public Shared Function NewPackagingLineTable() As DataTable
+        Dim t As New DataTable()
+        t.Columns.Add("pack_key", GetType(Integer))
+        t.Columns.Add("srl", GetType(Integer))
+        t.Columns.Add("cost_name", GetType(String))
+        t.Columns.Add("amount", GetType(Decimal))
+        Return t
+    End Function
+
+    ''' <summary>[opc_sku_formulation_save] - new version of brand+vendor+product with raw materials and packaging in one transaction.</summary>
+    Function SaveSkuFormulation(ByVal brandCode As String, ByVal vendorCode As String, ByVal productCode As String, ByVal remarks As String,
+                                ByVal dtl As DataTable, ByVal packs As DataTable, ByVal lines As DataTable, ByVal userId As String) As SkuFormulationSaveResult
+        Dim result As New SkuFormulationSaveResult()
+        Dim sqlConn As SqlConnection = Nothing
+        Try
+            sqlConn = DBFactory.GetHelper.OpenConnection
+            Dim sqlCmd As New SqlCommand("[dbo].[opc_sku_formulation_save]", sqlConn)
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.Parameters.Add("@brand_code", SqlDbType.VarChar, 50).Value = brandCode
+            sqlCmd.Parameters.Add("@vendor_code", SqlDbType.VarChar, 50).Value = vendorCode
+            sqlCmd.Parameters.Add("@product_code", SqlDbType.VarChar, 50).Value = productCode
+            sqlCmd.Parameters.Add("@remarks", SqlDbType.VarChar, 500).Value = If(String.IsNullOrWhiteSpace(remarks), CObj(DBNull.Value), remarks.Trim())
+            Dim pDtl As SqlParameter = sqlCmd.Parameters.Add("@dtl", SqlDbType.Structured) : pDtl.TypeName = "dbo.tbl_opc_sku_formulation_dtl" : pDtl.Value = dtl
+            Dim pPack As SqlParameter = sqlCmd.Parameters.Add("@packs", SqlDbType.Structured) : pPack.TypeName = "dbo.tbl_opc_packaging_pack" : pPack.Value = packs
+            Dim pLine As SqlParameter = sqlCmd.Parameters.Add("@lines", SqlDbType.Structured) : pLine.TypeName = "dbo.tbl_opc_packaging_line" : pLine.Value = lines
+            sqlCmd.Parameters.Add("@user_id", SqlDbType.VarChar, 50).Value = userId
+            Using dr As SqlDataReader = sqlCmd.ExecuteReader()
+                If dr.Read() Then
+                    result.Status = If(IsDBNull(dr("Status")), 0, Convert.ToInt32(dr("Status")))
+                    result.Message = If(IsDBNull(dr("Message")), "", Convert.ToString(dr("Message")))
+                    result.HeaderId = If(IsDBNull(dr("HeaderID")), 0, Convert.ToInt32(dr("HeaderID")))
+                    result.Version = If(IsDBNull(dr("Version")), 0, Convert.ToInt32(dr("Version")))
+                End If
+            End Using
+        Finally
+            If sqlConn IsNot Nothing Then sqlConn.Close()
+        End Try
+        Return result
+    End Function
+
+    ''' <summary>[opc_sku_formulation_get] - table 0 header, 1 raw materials, 2 packs, 3 pack lines. Pass sfId, or 0 with the key for the current version.</summary>
+    Function GetSkuFormulation(ByVal sfId As Integer, Optional ByVal brandCode As String = Nothing, Optional ByVal vendorCode As String = Nothing, Optional ByVal productCode As String = Nothing) As DataSet
+        Dim sqlParams(3) As SqlParameter
+        sqlParams(0) = New SqlParameter("@sf_id", SqlDbType.Int) With {.Value = If(sfId > 0, CObj(sfId), DBNull.Value)}
+        sqlParams(1) = New SqlParameter("@brand_code", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(brandCode), CObj(DBNull.Value), brandCode)}
+        sqlParams(2) = New SqlParameter("@vendor_code", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(vendorCode), CObj(DBNull.Value), vendorCode)}
+        sqlParams(3) = New SqlParameter("@product_code", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(productCode), CObj(DBNull.Value), productCode)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_get]", Data.CommandType.StoredProcedure, sqlParams)
+    End Function
+
+    ''' <summary>[opc_sku_formulation_list] - current versions (history = "N") or every version (history = "Y").</summary>
+    Function ListSkuFormulation(ByVal brandCode As String, ByVal vendorCode As String, ByVal productCode As String, ByVal history As String) As DataSet
+        Dim sqlParams(3) As SqlParameter
+        sqlParams(0) = New SqlParameter("@brand_code", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(brandCode), CObj(DBNull.Value), brandCode.Trim())}
+        sqlParams(1) = New SqlParameter("@vendor_code", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(vendorCode), CObj(DBNull.Value), vendorCode.Trim())}
+        sqlParams(2) = New SqlParameter("@product_code", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(productCode), CObj(DBNull.Value), productCode.Trim())}
+        sqlParams(3) = New SqlParameter("@history", SqlDbType.Char, 1) With {.Value = If(history = "Y", "Y", "N")}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_list]", Data.CommandType.StoredProcedure, sqlParams)
     End Function
 #End Region
 

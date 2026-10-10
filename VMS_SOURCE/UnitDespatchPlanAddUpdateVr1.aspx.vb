@@ -325,7 +325,7 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             Dim isTemporaryV02Exception As Boolean =
                 String.Equals(userInfo.userBranchEntity, "V02", StringComparison.OrdinalIgnoreCase) AndAlso
                 DateTime.Today >= New DateTime(2026, 10, 4) AndAlso
-                DateTime.Today <= New DateTime(2026, 10, 6)
+                DateTime.Today <= New DateTime(2026, 10, 11)
 
             If Result <= lowerBound AndAlso Not isTemporaryV02Exception Then
                 'Modified-by MUKESH BHAGAT on 17-09-2026 : say when freight was included, so the user
