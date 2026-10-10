@@ -33,7 +33,7 @@
                     </div>
                 </div>
             </div>
-            <div class="mst-panel-header" style="padding: 10px 0">
+            <div class="mst-panel-header" style="padding: 10px 0px 0px 0px">
                 <div class="mst-panel-header-left">
                     <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
                     <div>

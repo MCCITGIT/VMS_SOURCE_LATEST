@@ -215,7 +215,8 @@ Partial Class Vendor_SKU_AddUpdate
     End Sub
 #End Region
 #Region "Vendor SKU Search Result for SKU Code"
-    Protected Sub btnSkuCode_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnSkuCode.Click
+    'Protected Sub btnSkuCode_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnSkuCode.Click
+    Protected Sub btnSkuCode_Click(sender As Object, e As EventArgs) Handles btnSkuCode.Click
         '    checkLogin()
         Dim VendorListset As New DataSet
         Dim Vendor_mstr As New VendorMaster
