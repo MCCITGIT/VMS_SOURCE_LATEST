@@ -97,9 +97,16 @@ Partial Class FormulationMstrList
     Private Sub Binddata()
         Dim ds As DataSet
         Dim obj As New OPC_VendorClass()
-        ds = obj.GetFormulationDataList(ddlBrand.SelectedValue, ddlRawMat.SelectedValue, hdnProductCode.Value, ddlvendor.SelectedValue)
+        ' V2 (MUKESH BHAGAT 09-Oct-2026): versioned SKU formulation list - current versions only; columns aliased for the existing grid
+        ds = obj.ListSkuFormulation(ddlBrand.SelectedValue, ddlvendor.SelectedValue, hdnProductCode.Value, "N")
 
         Dim table As DataTable = RmGridHelper.GetTable(ds)
+        If table IsNot Nothing Then
+            Dim map As New Dictionary(Of String, String) From {{"sf_id", "fh_id"}, {"brand_name", "Brand_Name"}, {"sf_brand_code", "Brand_Code"}, {"sf_vendor_code", "vendor_code"}, {"sf_product_code", "Sku_Code"}, {"product_name", "Sku_Desc"}}
+            For Each kv In map
+                If table.Columns.Contains(kv.Key) AndAlso Not table.Columns.Contains(kv.Value) Then table.Columns(kv.Key).ColumnName = kv.Value
+            Next
+        End If
         RmGridHelper.BindPaged(gvFormulationList, table)
         UpdateSummary(table)
     End Sub
@@ -170,7 +177,7 @@ Partial Class FormulationMstrList
                 Dim id As String = If(hdnid Is Nothing, String.Empty, Convert.ToString(hdnid.Value))
 
                 'Dim redirectUrl = "FormulationMaster.aspx?brandcode=" & Server.UrlEncode(brandCode) & "&rawcode=" & Server.UrlEncode(rawCode) & "&producode=" & Server.UrlEncode(produCode)
-                Dim redirectUrl = "Product_Formulation.aspx?brandcode=" & Server.UrlEncode(brandCode) & "&producode=" & Server.UrlEncode(produCode) & "&id=" & Server.UrlEncode(id)
+                Dim redirectUrl = "Product_Formulation.aspx?id=" & Server.UrlEncode(id)     ' id = sf_id of the current version
                 Response.Redirect(redirectUrl, False)
                 Context.ApplicationInstance.CompleteRequest()
                 Exit Sub
