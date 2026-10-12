@@ -720,6 +720,7 @@
                 if (dup) { setFieldError('txtPackSize', 'valPackSize', 'This Pack size is already added.', true); return false; }
                 return true;
             }
+    <link href="includes/product-formulation.css" rel="stylesheet" />
 
             /* every pack must have complete lines and a margin between 0 and 100; packs are saved with the formulation */
             function validateAllPacks() {

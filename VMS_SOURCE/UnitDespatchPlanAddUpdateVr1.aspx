@@ -104,7 +104,7 @@
         .loader-wrapper {
             position: fixed;
             z-index: 999999999;
-            background: rgba(41, 43, 55, 0.85);
+            background: rgba(41, 43, 55, 0.5);
             width: 100%;
             height: 100vh;
             top: 0;

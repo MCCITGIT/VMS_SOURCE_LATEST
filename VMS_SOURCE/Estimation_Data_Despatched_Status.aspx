@@ -90,7 +90,7 @@
                             <%--<asp:ImageButton ImageUrl="images/ic_search.gif" ID="ImgbtnSearch" CssClass="btn btn-primary btn-sm" runat="server" AlternateText="Search" />--%>
                             <asp:LinkButton ID="ImgbtnSearch" CssClass="btn btn-primary btn-sm" runat="server" AlternateText="Search" OnClick="ImgbtnSearch_Click">Search</asp:LinkButton>
                             <asp:Button ID="btnSubmit" CssClass="btn btn-success btn-sm" TabIndex="31" runat="server" Text="Submit" />
-                            <asp:Button ID="btnCancel" CssClass="btn btn-secondary btn-sm" TabIndex="32" runat="server" Text="Cancel" />
+                            <asp:Button ID="btnCancel" CssClass="btn btn-secondary btn-sm d-none" TabIndex="32" runat="server" Text="Cancel" />
                         </div>
                     </div>
                     <div id="divErrMsg1" class="errormsg"></div>

@@ -241,7 +241,11 @@ Partial Class OCSpecificationList
 
         End If
     End Sub
-    Protected Sub imgbtnSearch_Click(sender As Object, e As ImageClickEventArgs) Handles imgbtnSearch.Click
+    'Protected Sub imgbtnSearch_Click(sender As Object, e As ImageClickEventArgs) Handles imgbtnSearch.Click
+    '    BindGrid(ddlVender.SelectedValue, txtFromDate.Text, txtTodate.Text, ddlproduct.SelectedValue)
+    'End Sub
+
+    Protected Sub imgbtnSearch_Click(sender As Object, e As EventArgs) Handles imgbtnSearch.Click
         BindGrid(ddlVender.SelectedValue, txtFromDate.Text, txtTodate.Text, ddlproduct.SelectedValue)
     End Sub
     Public Function ExportOCSReport(ByVal genReportPath As String, ByVal dthdr As DataTable) As String
