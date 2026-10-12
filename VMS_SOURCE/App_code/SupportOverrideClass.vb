@@ -21,6 +21,16 @@ Public Class SupportOverrideClass
     Public Const OCR_VALIDATION_ENABLED As String = "OCR_VALIDATION_ENABLED"
     Public Const OCR_FAIL_OPEN As String = "OCR_FAIL_OPEN"
     Public Const OCR_API_TIMEOUT_MS As String = "OCR_API_TIMEOUT_MS"
+    Public Const SUPPORT_PAGE_USERS As String = "SUPPORT_PAGE_USERS"
+
+    ''' <summary>True when userId may open SupportOverrides.aspx: listed (comma separated) in SUPPORT_PAGE_USERS. No row = nobody.</summary>
+    Public Shared Function CanOpenSupportPage(ByVal userId As String) As Boolean
+        If String.IsNullOrWhiteSpace(userId) Then Return False
+        For Each u As String In GetValue(SUPPORT_PAGE_USERS, "").Split(","c, ";"c)
+            If String.Equals(u.Trim(), userId.Trim(), StringComparison.OrdinalIgnoreCase) Then Return True
+        Next
+        Return False
+    End Function
 
     ''' <summary>Catalogue shown on the support page: key, label, needs a unit scope, needs a value, value hint.</summary>
     Public Class OverrideType
@@ -41,7 +51,9 @@ Public Class SupportOverrideClass
         New OverrideType With {.Key = OCR_FAIL_OPEN, .Label = "OCR: continue saving when the OCR service fails (Y/N)", .NeedsScope = False, .NeedsValue = True, .ValueHint = "Y or N",
                                .Description = "Y = if the OCR service errors or times out the save proceeds; N = the save is blocked until OCR answers."},
         New OverrideType With {.Key = OCR_API_TIMEOUT_MS, .Label = "OCR: service timeout in milliseconds", .NeedsScope = False, .NeedsValue = True, .ValueHint = "e.g. 30000",
-                               .Description = "How long Submit waits for the OCR service before treating it as failed."}
+                               .Description = "How long Submit waits for the OCR service before treating it as failed."},
+        New OverrideType With {.Key = SUPPORT_PAGE_USERS, .Label = "Support page: user ids allowed to open this page", .NeedsScope = False, .NeedsValue = True, .ValueHint = "murthy,user2",
+                               .Description = "Comma-separated login ids. Only these users (SYSADMIN group) can open Support Overrides. Do not remove yourself."}
     }
 
     Public Shared Function FindType(ByVal key As String) As OverrideType
