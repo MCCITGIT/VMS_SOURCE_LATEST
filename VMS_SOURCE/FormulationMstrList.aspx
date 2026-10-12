@@ -202,6 +202,13 @@
                                                 <HeaderStyle HorizontalAlign="Center" />
                                                 <ItemStyle HorizontalAlign="Right" Width="6%" />
                                             </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="Status">
+                                                <ItemTemplate>
+                                                    <span style='font-weight:600;color:<%# If(Eval("sf_status").ToString() = "APPROVED", "#28a745", If(Eval("sf_status").ToString() = "REJECTED", "#dc3545", "#e0a800")) %>'><%# Eval("sf_status") %></span>
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center" />
+                                                <ItemStyle HorizontalAlign="Center" Width="7%" />
+                                            </asp:TemplateField>
                                             <asp:TemplateField HeaderText="Packs">
                                                 <ItemTemplate>
                                                     <asp:Label ID="lblPacks" Text='<%# Eval("pack_count") %>' runat="server" />

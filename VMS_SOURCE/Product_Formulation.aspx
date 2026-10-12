@@ -4,6 +4,7 @@
 
 <asp:Content ID="Content1" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
     <link href="includes/rm-procurement.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />
+    <link href="includes/product-formulation.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />
     <style type="text/css">
         /* ---------- Scoped to .pf so it doesn't clash with MasterPage styles ---------- */
         .pf {
@@ -350,10 +351,18 @@
             .pf-sku-table .pf-c-price { width: 110px; }
             .pf-sku-table .pf-c-act { width: 70px; }
 
-            .pf-sku-table td {
+            .pf-sku-table tbody tr.tlrowlight td {
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
+
+            /* the autocomplete flyouts (SKU, raw material) render inside the entry cells - never clip them */
+            .pf-sku-table,
+            .pf-sku-table .pf-entry-row td,
+            .pf-section .pf-table-wrap {
+                overflow: visible !important;
+            }
+
 
             .pf-sku-table .select2-container {
                 width: 100% !important;
@@ -720,7 +729,6 @@
                 if (dup) { setFieldError('txtPackSize', 'valPackSize', 'This Pack size is already added.', true); return false; }
                 return true;
             }
-    <link href="includes/product-formulation.css" rel="stylesheet" />
 
             /* every pack must have complete lines and a margin between 0 and 100; packs are saved with the formulation */
             function validateAllPacks() {
@@ -954,9 +962,13 @@
                     </div>
 
                     <asp:HiddenField ID="hdnSnapshot" ClientIDMode="Static" runat="server" />
+                    <asp:Panel ID="pnlHoRemarks" runat="server" Visible="false" Style="margin-top: 8px; padding: 8px 10px; border-radius: 6px; font-size: 12px;">
+                        <b><asp:Label ID="lblHoRemarksTitle" runat="server"></asp:Label></b>
+                        <asp:Label ID="lblHoRemarks" runat="server"></asp:Label>
+                    </asp:Panel>
                     <div class="pf-head-grid" style="margin-top: 8px;">
                         <div>
-                            <label class="pf-label">Version</label>
+                            <label class="pf-label">Version / Status</label>
                             <div style="height: 26px; line-height: 26px; font-weight: 600; color: var(--pf-theme);"><asp:Label ID="lblVersionInfo" runat="server" Text="New (version 1 on submit)"></asp:Label></div>
                         </div>
                         <div style="grid-column: span 2;">
@@ -967,6 +979,17 @@
 
                     <asp:Label ID="valGrid" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                     <asp:Label ID="lblErrorMessage" ClientIDMode="Static" CssClass="errormsg" runat="server" Style="font-size: 11px; font-weight: bold;" Text=""></asp:Label>
+
+                    <%-- HO approval (visible to HO only while the version is pending) --%>
+                    <asp:Panel ID="pnlApproval" runat="server" Visible="false" Style="margin-top: 10px; padding: 10px; border: 1px solid #ffc107; background: #fffbe8; border-radius: 6px;">
+                        <label class="pf-label">HO approval - remarks (mandatory to reject; e.g. the negotiated price)</label>
+                        <asp:TextBox ID="txtHoRemarks" runat="server" TextMode="MultiLine" Rows="2" MaxLength="1000" Style="width: 100%;"></asp:TextBox>
+                        <asp:Label ID="valHoRemarks" runat="server" CssClass="dispatch-field-error"></asp:Label>
+                        <div class="pf-actions" style="margin-top: 6px;">
+                            <asp:Button ID="btnApprove" runat="server" Text="Approve" CssClass="pf-btn pf-btn-save" ClientIDMode="Static" OnClick="btnApprove_Click" OnClientClick="return rmConfirmPostback('btnApprove', 'approve');" />
+                            <asp:Button ID="btnReject" runat="server" Text="Reject" CssClass="pf-btn" Style="background: #dc3545; border-color: #dc3545; color: #fff; font-weight: 600;" ClientIDMode="Static" OnClick="btnReject_Click" OnClientClick="return rmConfirmPostback('btnReject', 'submit');" />
+                        </div>
+                    </asp:Panel>
 
                     <div class="pf-actions">
                         <asp:Button ID="btnSubmit" runat="server" Text="Submit" CssClass="pf-btn pf-btn-save" ClientIDMode="Static" Visible="false" OnClick="btnSubmit_Click" />
