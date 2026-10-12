@@ -188,6 +188,34 @@
                                                 <HeaderStyle HorizontalAlign="Center" />
                                                 <ItemStyle HorizontalAlign="Left" Width="6%" />
                                             </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="Version">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="lblVersion" Text='<%# Eval("sf_version") %>' runat="server" />
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center" />
+                                                <ItemStyle HorizontalAlign="Center" Width="4%" />
+                                            </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="SKU Price (&#8377;)">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="lblSkuPrice" Text='<%# String.Format("{0:0.00}", Eval("sf_sku_price")) %>' runat="server" />
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center" />
+                                                <ItemStyle HorizontalAlign="Right" Width="6%" />
+                                            </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="Status">
+                                                <ItemTemplate>
+                                                    <span style='font-weight:600;color:<%# If(Eval("sf_status").ToString() = "APPROVED", "#28a745", If(Eval("sf_status").ToString() = "REJECTED", "#dc3545", "#e0a800")) %>'><%# Eval("sf_status") %></span>
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center" />
+                                                <ItemStyle HorizontalAlign="Center" Width="7%" />
+                                            </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="Packs">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="lblPacks" Text='<%# Eval("pack_count") %>' runat="server" />
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center" />
+                                                <ItemStyle HorizontalAlign="Center" Width="4%" />
+                                            </asp:TemplateField>
                                             <asp:TemplateField HeaderText="Action">
                                                 <ItemTemplate>
                                                     <div style="display: flex; align-items: center; justify-content: center">
