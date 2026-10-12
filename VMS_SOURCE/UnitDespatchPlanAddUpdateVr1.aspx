@@ -1684,12 +1684,15 @@
         // failed bill blocks the save and shows the panel with what the bill contains.
         // If the OCR service itself is unreachable the save proceeds (fail-open) so a
         // service outage can never stop despatches - flip OCR_FAIL_OPEN to change that.
-        var OCR_FAIL_OPEN = true;
+        // Modified-by MUKESH BHAGAT on 12-10-2026 : these three flags now come from the Support
+        // Overrides page (table support_override_mstr, keys OCR_FAIL_OPEN / OCR_VALIDATION_ENABLED /
+        // OCR_API_TIMEOUT_MS). The values below are the defaults used when no override row exists.
+        var OCR_FAIL_OPEN = <%= OcrFailOpenJs %>;
         // Modified-by MUKESH BHAGAT on 06-10-2026 : COLOURANT_INV_AI is live again, so Submit
         // checks the uploaded bill. If the call fails or does not answer within
         // OCR_API_TIMEOUT_MS, the bill check is skipped and the save continues.
-        var OCR_VALIDATION_ENABLED = true;
-        var OCR_API_TIMEOUT_MS = 30000;
+        var OCR_VALIDATION_ENABLED = <%= OcrValidationEnabledJs %>;
+        var OCR_API_TIMEOUT_MS = <%= OcrApiTimeoutMsJs %>;
         var ocrPassThrough = false;
 
         function bindInvoiceUploadExtract() {
