@@ -1169,6 +1169,24 @@ Public Class OPC_VendorClass
         Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_get]", Data.CommandType.StoredProcedure, sqlParams)
     End Function
 
+    ''' <summary>[opc_sku_formulation_ho_email] - TOAddr / CCAddr / BCCAddr for the approval mail (same pattern as Indent_HO_Email).</summary>
+    Function GetSkuFormulationHoEmail() As DataSet
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_ho_email]", Data.CommandType.StoredProcedure)
+    End Function
+
+    ''' <summary>[opc_sku_formulation_approve] - HO decision: action "A" approve / "R" reject (remarks mandatory). Returns the SP message; "" on success.</summary>
+    Function ApproveSkuFormulation(ByVal sfId As Integer, ByVal action As String, ByVal remarks As String, ByVal userId As String) As String
+        Dim sqlParams(3) As SqlParameter
+        sqlParams(0) = New SqlParameter("@sf_id", SqlDbType.Int) With {.Value = sfId}
+        sqlParams(1) = New SqlParameter("@action", SqlDbType.Char, 1) With {.Value = action}
+        sqlParams(2) = New SqlParameter("@remarks", SqlDbType.VarChar, 1000) With {.Value = If(String.IsNullOrWhiteSpace(remarks), CObj(DBNull.Value), remarks.Trim())}
+        sqlParams(3) = New SqlParameter("@user_id", SqlDbType.VarChar, 50) With {.Value = userId}
+        Dim ds As DataSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_approve]", Data.CommandType.StoredProcedure, sqlParams)
+        If ds Is Nothing OrElse ds.Tables.Count = 0 OrElse ds.Tables(0).Rows.Count = 0 Then Return "No response from the approval procedure."
+        Dim r As DataRow = ds.Tables(0).Rows(0)
+        Return If(Convert.ToInt32(r("Status")) = 1, "", Convert.ToString(r("Message")))
+    End Function
+
     ''' <summary>[opc_sku_formulation_list] - current versions (history = "N") or every version (history = "Y").</summary>
     Function ListSkuFormulation(ByVal brandCode As String, ByVal vendorCode As String, ByVal productCode As String, ByVal history As String) As DataSet
         Dim sqlParams(3) As SqlParameter

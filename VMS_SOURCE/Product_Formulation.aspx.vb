@@ -3,6 +3,7 @@ Imports System.Data
 Imports System.Globalization
 Imports System.Linq
 Imports System.Text
+Imports System.Configuration
 Imports VMS.Web
 Imports System.Data.SqlClient
 
@@ -432,7 +433,8 @@ Partial Class Product_Formulation
             Select Case result.Status
                 Case 1
                     ClearInlineValidation()
-                    RmActionPopup.ShowSuccess(Me, "Saved successfully as version " & result.Version & ".", "Product_Formulation.aspx?id=" & result.HeaderId)
+                    Dim mailNote As String = SendHoMail(result.HeaderId, result.Version)
+                    RmActionPopup.ShowSuccess(Me, "Saved successfully as version " & result.Version & If(mailNote = "", " and sent to HO for approval.", ". " & mailNote), "Product_Formulation.aspx?id=" & result.HeaderId)
                 Case 2
                     RmActionPopup.ShowError(Me, result.Message)
                 Case Else
@@ -464,9 +466,14 @@ Partial Class Product_Formulation
         hdnProductCode.Value = Convert.ToString(h("sf_product_code")).Trim()
         hdnProductName.Value = Convert.ToString(h("product_name")).Trim()
         txtProductSearch.Text = hdnProductCode.Value & "-" & hdnProductName.Value
+        Dim status As String = If(h.Table.Columns.Contains("sf_status"), Convert.ToString(h("sf_status")).Trim().ToUpperInvariant(), "APPROVED")
+        Dim hoRemarks As String = If(h.Table.Columns.Contains("sf_ho_remarks"), Convert.ToString(h("sf_ho_remarks")).Trim(), "")
+        Dim approvedBy As String = If(h.Table.Columns.Contains("sf_approved_by"), Convert.ToString(h("sf_approved_by")).Trim(), "")
         lblVersionInfo.Text = "Version " & Convert.ToString(h("sf_version")) &
-            If(Convert.ToString(h("sf_is_current")) = "Y", " (current)", " (history - valid till " & Convert.ToString(h("sf_valid_to")) & ")")
+            If(Convert.ToString(h("sf_is_current")) = "Y", " (current)", " (history - valid till " & Convert.ToString(h("sf_valid_to")) & ")") &
+            " - " & StatusText(status, approvedBy)
         txtRemarks.Text = ""
+        ApplyApprovalState(status, hoRemarks)
 
         Dim dtGrid As DataTable = GetGridTable()
         dtGrid.Rows.Clear()
@@ -543,6 +550,150 @@ Partial Class Product_Formulation
     Protected Sub btnCancel_Click1(sender As Object, e As EventArgs)
         Response.Redirect("~/FormulationMstrList.aspx")
     End Sub
+#End Region
+
+#Region "HO approval + mail"
+    ''' <summary>HO groups decide; SYSADMIN can do both sides (testing / support).</summary>
+    Private Function IsHoUser() As Boolean
+        Dim g As String = Convert.ToString(userInfo.userGroupCodeEntity)
+        Return g = Constant.UserFormAccess.HO OrElse g = Constant.UserFormAccess.HOMARKETING OrElse g = Constant.UserFormAccess.HOACCOUNTS OrElse g = Constant.UserFormAccess.SYSADMIN
+    End Function
+
+    Private Shared Function StatusText(ByVal status As String, ByVal approvedBy As String) As String
+        Select Case status
+            Case "APPROVED" : Return "APPROVED" & If(approvedBy <> "", " by " & approvedBy, "")
+            Case "REJECTED" : Return "REJECTED" & If(approvedBy <> "", " by " & approvedBy, "")
+            Case Else : Return "PENDING HO APPROVAL"
+        End Select
+    End Function
+
+    ''' <summary>Shows HO remarks to everyone, the Approve / Reject panel to HO while pending, and locks editing for HO (except SYSADMIN).</summary>
+    Private Sub ApplyApprovalState(ByVal status As String, ByVal hoRemarks As String)
+        pnlHoRemarks.Visible = hoRemarks <> ""
+        If hoRemarks <> "" Then
+            lblHoRemarksTitle.Text = If(status = "REJECTED", "HO rejected this version - ", "HO remarks - ")
+            lblHoRemarks.Text = Server.HtmlEncode(hoRemarks)
+            pnlHoRemarks.Style("background") = If(status = "REJECTED", "#f8d7da", "#d4edda")
+            pnlHoRemarks.Style("color") = If(status = "REJECTED", "#721c24", "#155724")
+        End If
+        pnlApproval.Visible = IsHoUser() AndAlso status = "PENDING"
+        valHoRemarks.Text = ""
+        ' HO (other than SYSADMIN) only reviews: no editing, no new version from their side
+        If IsHoUser() AndAlso userInfo.userGroupCodeEntity <> Constant.UserFormAccess.SYSADMIN Then
+            btnSubmit.Visible = False
+            btnAdd.Enabled = False
+            btnAddPack.Enabled = False
+        End If
+    End Sub
+
+    Protected Sub btnApprove_Click(sender As Object, e As EventArgs)
+        Decide("A")
+    End Sub
+
+    Protected Sub btnReject_Click(sender As Object, e As EventArgs)
+        Decide("R")
+    End Sub
+
+    Private Sub Decide(ByVal action As String)
+        Dim sfId As Integer = ParseInteger(hdnId.Value)
+        If sfId <= 0 OrElse Not IsHoUser() Then Exit Sub
+        If action = "R" AndAlso String.IsNullOrWhiteSpace(txtHoRemarks.Text) Then
+            CapturePackInputs() : BindPacks()
+            pnlApproval.Visible = True
+            valHoRemarks.Text = "Please enter the remarks / negotiated price before rejecting."
+            Exit Sub
+        End If
+        Dim obj As New OPC_VendorClass()
+        Dim err As String = obj.ApproveSkuFormulation(sfId, action, txtHoRemarks.Text, userInfo.userIDEntity)
+        If err <> "" Then
+            CapturePackInputs() : BindPacks()
+            pnlApproval.Visible = True
+            valHoRemarks.Text = err
+            Exit Sub
+        End If
+        RmActionPopup.ShowSuccess(Me, If(action = "A", "Formulation approved.", "Formulation rejected. The vendor will see your remarks when they open it."), "Product_Formulation.aspx?id=" & sfId)
+    End Sub
+
+    ''' <summary>Mail to HO after a version is saved: header, raw materials with ratio/price, packs and a link.
+    ''' Recipients come from SP [opc_sku_formulation_ho_email] (TOAddr/CCAddr/BCCAddr), the same way as Indent_HO_Email.</summary>
+    ''' <returns>"" when the mail API accepted the mail, otherwise a short reason shown in the save popup (the save itself is never undone).</returns>
+    Private Function SendHoMail(ByVal sfId As Integer, ByVal version As Integer) As String
+        Dim toAddress As String = "", ccAddress As String = "", bccAddress As String = ""
+        Try
+            Dim dsMail As DataSet = New OPC_VendorClass().GetSkuFormulationHoEmail()
+            If dsMail IsNot Nothing AndAlso dsMail.Tables.Count > 0 AndAlso dsMail.Tables(0).Rows.Count > 0 Then
+                toAddress = Convert.ToString(dsMail.Tables(0).Rows(0)("TOAddr")).Trim()
+                ccAddress = Convert.ToString(dsMail.Tables(0).Rows(0)("CCAddr")).Trim()
+                bccAddress = Convert.ToString(dsMail.Tables(0).Rows(0)("BCCAddr")).Trim()
+            End If
+        Catch ex As Exception
+            Return "HO mail NOT sent - recipient lookup failed (" & ex.Message & ")"
+        End Try
+        If toAddress = "" Then Return "HO mail NOT sent - opc_sku_formulation_ho_email returned no TOAddr"
+        Try
+            Dim sb As New StringBuilder()
+            Dim link As String = Request.Url.GetLeftPart(UriPartial.Authority) & ResolveUrl("~/Product_Formulation.aspx?id=" & sfId)
+            Dim td As String = "style='border:1px solid #999;padding:4px 8px;'"
+            sb.Append("<p>Dear HO team,</p><p>A SKU formulation has been submitted and needs your approval.</p>")
+            sb.Append("<table style='border-collapse:collapse;font-family:Segoe UI,Arial;font-size:13px;'>")
+            sb.Append("<tr><td " & td & "><b>Brand</b></td><td " & td & ">" & Server.HtmlEncode(ddlBrand.SelectedItem.Text) & "</td></tr>")
+            sb.Append("<tr><td " & td & "><b>Vendor</b></td><td " & td & ">" & Server.HtmlEncode(ddlvendor.SelectedItem.Text) & "</td></tr>")
+            sb.Append("<tr><td " & td & "><b>SKU</b></td><td " & td & ">" & Server.HtmlEncode(hdnProductCode.Value & " - " & hdnProductName.Value) & "</td></tr>")
+            sb.Append("<tr><td " & td & "><b>Version</b></td><td " & td & ">" & version & "</td></tr>")
+            sb.Append("<tr><td " & td & "><b>Submitted by</b></td><td " & td & ">" & Server.HtmlEncode(userInfo.userIDEntity) & " on " & DateTime.Now.ToString("dd/MM/yyyy HH:mm") & "</td></tr>")
+            If txtRemarks.Text.Trim() <> "" Then sb.Append("<tr><td " & td & "><b>Vendor remarks</b></td><td " & td & ">" & Server.HtmlEncode(txtRemarks.Text.Trim()) & "</td></tr>")
+            sb.Append("</table><br/>")
+
+            sb.Append("<b>Raw materials</b><table style='border-collapse:collapse;font-family:Segoe UI,Arial;font-size:13px;'>")
+            sb.Append("<tr style='background:#375973;color:#fff;'><th " & td & ">Raw material</th><th " & td & ">Ratio %</th><th " & td & ">Price</th><th " & td & ">Amount</th></tr>")
+            Dim skuPrice As Decimal = 0D
+            For Each r As DataRow In GetGridTable().Rows
+                Dim ratio As Decimal = ParseDecimal(Convert.ToString(r("ratio"))), price As Decimal = ParseDecimal(Convert.ToString(r("rate")))
+                Dim amt As Decimal = Math.Round(ratio / 100D * price, 2) : skuPrice += amt
+                sb.Append("<tr><td " & td & ">" & Server.HtmlEncode(Convert.ToString(r("rawmat_name"))) & " (" & Server.HtmlEncode(Convert.ToString(r("rawmat_code"))) & ")</td><td " & td & " align='right'>" & ratio.ToString("0.00") & "</td><td " & td & " align='right'>" & price.ToString("0.00") & "</td><td " & td & " align='right'>" & amt.ToString("0.00") & "</td></tr>")
+            Next
+            sb.Append("<tr><td " & td & " colspan='3' align='right'><b>SKU price</b></td><td " & td & " align='right'><b>" & skuPrice.ToString("0.00") & "</b></td></tr></table><br/>")
+
+            sb.Append("<b>Packaging cost</b><table style='border-collapse:collapse;font-family:Segoe UI,Arial;font-size:13px;'>")
+            sb.Append("<tr style='background:#375973;color:#fff;'><th " & td & ">Pack size</th><th " & td & ">Material lines</th><th " & td & ">Processing</th><th " & td & ">Labour</th><th " & td & ">Margin %</th><th " & td & ">Total</th></tr>")
+            For Each h As DataRow In PackHdr().Select("", "pack_key")
+                Dim key As Integer = Convert.ToInt32(h("pack_key"))
+                Dim material As Decimal = 0D
+                Dim lines As New List(Of String)()
+                For Each l As DataRow In PackDtl().Select("pack_key = " & key, "srl, line_key")
+                    Dim name As String = Convert.ToString(l("cost_name")).Trim()
+                    If name = "" Then Continue For
+                    Dim amt As Decimal = ParseDecimal(Convert.ToString(l("amount")))
+                    material += amt
+                    lines.Add(Server.HtmlEncode(name) & " " & amt.ToString("0.00"))
+                Next
+                Dim proc As Decimal = ParseDecimal(Convert.ToString(h("processing_fee"))), lab As Decimal = ParseDecimal(Convert.ToString(h("labour_charge"))), pct As Decimal = ParseDecimal(Convert.ToString(h("margin_pct")))
+                Dim baseAmt As Decimal = skuPrice + material + proc + lab
+                Dim total As Decimal = Math.Round(baseAmt + baseAmt * pct / 100D, 2)
+                sb.Append("<tr><td " & td & ">" & Server.HtmlEncode(Convert.ToString(h("pack_size"))) & "</td><td " & td & ">" & String.Join(", ", lines.ToArray()) & " (= " & material.ToString("0.00") & ")</td><td " & td & " align='right'>" & proc.ToString("0.00") & "</td><td " & td & " align='right'>" & lab.ToString("0.00") & "</td><td " & td & " align='right'>" & pct.ToString("0.00") & "</td><td " & td & " align='right'><b>" & total.ToString("0.00") & "</b></td></tr>")
+            Next
+            sb.Append("</table><br/>")
+            sb.Append("<p><a href='" & link & "'>Open the formulation to approve or reject</a></p>")
+            sb.Append("<h4 style='color:darkred;'>**This is an auto-generated mail. Please do not reply to this mail**</h4>")
+
+            Dim mailEntity As New MailEntity()
+            mailEntity.FromAddress = ConfigurationManager.AppSettings("EMAIL_ADDRESS")
+            mailEntity.ToAddress = toAddress
+            mailEntity.CCAddress = ccAddress
+            mailEntity.BCCAddress = bccAddress
+            mailEntity.MailSubject = "SKU formulation approval required: " & hdnProductCode.Value & " - " & ddlvendor.SelectedItem.Text & " (v" & version & ")"
+            mailEntity.MailBody = sb.ToString()
+            mailEntity.Sender_App = "VMS"
+            mailEntity.Sender_Task = "SkuFormulationApproval"
+            Dim mailobj As New EmailSMSsender()
+            Dim rc As Integer = mailobj.sendMail(mailEntity)
+            If rc = 0 Then Return "HO mail NOT sent - mail service rejected it (to: " & toAddress & ")"
+            Return ""
+        Catch ex As Exception
+            ' a mail failure must never undo a saved formulation
+            Return "HO mail NOT sent - " & ex.Message
+        End Try
+    End Function
 #End Region
 
 #Region "section 2 - packaging cost"
