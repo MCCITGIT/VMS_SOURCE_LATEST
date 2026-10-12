@@ -11,6 +11,26 @@ Imports System.Globalization
 
 Partial Class UnitDespatchPlanAddUpdateVr1
     Inherits System.Web.UI.Page
+
+    'Modified-by MUKESH BHAGAT on 12-10-2026 : OCR flags for the page script come from the Support
+    'Overrides table (SupportOverrides.aspx); the second argument is the default when no row exists.
+    Protected ReadOnly Property OcrFailOpenJs() As String
+        Get
+            Return If(SupportOverrideClass.GetBool(SupportOverrideClass.OCR_FAIL_OPEN, True), "true", "false")
+        End Get
+    End Property
+
+    Protected ReadOnly Property OcrValidationEnabledJs() As String
+        Get
+            Return If(SupportOverrideClass.GetBool(SupportOverrideClass.OCR_VALIDATION_ENABLED, True), "true", "false")
+        End Get
+    End Property
+
+    Protected ReadOnly Property OcrApiTimeoutMsJs() As String
+        Get
+            Return SupportOverrideClass.GetInt(SupportOverrideClass.OCR_API_TIMEOUT_MS, 30000).ToString()
+        End Get
+    End Property
     Dim Updatemode As Boolean = False
     Dim Aproved_yn As Boolean = False
     Dim userInfo As VMSUserEntity = New VMSUserEntity()
@@ -322,10 +342,13 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             'no other unit is exempted, and V02 itself is exempted only in this window, only on this
             'one check.
             'REMOVE this block once no longer needed - do not leave it in past 02-10-2026.
+            '
+            'Modified-by MUKESH BHAGAT on 12-10-2026 : the hard-coded unit + date window is replaced by
+            'the Support Overrides page (SupportOverrides.aspx, table support_override_mstr, key
+            'DESPATCH_INVOICE_LIMIT_BYPASS scoped to the unit with a Valid From / To). Support switches
+            'it on and off without a deployment; the rule here is unchanged.
             Dim isTemporaryV02Exception As Boolean =
-                String.Equals(userInfo.userBranchEntity, "V02", StringComparison.OrdinalIgnoreCase) AndAlso
-                DateTime.Today >= New DateTime(2026, 10, 4) AndAlso
-                DateTime.Today <= New DateTime(2026, 10, 11)
+                SupportOverrideClass.IsActive(SupportOverrideClass.DESPATCH_INVOICE_LIMIT_BYPASS, userInfo.userBranchEntity)
 
             If Result <= lowerBound AndAlso Not isTemporaryV02Exception Then
                 'Modified-by MUKESH BHAGAT on 17-09-2026 : say when freight was included, so the user
