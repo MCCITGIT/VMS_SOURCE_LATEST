@@ -1056,8 +1056,6 @@
                     <div class="pf-head-grid" style="margin-top: 8px;">
                         <div>
                             <label class="pf-label">Version / Status</label>
-                            <div style="height: 26px; line-height: 26px; font-weight: 600; color: var(--pf-theme);">
-                                <asp:Label ID="lblVersionInfo" runat="server" Text="New (version 1 on submit)"></asp:Label></div>
                             <div style="height: 26px; line-height: 26px; font-weight: 600; color: var(--pf-theme);"><asp:Label ID="lblVersionInfo" runat="server" Text="New - goes to HO for approval on submit"></asp:Label></div>
                             <div style="font-size: 11.5px;"><asp:Literal ID="litLinks" runat="server"></asp:Literal> <asp:Label ID="lblReadOnlyNote" runat="server" Style="color: #856404;"></asp:Label></div>
                         </div>

@@ -30,6 +30,15 @@
             <div class="rightFung"></div>
         </div>
 
+        <asp:Panel ID="pnlDenied" runat="server" Visible="false" CssClass="card">
+            <div class="card-body">
+                <h5 style="color: #dc3545;">Support Overrides - access denied</h5>
+                <asp:Literal ID="litDenied" runat="server"></asp:Literal>
+                <a href="Home.aspx" class="btn btn-secondary btn-sm">Back to Home</a>
+            </div>
+        </asp:Panel>
+
+        <asp:Panel ID="pnlContent" runat="server">
         <div class="card">
             <div class="mst-panel-header">
                 <div class="mst-panel-header-left">
@@ -56,6 +65,7 @@
                         <div class="form-group">
                             <label class="form-control-label">Unit / Vendor:<asp:Label ID="lblScopeReq" runat="server" CssClass="mandatory" Text="*"></asp:Label></label>
                             <asp:DropDownList ID="ddlScope" runat="server" CssClass="form-control select2"></asp:DropDownList>
+                            <asp:TextBox ID="txtScope" runat="server" CssClass="form-control" Visible="false" MaxLength="50" AutoComplete="Off" Placeholder="Unit code, e.g. V02 (blank = all)"></asp:TextBox>
                             <asp:Label ID="valScope" runat="server" CssClass="dispatch-field-error"></asp:Label>
                         </div>
                     </div>
@@ -139,5 +149,6 @@
                 </div>
             </div>
         </div>
+        </asp:Panel>
     </div>
 </asp:Content>
