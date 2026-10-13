@@ -283,19 +283,19 @@
                 box-shadow: 0 0 0 2px rgba(55, 89, 115, .18) !important;
             }
 
-        .rm-module .pf .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 20px !important;
-            padding-left: 0 !important;
-            padding-right: 16px !important;
-            font-size: 12px !important;
-            color: #222;
-        }
+            .rm-module .pf .select2-container--default .select2-selection--single .select2-selection__rendered {
+                line-height: 20px !important;
+                padding-left: 0 !important;
+                padding-right: 16px !important;
+                font-size: 12px !important;
+                color: #222;
+            }
 
-        .rm-module .pf .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 24px !important;
-            top: 0 !important;
-            right: 2px !important;
-        }
+            .rm-module .pf .select2-container--default .select2-selection--single .select2-selection__arrow {
+                height: 24px !important;
+                top: 0 !important;
+                right: 2px !important;
+            }
 
         .rm-module .pf .pf-input-group {
             display: flex;
@@ -342,14 +342,38 @@
             min-width: 1000px;
         }
 
-            .pf-sku-table .pf-c-sn { width: 40px; text-align: center; }
-            .pf-sku-table .pf-c-brand { width: 13%; }
-            .pf-sku-table .pf-c-vendor { width: 13%; }
-            .pf-sku-table .pf-c-sku { width: 17%; }
-            .pf-sku-table .pf-c-rm { width: auto; }
-            .pf-sku-table .pf-c-ratio { width: 110px; }
-            .pf-sku-table .pf-c-price { width: 110px; }
-            .pf-sku-table .pf-c-act { width: 70px; }
+            .pf-sku-table .pf-c-sn {
+                width: 40px;
+                text-align: center;
+            }
+
+            .pf-sku-table .pf-c-brand {
+                width: 13%;
+            }
+
+            .pf-sku-table .pf-c-vendor {
+                width: 13%;
+            }
+
+            .pf-sku-table .pf-c-sku {
+                width: 17%;
+            }
+
+            .pf-sku-table .pf-c-rm {
+                width: auto;
+            }
+
+            .pf-sku-table .pf-c-ratio {
+                width: 110px;
+            }
+
+            .pf-sku-table .pf-c-price {
+                width: 110px;
+            }
+
+            .pf-sku-table .pf-c-act {
+                width: 70px;
+            }
 
             .pf-sku-table tbody tr.tlrowlight td {
                 overflow: hidden;
@@ -364,9 +388,9 @@
             }
 
 
-            .pf-sku-table .select2-container {
-                width: 100% !important;
-            }
+                .pf-sku-table .select2-container {
+                    width: 100% !important;
+                }
 
         .pf-remove {
             border: none;
@@ -806,6 +830,9 @@
                     <h3 class="pageTitle">Product Formulation Master</h3>
                     <p class="pageSubTitle">Define the raw material formulation and packaging cost of a product</p>
                 </div>
+                <div style="padding: 6px 10px; background: #4b6a8133; border-radius: 8px; margin-left: auto; cursor: pointer;">
+                    <img src="images/table.png" alt="Alternate Text" style="width: 20px;"/>
+                </div>
             </div>
             <div class="rightFung"></div>
         </div>
@@ -832,7 +859,8 @@
                             <HeaderStyle CssClass="headerGrid" />
                             <Columns>
                                 <asp:TemplateField HeaderText="S.No">
-                                    <ItemTemplate><%# Container.DataItemIndex + 1 %>
+                                    <ItemTemplate>
+                                        <%# Container.DataItemIndex + 1 %>
                                         <asp:HiddenField ID="hdnBrandCode" runat="server" Value='<%# Bind("brand_code") %>' />
                                         <asp:HiddenField ID="hdnProductCode" runat="server" Value='<%# Bind("product_code") %>' />
                                         <asp:HiddenField ID="hdnRawMatCode" runat="server" Value='<%# Bind("rawmat_code") %>' />
@@ -844,17 +872,20 @@
                                     <FooterStyle CssClass="pf-c-sn" />
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Brand *">
-                                    <ItemTemplate><asp:Label ID="lblBrandName" runat="server" Text='<%# Bind("brand_name") %>'></asp:Label></ItemTemplate>
+                                    <ItemTemplate>
+                                        <asp:Label ID="lblBrandName" runat="server" Text='<%# Bind("brand_name") %>'></asp:Label></ItemTemplate>
                                     <HeaderStyle CssClass="pf-c-brand" />
                                     <ItemStyle CssClass="pf-c-brand" />
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Vendor *">
-                                    <ItemTemplate><asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vendor_name") %>'></asp:Label></ItemTemplate>
+                                    <ItemTemplate>
+                                        <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vendor_name") %>'></asp:Label></ItemTemplate>
                                     <HeaderStyle CssClass="pf-c-vendor" />
                                     <ItemStyle CssClass="pf-c-vendor" />
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="SKU / Product *">
-                                    <ItemTemplate><asp:Label ID="lblProductName" runat="server" Text='<%# Bind("product_name") %>'></asp:Label></ItemTemplate>
+                                    <ItemTemplate>
+                                        <asp:Label ID="lblProductName" runat="server" Text='<%# Bind("product_name") %>'></asp:Label></ItemTemplate>
                                     <HeaderStyle CssClass="pf-c-sku" />
                                     <ItemStyle CssClass="pf-c-sku" />
                                 </asp:TemplateField>
@@ -874,7 +905,8 @@
                                     </ItemTemplate>
                                     <FooterTemplate>
                                         <asp:Label ID="lblRatioTotal" runat="server" ClientIDMode="Static"></asp:Label>
-                                        <br /><asp:Label ID="lblRatioStatus" runat="server" ClientIDMode="Static" Text="Within 100%" Style="font-size: 11px;"></asp:Label>
+                                        <br />
+                                        <asp:Label ID="lblRatioStatus" runat="server" ClientIDMode="Static" Text="Within 100%" Style="font-size: 11px;"></asp:Label>
                                     </FooterTemplate>
                                     <HeaderStyle CssClass="pf-c-ratio pf-center" />
                                     <ItemStyle CssClass="pf-c-ratio pf-center" />
@@ -885,7 +917,8 @@
                                         <asp:Label ID="lblRate" runat="server" Text='<%# Bind("rate") %>'></asp:Label>
                                     </ItemTemplate>
                                     <FooterTemplate>
-                                        SKU price<br />&#8377;
+                                        SKU price<br />
+                                        &#8377;
                                         <asp:Label ID="lblSkuPrice" runat="server" ClientIDMode="Static" Text="0.00"></asp:Label>
                                     </FooterTemplate>
                                     <HeaderStyle CssClass="pf-c-price pf-right" />
@@ -963,13 +996,15 @@
 
                     <asp:HiddenField ID="hdnSnapshot" ClientIDMode="Static" runat="server" />
                     <asp:Panel ID="pnlHoRemarks" runat="server" Visible="false" Style="margin-top: 8px; padding: 8px 10px; border-radius: 6px; font-size: 12px;">
-                        <b><asp:Label ID="lblHoRemarksTitle" runat="server"></asp:Label></b>
+                        <b>
+                            <asp:Label ID="lblHoRemarksTitle" runat="server"></asp:Label></b>
                         <asp:Label ID="lblHoRemarks" runat="server"></asp:Label>
                     </asp:Panel>
                     <div class="pf-head-grid" style="margin-top: 8px;">
                         <div>
                             <label class="pf-label">Version / Status</label>
-                            <div style="height: 26px; line-height: 26px; font-weight: 600; color: var(--pf-theme);"><asp:Label ID="lblVersionInfo" runat="server" Text="New (version 1 on submit)"></asp:Label></div>
+                            <div style="height: 26px; line-height: 26px; font-weight: 600; color: var(--pf-theme);">
+                                <asp:Label ID="lblVersionInfo" runat="server" Text="New (version 1 on submit)"></asp:Label></div>
                         </div>
                         <div style="grid-column: span 2;">
                             <label class="pf-label">Remarks / reason for change</label>
@@ -1002,135 +1037,138 @@
                     <h4 class="pf-section-title">Packaging cost</h4>
                     <p class="pf-section-sub">
                         Per pack size: packaging material lines + Processing fee + Labour charge. Margin % is applied on
-                        (SKU price &#8377; <asp:Label ID="lblSkuPriceInfo" runat="server" Text="0.00"></asp:Label> + material + processing + labour) and added to that pack's total.
+                        (SKU price &#8377;
+                        <asp:Label ID="lblSkuPriceInfo" runat="server" Text="0.00"></asp:Label>
+                        + material + processing + labour) and added to that pack's total.
                         The SKU formulation and all packs are saved together with the Submit button above.
                     </p>
 
-                <asp:Panel ID="pnlPackaging" runat="server">
-                    <asp:Repeater ID="rptPack" runat="server" OnItemDataBound="rptPack_ItemDataBound" OnItemCommand="rptPack_ItemCommand">
-                        <ItemTemplate>
-                            <div class="pf-pack" data-name='<%# Eval("pack_size") %>'>
-                                <asp:HiddenField ID="hdnPackKey" runat="server" Value='<%# Eval("pack_key") %>' />
-                                <asp:HiddenField ID="hdnPchId" runat="server" Value='<%# Eval("pch_id") %>' />
-                                <input type="checkbox" class="pf-toggle" id='pfPack<%# Eval("pack_key") %>' onchange='pfToggle(this, "<%# Eval("pack_key") %>")' <%# If(IsPackOpen(Eval("pack_key")), "checked='checked'", "") %> />
-                                <div class="pf-pack-head">
-                                    <label class="pf-pack-label" for='pfPack<%# Eval("pack_key") %>'>
-                                        <span class="pf-pack-name"><span class="pf-caret"></span><%# Eval("pack_size") %> packaging</span>
-                                        <span class="pf-pack-total">Total &#8377; 0.00</span>
-                                        <span></span>
-                                    </label>
-                                    <div class="pf-pack-actions">
-                                        <asp:LinkButton ID="btnRemovePack" runat="server" CssClass="pf-remove" CommandName="RemovePack" CommandArgument='<%# Eval("pack_key") %>'
-                                            ToolTip="Remove pack" OnClientClick="return rmConfirmAction(this, 'delete');">&times;</asp:LinkButton>
+                    <asp:Panel ID="pnlPackaging" runat="server">
+                        <asp:Repeater ID="rptPack" runat="server" OnItemDataBound="rptPack_ItemDataBound" OnItemCommand="rptPack_ItemCommand">
+                            <ItemTemplate>
+                                <div class="pf-pack" data-name='<%# Eval("pack_size") %>'>
+                                    <asp:HiddenField ID="hdnPackKey" runat="server" Value='<%# Eval("pack_key") %>' />
+                                    <asp:HiddenField ID="hdnPchId" runat="server" Value='<%# Eval("pch_id") %>' />
+                                    <input type="checkbox" class="pf-toggle" id='pfPack<%# Eval("pack_key") %>' onchange='pfToggle(this, "<%# Eval("pack_key") %>")' <%# If(IsPackOpen(Eval("pack_key")), "checked='checked'", "") %> />
+                                    <div class="pf-pack-head">
+                                        <label class="pf-pack-label" for='pfPack<%# Eval("pack_key") %>'>
+                                            <span class="pf-pack-name"><span class="pf-caret"></span><%# Eval("pack_size") %> packaging</span>
+                                            <span class="pf-pack-total">Total &#8377; 0.00</span>
+                                            <span></span>
+                                        </label>
+                                        <div class="pf-pack-actions">
+                                            <asp:LinkButton ID="btnRemovePack" runat="server" CssClass="pf-remove" CommandName="RemovePack" CommandArgument='<%# Eval("pack_key") %>'
+                                                ToolTip="Remove pack" OnClientClick="return rmConfirmAction(this, 'delete');">&times;</asp:LinkButton>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="pf-pack-body">
-                                    <div class="pf-pack-inner">
-                                        <div class="pf-pack-content">
-                                            <div class="pf-table-wrap">
-                                                <table class="pf-table pf-pack-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th class="pf-col-sn">S.No</th>
-                                                            <th>Cost name</th>
-                                                            <th class="pf-col-amt pf-right">Amount (&#8377;)</th>
-                                                            <th class="pf-col-act">Action</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <asp:Repeater ID="rptLines" runat="server" OnItemCommand="rptLines_ItemCommand">
-                                                            <ItemTemplate>
-                                                                <tr class="pf-line">
-                                                                    <td class="pf-col-sn"><%# Container.ItemIndex + 1 %>
-                                                                        <asp:HiddenField ID="hdnLineKey" runat="server" Value='<%# Eval("line_key") %>' />
-                                                                    </td>
-                                                                    <td>
-                                                                        <asp:TextBox ID="txtCostName" runat="server" CssClass="pf-name" Text='<%# Eval("cost_name") %>' MaxLength="100" Placeholder="e.g. Cap, Bottle, Label" AutoComplete="Off"></asp:TextBox>
-                                                                    </td>
-                                                                    <td class="pf-col-amt">
-                                                                        <asp:TextBox ID="txtAmount" runat="server" CssClass="pf-num pf-amt" Text='<%# Eval("amount") %>' Placeholder="0.00" AutoComplete="Off"
-                                                                            onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
-                                                                    </td>
-                                                                    <td class="pf-col-act">
-                                                                        <asp:LinkButton ID="btnRemoveLine" runat="server" CssClass="pf-remove" CommandName="RemoveLine" CommandArgument='<%# Eval("line_key") %>' ToolTip="Remove">&times;</asp:LinkButton>
-                                                                    </td>
-                                                                </tr>
-                                                            </ItemTemplate>
-                                                        </asp:Repeater>
-                                                        <%-- fixed lines of every pack: processing fee, labour charge, margin % --%>
-                                                        <tr class="pf-fixed-line">
-                                                            <td class="pf-col-sn"><i class="fas fa-cog" style="color: #888;"></i></td>
-                                                            <td>Processing fee</td>
-                                                            <td class="pf-col-amt">
-                                                                <asp:TextBox ID="txtProcessing" runat="server" CssClass="pf-num pf-proc" Text='<%# Eval("processing_fee") %>' Placeholder="0.00" AutoComplete="Off"
-                                                                    onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
-                                                            </td>
-                                                            <td class="pf-col-act"></td>
-                                                        </tr>
-                                                        <tr class="pf-fixed-line">
-                                                            <td class="pf-col-sn"><i class="fas fa-user-cog" style="color: #888;"></i></td>
-                                                            <td>Labour charge</td>
-                                                            <td class="pf-col-amt">
-                                                                <asp:TextBox ID="txtLabour" runat="server" CssClass="pf-num pf-lab" Text='<%# Eval("labour_charge") %>' Placeholder="0.00" AutoComplete="Off"
-                                                                    onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
-                                                            </td>
-                                                            <td class="pf-col-act"></td>
-                                                        </tr>
-                                                        <tr class="pf-fixed-line">
-                                                            <td class="pf-col-sn"><i class="fas fa-percent" style="color: #888;"></i></td>
-                                                            <td>Margin (%) <span class="pf-muted">on SKU price &#8377; <%# SkuPriceText %> + material + processing + labour</span></td>
-                                                            <td class="pf-col-amt">
-                                                                <asp:TextBox ID="txtMarginPct" runat="server" CssClass="pf-num pf-mar" Text='<%# Eval("margin_pct") %>' Placeholder="0.00 %" AutoComplete="Off"
-                                                                    onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
-                                                            </td>
-                                                            <td class="pf-col-act"></td>
-                                                        </tr>
-                                                    </tbody>
-                                                    <tfoot>
-                                                        <tr class="pf-sub">
-                                                            <td colspan="2" class="pf-right">SKU price</td>
-                                                            <td class="pf-right">&#8377; <%# SkuPriceText %></td>
-                                                            <td></td>
-                                                        </tr>
-                                                        <tr class="pf-sub">
-                                                            <td colspan="2" class="pf-right">Packaging material</td>
-                                                            <td class="pf-right">&#8377; <span class="pf-material-amt">0.00</span></td>
-                                                            <td></td>
-                                                        </tr>
-                                                        <tr class="pf-sub">
-                                                            <td colspan="2" class="pf-right">Margin amount</td>
-                                                            <td class="pf-right">&#8377; <span class="pf-margin-amt">0.00</span></td>
-                                                            <td></td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td colspan="2" class="pf-right">Total</td>
-                                                            <td class="pf-right">&#8377; <span class="pf-total-amt">0.00</span></td>
-                                                            <td></td>
-                                                        </tr>
-                                                    </tfoot>
-                                                </table>
-                                            </div>
-                                            <div style="text-align: center; margin-top: 6px;">
-                                                <asp:LinkButton ID="btnAddLine" runat="server" CssClass="pf-btn" CommandName="AddLine" CommandArgument='<%# Eval("pack_key") %>' Text="+ Add cost line"></asp:LinkButton>
+                                    <div class="pf-pack-body">
+                                        <div class="pf-pack-inner">
+                                            <div class="pf-pack-content">
+                                                <div class="pf-table-wrap">
+                                                    <table class="pf-table pf-pack-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th class="pf-col-sn">S.No</th>
+                                                                <th>Cost name</th>
+                                                                <th class="pf-col-amt pf-right">Amount (&#8377;)</th>
+                                                                <th class="pf-col-act">Action</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <asp:Repeater ID="rptLines" runat="server" OnItemCommand="rptLines_ItemCommand">
+                                                                <ItemTemplate>
+                                                                    <tr class="pf-line">
+                                                                        <td class="pf-col-sn"><%# Container.ItemIndex + 1 %>
+                                                                            <asp:HiddenField ID="hdnLineKey" runat="server" Value='<%# Eval("line_key") %>' />
+                                                                        </td>
+                                                                        <td>
+                                                                            <asp:TextBox ID="txtCostName" runat="server" CssClass="pf-name" Text='<%# Eval("cost_name") %>' MaxLength="100" Placeholder="e.g. Cap, Bottle, Label" AutoComplete="Off"></asp:TextBox>
+                                                                        </td>
+                                                                        <td class="pf-col-amt">
+                                                                            <asp:TextBox ID="txtAmount" runat="server" CssClass="pf-num pf-amt" Text='<%# Eval("amount") %>' Placeholder="0.00" AutoComplete="Off"
+                                                                                onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
+                                                                        </td>
+                                                                        <td class="pf-col-act">
+                                                                            <%--<asp:LinkButton ID="btnRemoveLine" runat="server" CssClass="pf-remove" CommandName="RemoveLine" CommandArgument='<%# Eval("line_key") %>' ToolTip="Remove">&times;</asp:LinkButton>--%>
+                                                                            <asp:Button ID="btnAdd" runat="server" Text="Add" CssClass="pf-btn pf-btn-primary" ClientIDMode="Static" OnClick="btnAdd_Click" />
+                                                                        </td>
+                                                                    </tr>
+                                                                </ItemTemplate>
+                                                            </asp:Repeater>
+                                                            <%-- fixed lines of every pack: processing fee, labour charge, margin % --%>
+                                                            <tr class="pf-fixed-line">
+                                                                <td class="pf-col-sn"><i class="fas fa-cog" style="color: #888;"></i></td>
+                                                                <td>Processing fee</td>
+                                                                <td class="pf-col-amt">
+                                                                    <asp:TextBox ID="txtProcessing" runat="server" CssClass="pf-num pf-proc" Text='<%# Eval("processing_fee") %>' Placeholder="0.00" AutoComplete="Off"
+                                                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
+                                                                </td>
+                                                                <td class="pf-col-act"></td>
+                                                            </tr>
+                                                            <tr class="pf-fixed-line">
+                                                                <td class="pf-col-sn"><i class="fas fa-user-cog" style="color: #888;"></i></td>
+                                                                <td>Labour charge</td>
+                                                                <td class="pf-col-amt">
+                                                                    <asp:TextBox ID="txtLabour" runat="server" CssClass="pf-num pf-lab" Text='<%# Eval("labour_charge") %>' Placeholder="0.00" AutoComplete="Off"
+                                                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
+                                                                </td>
+                                                                <td class="pf-col-act"></td>
+                                                            </tr>
+                                                            <tr class="pf-fixed-line">
+                                                                <td class="pf-col-sn"><i class="fas fa-percent" style="color: #888;"></i></td>
+                                                                <td>Margin (%) <span class="pf-muted">on SKU price &#8377; <%# SkuPriceText %> + material + processing + labour</span></td>
+                                                                <td class="pf-col-amt">
+                                                                    <asp:TextBox ID="txtMarginPct" runat="server" CssClass="pf-num pf-mar" Text='<%# Eval("margin_pct") %>' Placeholder="0.00 %" AutoComplete="Off"
+                                                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
+                                                                </td>
+                                                                <td class="pf-col-act"></td>
+                                                            </tr>
+                                                        </tbody>
+                                                        <tfoot>
+                                                            <tr class="pf-sub">
+                                                                <td colspan="2" class="pf-right">SKU price</td>
+                                                                <td class="pf-right">&#8377; <%# SkuPriceText %></td>
+                                                                <td></td>
+                                                            </tr>
+                                                            <tr class="pf-sub">
+                                                                <td colspan="2" class="pf-right">Packaging material</td>
+                                                                <td class="pf-right">&#8377; <span class="pf-material-amt">0.00</span></td>
+                                                                <td></td>
+                                                            </tr>
+                                                            <tr class="pf-sub">
+                                                                <td colspan="2" class="pf-right">Margin amount</td>
+                                                                <td class="pf-right">&#8377; <span class="pf-margin-amt">0.00</span></td>
+                                                                <td></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td colspan="2" class="pf-right">Total</td>
+                                                                <td class="pf-right">&#8377; <span class="pf-total-amt">0.00</span></td>
+                                                                <td></td>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
+                                                <div style="text-align: center; margin-top: 6px;">
+                                                    <asp:LinkButton ID="btnAddLine" runat="server" CssClass="pf-btn" CommandName="AddLine" CommandArgument='<%# Eval("pack_key") %>' Text="+ Add cost line"></asp:LinkButton>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </ItemTemplate>
-                    </asp:Repeater>
+                            </ItemTemplate>
+                        </asp:Repeater>
 
-                    <div class="pf-add-pack">
-                        <div>
-                            <asp:TextBox ID="txtPackSize" runat="server" ClientIDMode="Static" Placeholder="Pack size, e.g. 1 ltr" MaxLength="50" AutoComplete="Off"
-                                oninput="if(typeof clearFieldValidation==='function')clearFieldValidation('txtPackSize','valPackSize');"></asp:TextBox>
-                            <asp:Label ID="valPackSize" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                        <div class="pf-add-pack">
+                            <div>
+                                <asp:TextBox ID="txtPackSize" runat="server" ClientIDMode="Static" Placeholder="Pack size, e.g. 1 ltr" MaxLength="50" AutoComplete="Off"
+                                    oninput="if(typeof clearFieldValidation==='function')clearFieldValidation('txtPackSize','valPackSize');"></asp:TextBox>
+                                <asp:Label ID="valPackSize" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                            </div>
+                            <asp:Button ID="btnAddPack" runat="server" Text="+ Add pack size" CssClass="pf-btn pf-btn-primary" ClientIDMode="Static" OnClientClick="return validateAddPack();" OnClick="btnAddPack_Click" />
                         </div>
-                        <asp:Button ID="btnAddPack" runat="server" Text="+ Add pack size" CssClass="pf-btn pf-btn-primary" ClientIDMode="Static" OnClientClick="return validateAddPack();" OnClick="btnAddPack_Click" />
-                    </div>
-                    <p class="pf-hint">Pack size is free text for now; it will become a dropdown once the pack-size master is available.</p>
-                    <asp:Label ID="valPack" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
-                </asp:Panel>
+                        <p class="pf-hint">Pack size is free text for now; it will become a dropdown once the pack-size master is available.</p>
+                        <asp:Label ID="valPack" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                    </asp:Panel>
                 </div>
             </div>
         </div>
