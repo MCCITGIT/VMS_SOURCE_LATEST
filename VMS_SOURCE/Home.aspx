@@ -475,17 +475,35 @@
             max-height: 1200px;
         }
 
-        .card .card-body .btn-cust {
+        .card .card-body .btn-cust, .card .card-body .view-brand, .card .card-body .view-vendor {
             padding: 1px 8px !important;
         }
 
-            .card .card-body .btn-cust i {
+            .card .card-body .btn-cust i, .card .card-body .view-brand i, .card .card-body .view-vendor i {
                 font-size: 10px;
             }
 
         .card .card-body .btn {
             padding: 2px 20px;
         }
+
+        /*#gvVendorDispatch .grid-skel-bar,
+        #gvBrandList .grid-skel-bar,
+        #gvVendorList .grid-skel-bar {
+            display: inline-block;
+            height: 12px;
+            max-width: 100%;
+            border-radius: 3px;
+            vertical-align: middle;
+            background: linear-gradient(90deg, #e7eef5 25%, #f7fafc 37%, #e7eef5 63%);
+            background-size: 400% 100%;
+            animation: gvDispatchSkelShimmer 1.2s ease-in-out infinite;
+        }
+
+        @keyframes gvDispatchSkelShimmer {
+            0% { background-position: 100% 0; }
+            100% { background-position: 0 0; }
+        }*/
     </style>
 
     <div class="vms-home">
@@ -1946,8 +1964,11 @@
             var pageIndex = 0;
             var loading = false;
             var noMoreData = false;
+            var suppressScrollUntil = 0;
 
             $('#gvVendorDispatch').closest('.rm-grid-scroll').on('scroll', function () {
+                if (Date.now() < suppressScrollUntil) return;
+
                 var $el = $(this);
                 var nearBottom = $el.scrollTop() + $el.innerHeight() >= $el[0].scrollHeight - 50;
 
@@ -1955,6 +1976,7 @@
 
                 loading = true;
                 pageIndex++;
+                showDispatchSkeleton($el);
 
                 var vendorUnit = $('#ddlVendorList').val() || '';
                 var year = $('#<%= ddlProcessYr.ClientID %>').val();
@@ -1962,6 +1984,7 @@
 
                 PageMethods.GetMoreDispatch(pageIndex, vendorUnit, year, month,
                     function (result) {
+                        hideDispatchSkeleton();
                         if (!result.rows || result.rows.length === 0) {
                             noMoreData = true;
                             loading = false;
@@ -1970,12 +1993,13 @@
                         $.each(result.rows, function (i, r) {
                             appendDispatchRow($('#gvVendorDispatch tbody'), r);
                         });
-                        if ($('#gvVendorDispatch tbody tr').length >= result.total) {
+                        if ($('#gvVendorDispatch tbody tr').not('.dispatch-skel').length >= result.total) {
                             noMoreData = true;
                         }
                         loading = false;
                     },
                     function (err) {
+                        hideDispatchSkeleton();
                         loading = false;
                         console.error(err);
                     }
@@ -2002,6 +2026,38 @@
                     '</tr>'
                 );
             }
+
+            function showDispatchSkeleton($scroll) {
+                var $tbody = $('#gvVendorDispatch tbody');
+                if (!$tbody.length || $tbody.find('tr.dispatch-skel').length) return;
+
+                var colWidths = ['10%', '10%', '10%', '10%', '15%', '10%'];
+                var barWidths = [
+                    ['74%', '62%', '80%'],
+                    ['58%', '70%', '50%'],
+                    ['46%', '54%', '42%'],
+                    ['64%', '56%', '72%'],
+                    ['82%', '70%', '88%'],
+                    ['44%', '52%', '38%']
+                ];
+                var html = '';
+                for (var r = 0; r < 3; r++) {
+                    html += '<tr class="tlrowlight dispatch-skel">';
+                    for (var c = 0; c < colWidths.length; c++) {
+                        html += '<td align="center" style="width:' + colWidths[c] + ';"><span class="grid-skel-bar" style="width:' + barWidths[c][r] + ';"></span></td>';
+                    }
+                    html += '</tr>';
+                }
+                $tbody.append(html);
+                suppressScrollUntil = Date.now() + 200;
+                $scroll.scrollTop($scroll[0].scrollHeight);
+            }
+
+            function hideDispatchSkeleton() {
+                if (!$('#gvVendorDispatch tbody tr.dispatch-skel').length) return;
+                suppressScrollUntil = Date.now() + 200;
+                $('#gvVendorDispatch tbody tr.dispatch-skel').remove();
+            }
         });
 
         $(function () {
@@ -2012,14 +2068,18 @@
                 var pageIndex = 0;
                 var loading = false;
                 var noMoreData = false;
+                var suppressScrollUntil = 0;
 
                 $(gridSel).closest('.rm-grid-scroll').on('scroll', function () {
+                    if (Date.now() < suppressScrollUntil) return;
+
                     var $el = $(this);
                     var nearBottom = $el.scrollTop() + $el.innerHeight() >= $el[0].scrollHeight - 50;
                     if (!nearBottom || loading || noMoreData) return;
 
                     loading = true;
                     pageIndex++;
+                    showListSkeleton(gridSel, $el, function (ms) { suppressScrollUntil = Date.now() + ms; });
 
                     var vendorUnit = $('#<%= ddlvendor.ClientID %>').val() || '';
                     var year = $('#<%= ddlProcessYr.ClientID %>').val();
@@ -2027,6 +2087,7 @@
 
                     PageMethods[pageMethodName](pageIndex, vendorUnit, year, month,
                         function (result) {
+                            hideListSkeleton(gridSel, function (ms) { suppressScrollUntil = Date.now() + ms; });
                             if (!result.rows || result.rows.length === 0) {
                                 noMoreData = true;
                                 loading = false;
@@ -2035,12 +2096,13 @@
                             $.each(result.rows, function (i, r) {
                                 appendFn($(gridSel + ' tbody'), r);
                             });
-                            if ($(gridSel + ' tbody tr').length >= result.total) {
+                            if ($(gridSel + ' tbody tr').not('.dispatch-skel').length >= result.total) {
                                 noMoreData = true;
                             }
                             loading = false;
                         },
                         function (err) {
+                            hideListSkeleton(gridSel, function (ms) { suppressScrollUntil = Date.now() + ms; });
                             loading = false;
                             console.error(err);
                         }
@@ -2048,8 +2110,41 @@
                 });
             }
 
+            function showListSkeleton(gridSel, $scroll, holdScroll) {
+                var $tbody = $(gridSel + ' tbody');
+                if (!$tbody.length || $tbody.find('tr.dispatch-skel').length) return;
+
+                var barWidths = [
+                    ['70%', '58%', '76%'],
+                    ['40%', '52%', '34%'],
+                    ['46%', '38%', '50%'],
+                    ['44%', '56%', '36%']
+                ];
+                var html = '';
+                for (var r = 0; r < 3; r++) {
+                    html += '<tr class="tlrowlight dispatch-skel">';
+                    html += '<td align="center" style="width:8%;"><span class="grid-skel-bar" style="width:16px;"></span></td>';
+                    html += '<td align="left" style="width:40%;"><span class="grid-skel-bar" style="width:' + barWidths[0][r] + ';"></span></td>';
+                    html += '<td><span class="grid-skel-bar" style="width:' + barWidths[1][r] + ';"></span></td>';
+                    html += '<td><span class="grid-skel-bar" style="width:' + barWidths[2][r] + ';"></span></td>';
+                    html += '<td><span class="grid-skel-bar" style="width:' + barWidths[3][r] + ';"></span></td>';
+                    html += '<td align="center" style="width:12%;"><span class="grid-skel-bar" style="width:16px;"></span></td>';
+                    html += '</tr>';
+                }
+                $tbody.append(html);
+                holdScroll(200);
+                $scroll.scrollTop($scroll[0].scrollHeight);
+            }
+
+            function hideListSkeleton(gridSel, holdScroll) {
+                var $rows = $(gridSel + ' tbody tr.dispatch-skel');
+                if (!$rows.length) return;
+                holdScroll(200);
+                $rows.remove();
+            }
+
             function appendBrandRow($tbody, r) {
-                var slNo = $tbody.find('tr').length + 1;
+                var slNo = $tbody.find('tr').not('.dispatch-skel').length + 1;
                 $tbody.append(
                     '<tr class="tlrowlight">' +
                     '<td class="text-center">' + slNo + '</td>' +
@@ -2063,7 +2158,7 @@
             }
 
             function appendVendorRow($tbody, r) {
-                var slNo = $tbody.find('tr').length + 1;
+                var slNo = $tbody.find('tr').not('.dispatch-skel').length + 1;
                 $tbody.append(
                     '<tr class="tlrowlight">' +
                     '<td class="text-center">' + slNo + '</td>' +
