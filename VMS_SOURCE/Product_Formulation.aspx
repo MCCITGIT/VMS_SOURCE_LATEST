@@ -1057,8 +1057,7 @@
                         <div>
                             <label class="pf-label">Version / Status</label>
                             <div style="height: 26px; line-height: 26px; font-weight: 600; color: var(--pf-theme);"><asp:Label ID="lblVersionInfo" runat="server" Text="New - goes to HO for approval on submit"></asp:Label></div>
-                            <div style="font-size: 11.5px;"><asp:Literal ID="litLinks" runat="server"></asp:Literal> <asp:Label ID="lblReadOnlyNote" runat="server" Style="color: #856404;"></asp:Label></div>
-                        </div>
+                            <div style="font-size: 11.5px;"><asp:Literal ID="litLinks" runat="server"></asp:Literal> <asp:Label ID="lblReadOnlyNote" runat="server" Style="color: #856404;"></asp:Label></div>                        </div>
                         <div style="grid-column: span 2;">
                             <label class="pf-label">Remarks / reason for change</label>
                             <asp:TextBox ID="txtRemarks" runat="server" MaxLength="500" AutoComplete="Off" Placeholder="Optional - stored with this version"></asp:TextBox>
@@ -1158,6 +1157,22 @@
                                                                 </tr>
                                                             </ItemTemplate>
                                                         </asp:Repeater>
+                                                        <%-- entry line: type a cost and press Add (same pattern as the SKU grid) --%>
+                                                        <tr class="pf-entry-row pf-line-entry">
+                                                            <td class="pf-col-sn"><i class="fas fa-plus"></i></td>
+                                                            <td>
+                                                                <asp:TextBox ID="txtNewCostName" runat="server" CssClass="pf-new-name" MaxLength="100" Placeholder="Cost name, e.g. Cap, Bottle, Label" AutoComplete="Off"
+                                                                    oninput="this.classList.remove('field-invalid');"></asp:TextBox>
+                                                            </td>
+                                                            <td class="pf-col-amt">
+                                                                <asp:TextBox ID="txtNewAmount" runat="server" CssClass="pf-num pf-new-amt" Placeholder="0.00" AutoComplete="Off"
+                                                                    onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); this.classList.remove('field-invalid');" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
+                                                            </td>
+                                                            <td class="pf-col-act">
+                                                                <asp:LinkButton ID="btnAddLine" runat="server" CssClass="pf-btn pf-btn-primary" CommandName="AddLine" CommandArgument='<%# Eval("pack_key") %>' Text="Add"
+                                                                    OnClientClick="return validateNewLine(this);"></asp:LinkButton>
+                                                            </td>
+                                                        </tr>
                                                         <%-- fixed lines of every pack: processing fee, labour charge, margin % --%>
                                                         <tr class="pf-fixed-line">
                                                             <td class="pf-col-sn"><i class="fas fa-cog" style="color: #888;"></i></td>
@@ -1210,9 +1225,6 @@
                                                         </tr>
                                                     </tfoot>
                                                 </table>
-                                            </div>
-                                            <div style="text-align: center; margin-top: 6px;">
-                                                <asp:LinkButton ID="btnAddLine" runat="server" CssClass="pf-btn" CommandName="AddLine" CommandArgument='<%# Eval("pack_key") %>' Text="+ Add cost line"></asp:LinkButton>
                                             </div>
                                         </div>
                                     </div>

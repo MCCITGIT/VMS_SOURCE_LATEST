@@ -576,7 +576,9 @@ Partial Class Product_Formulation
 #End Region
 
 #Region "HO approval + mail"
-    ''' <summary>HO groups decide; SYSADMIN can do both sides (testing / support).</summary>
+    ''' <summary>HO side = HO groups and SYSADMIN. Everyone else is the vendor side: only they see
+    ''' "Submit revised version", "Propose change", "Resubmit" and "Accept revised rate".
+    ''' To test the vendor side, log in with the unit (vendor) user.</summary>
     Private Function IsHoUser() As Boolean
         Dim g As String = Convert.ToString(userInfo.userGroupCodeEntity)
         Return g = Constant.UserFormAccess.HO OrElse g = Constant.UserFormAccess.HOMARKETING OrElse g = Constant.UserFormAccess.HOACCOUNTS OrElse g = Constant.UserFormAccess.SYSADMIN
@@ -606,7 +608,7 @@ Partial Class Product_Formulation
             pnlHoRemarks.Style("color") = If(status = "REJECTED", "#721c24", If(status = "PENDING_VENDOR", "#0c5460", "#155724"))
         End If
         Dim reviseMode As Boolean = Convert.ToString(ViewState("ReviseMode")) = "Y"
-        Dim hoOnly As Boolean = IsHoUser() AndAlso userInfo.userGroupCodeEntity <> Constant.UserFormAccess.SYSADMIN
+        Dim hoOnly As Boolean = IsHoUser()            ' HO side (HO groups + SYSADMIN): no vendor editing, no vendor buttons
         pnlApproval.Visible = IsHoUser() AndAlso status = "PENDING" AndAlso isLatest
         btnRevise.Visible = pnlApproval.Visible AndAlso Not reviseMode
         btnApprove.Visible = pnlApproval.Visible AndAlso Not reviseMode
@@ -629,7 +631,7 @@ Partial Class Product_Formulation
             ' active release: read-only until the vendor presses "Propose change" (then a new negotiation cycle starts on submit)
             Dim proposeMode As Boolean = Convert.ToString(ViewState("ProposeMode")) = "Y"
             editable = isLatest AndAlso proposeMode
-            btnPropose.Visible = isLatest AndAlso Not proposeMode AndAlso Not (IsHoUser() AndAlso userInfo.userGroupCodeEntity <> Constant.UserFormAccess.SYSADMIN)
+            btnPropose.Visible = isLatest AndAlso Not proposeMode AndAlso Not IsHoUser()
             btnSubmit.Text = "Submit change for HO approval"
         ElseIf status = "PENDING" Then
             ' vendor may still replace their own proposal; HO edits only after "Revise rate"
