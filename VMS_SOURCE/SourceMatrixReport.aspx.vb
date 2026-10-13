@@ -10,6 +10,7 @@ Imports NPOI.XSSF.UserModel
 Partial Class SourceMatrixReport
     Inherits System.Web.UI.Page
     Dim userInfo As VMSUserEntity = New VMSUserEntity()
+    Private Const MatrixPageSize As Integer = 20
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
         CheckLogin()
         If Not IsPostBack Then
@@ -119,7 +120,7 @@ Partial Class SourceMatrixReport
             dsProductSet = obj.SourceMatrixDataList(ddlDepot.SelectedValue, ddlVendorUnit.SelectedValue, txtSkucode.Text)
 
             If (Not (dsProductSet Is Nothing) AndAlso dsProductSet.Tables.Count > 0 AndAlso Not (dsProductSet.Tables(0) Is Nothing) AndAlso dsProductSet.Tables(0).Rows.Count > 0) Then
-                gvmatrixsource.DataSource = dsProductSet.Tables(0)
+                gvmatrixsource.DataSource = FirstMatrixPage(dsProductSet.Tables(0))
                 gvmatrixsource.DataBind()
             Else
                 gvmatrixsource.DataSource = Nothing
@@ -131,6 +132,45 @@ Partial Class SourceMatrixReport
             Server.Transfer(returnUrl)
         End Try
     End Sub
+    Private Function FirstMatrixPage(ByVal dt As DataTable) As DataTable
+        Dim pageDt As DataTable = dt.Clone()
+        Dim take As Integer = Math.Min(MatrixPageSize, dt.Rows.Count)
+        For i As Integer = 0 To take - 1
+            pageDt.ImportRow(dt.Rows(i))
+        Next
+        Return pageDt
+    End Function
+
+    <System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreSourceMatrix(pageIndex As Integer, depot As String, vendor As String, sku As String) As Object
+        Dim obj As New SourceMatrixClass
+        Dim ds As DataSet = obj.SourceMatrixDataList(If(depot, String.Empty), If(vendor, String.Empty), If(sku, String.Empty))
+        Dim rows As New List(Of Object)
+        Dim total As Integer = 0
+
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            Dim dt As DataTable = ds.Tables(0)
+            total = dt.Rows.Count
+            Dim start As Integer = pageIndex * MatrixPageSize
+            Dim last As Integer = Math.Min(start + MatrixPageSize, total) - 1
+            For i As Integer = start To last
+                Dim r As DataRow = dt.Rows(i)
+                rows.Add(New With {
+                    .Region = r("Region").ToString(),
+                    .Depot = r("Depot").ToString(),
+                    .SkuCode = r("SkuCode").ToString(),
+                    .Sku_Desc = r("Sku_Desc").ToString(),
+                    .vendor_name = r("vendor_name").ToString(),
+                    .Site_Code = r("Site_Code").ToString(),
+                    .TotalRate = r("TotalRate").ToString(),
+                    .priority_rank = r("priority_rank").ToString()
+                })
+            Next
+        End If
+
+        Return New With {.rows = rows, .total = total}
+    End Function
+
     Private Sub ExportToExcelSheet(ByVal dset As DataSet)
         Try
             'Opening the Excel template......

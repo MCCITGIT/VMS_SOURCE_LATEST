@@ -598,6 +598,27 @@ body {
         border-bottom: 0 !important;
     }
 
+    .upgradDataGrid .grid-skel-bar {
+        display: inline-block;
+        height: 12px;
+        max-width: 100%;
+        border-radius: 3px;
+        vertical-align: middle;
+        background: linear-gradient(90deg, #ced7e0 25%, #e6ebee 37%, #ced7e0 63%);
+        background-size: 400% 100%;
+        animation: gvDispatchSkelShimmer 1.2s ease-in-out infinite;
+    }
+
+    @keyframes gvDispatchSkelShimmer {
+        0% {
+            background-position: 100% 0;
+        }
+
+        100% {
+            background-position: 0 0;
+        }
+    }
+
 /* End Grid */
 .CheckBoxList table tr td {
     padding: 5px 0px;
