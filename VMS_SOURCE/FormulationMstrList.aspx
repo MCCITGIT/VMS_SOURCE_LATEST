@@ -63,6 +63,16 @@
                                     </div>
                                     <div class="col-md-3">
                                         <div class="form-group">
+                                            <label class="form-control-label">Show:</label>
+                                            <asp:DropDownList ID="ddlView" ClientIDMode="Static" CssClass="form-control" TabIndex="3" runat="server">
+                                                <asp:ListItem Value="ACTIVE" Text="Active releases (in force)" Selected="True"></asp:ListItem>
+                                                <asp:ListItem Value="NEGOTIATION" Text="Under negotiation (pending / rejected)"></asp:ListItem>
+                                                <asp:ListItem Value="ALL" Text="Everything (full history)"></asp:ListItem>
+                                            </asp:DropDownList>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
                                             <label class="form-control-label">Product:</label>
                                             <div class="input-group product-search-group">
                                                 <asp:TextBox ID="txtProductSearch" ClientIDMode="Static" CssClass="form-control" TabIndex="4" runat="server" AutoComplete="Off" Placeholder="Enter Product" onkeyup="clearProductSelection();"></asp:TextBox>
@@ -188,9 +198,9 @@
                                                 <HeaderStyle HorizontalAlign="Center" />
                                                 <ItemStyle HorizontalAlign="Left" Width="6%" />
                                             </asp:TemplateField>
-                                            <asp:TemplateField HeaderText="Version">
+                                            <asp:TemplateField HeaderText="Release / Revision">
                                                 <ItemTemplate>
-                                                    <asp:Label ID="lblVersion" Text='<%# Eval("sf_version") %>' runat="server" />
+                                                    <asp:Label ID="lblVersion" Text='<%# Eval("version_text") %>' runat="server" />
                                                 </ItemTemplate>
                                                 <HeaderStyle HorizontalAlign="Center" />
                                                 <ItemStyle HorizontalAlign="Center" Width="4%" />
@@ -204,7 +214,7 @@
                                             </asp:TemplateField>
                                             <asp:TemplateField HeaderText="Status">
                                                 <ItemTemplate>
-                                                    <span style='font-weight:600;color:<%# If(Eval("sf_status").ToString() = "APPROVED", "#28a745", If(Eval("sf_status").ToString() = "REJECTED", "#dc3545", "#e0a800")) %>'><%# Eval("sf_status") %></span>
+                                                    <span style='font-weight:600;color:<%# If(Eval("sf_status").ToString() = "APPROVED", "#28a745", If(Eval("sf_status").ToString() = "REJECTED", "#dc3545", If(Eval("sf_status").ToString() = "PENDING_VENDOR", "#17a2b8", If(Eval("sf_status").ToString() = "PENDING", "#e0a800", "#6c757d")))) %>'><%# Eval("sf_status") %></span>
                                                 </ItemTemplate>
                                                 <HeaderStyle HorizontalAlign="Center" />
                                                 <ItemStyle HorizontalAlign="Center" Width="7%" />
