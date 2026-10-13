@@ -98,7 +98,7 @@ Partial Class FormulationMstrList
         Dim ds As DataSet
         Dim obj As New OPC_VendorClass()
         ' V2 (MUKESH BHAGAT 09-Oct-2026): versioned SKU formulation list - current versions only; columns aliased for the existing grid
-        ds = obj.ListSkuFormulation(ddlBrand.SelectedValue, ddlvendor.SelectedValue, hdnProductCode.Value, "N")
+        ds = obj.ListSkuFormulation(ddlBrand.SelectedValue, ddlvendor.SelectedValue, hdnProductCode.Value, "N", ddlView.SelectedValue)
 
         Dim table As DataTable = RmGridHelper.GetTable(ds)
         If table IsNot Nothing Then

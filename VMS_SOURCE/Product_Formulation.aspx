@@ -719,6 +719,15 @@
                 document.getElementById('hdnOpenPack').value = cb.checked ? key : '';
             }
 
+            /* entry line of a pack: both fields required before the Add postback */
+            function validateNewLine(btn) {
+                var tr = btn.closest('tr'), n = tr.querySelector('input.pf-new-name'), a = tr.querySelector('input.pf-new-amt'), ok = true;
+                if ((n.value || '').trim() === '') { n.classList.add('field-invalid'); ok = false; }
+                if ((a.value || '').trim() === '' || isNaN(parseFloat(a.value))) { a.classList.add('field-invalid'); ok = false; }
+                if (!ok) { n.focus(); }
+                return ok;
+            }
+
             function validateAddPack() {
                 var txt = document.getElementById('txtPackSize');
                 var val = (txt.value || '').trim();
@@ -755,13 +764,55 @@
                 return ok;
             }
 
+            /* ---------- inline editing of ratio / price in the grid (overrides the span-based helpers of ValidateFormulationMstr.js) ---------- */
+            function pfGridRows() {
+                var rows = [];
+                document.querySelectorAll('#gvVendorRawMat tbody tr.tlrowlight').forEach(function (tr) {
+                    var r = tr.querySelector('input.pf-row-ratio'), p = tr.querySelector('input.pf-row-rate');
+                    if (r && p) { rows.push({ tr: tr, ratio: pfNum(r), rate: pfNum(p), ratioEl: r, rateEl: p }); }
+                });
+                return rows;
+            }
+            function getVendorRawMatGridRatioTotal() {
+                var t = 0; pfGridRows().forEach(function (x) { t += x.ratio; }); return Math.round(t * 100) / 100;
+            }
+            function pfGridRecalc() {
+                var total = 0, sku = 0;
+                pfGridRows().forEach(function (x) { total += x.ratio; sku += x.ratio / 100 * x.rate; });
+                total = Math.round(total * 100) / 100; sku = Math.round(sku * 100) / 100;
+                var lt = document.getElementById('lblRatioTotal'), ls = document.getElementById('lblRatioStatus'), lp = document.getElementById('lblSkuPrice');
+                if (lt) { lt.innerText = total.toFixed(2) + '%'; }
+                if (ls) { ls.innerText = total > 100 ? 'Exceed 100%' : (total === 100 ? '= 100%' : 'Within 100%'); ls.className = total > 100 ? 'pf-status-bad' : 'pf-status-ok'; }
+                if (lp) { lp.innerText = sku.toFixed(2); }
+                document.getElementById('hdnSkuPrice').value = sku.toFixed(2);
+                document.querySelectorAll('.pf-pack').forEach(function (p) { var i = p.querySelector('input.pf-proc'); if (i) { pfRecalc(i); } });
+            }
+            function updateVendorRawMatRatioTotal() { pfGridRecalc(); }
+            function validateFormulationSubmit() {
+                var hasError = false, rows = pfGridRows(), lblErrorMessage = document.getElementById('lblErrorMessage');
+                clearFormulationValidation();
+                if (lblErrorMessage) { lblErrorMessage.innerHTML = ''; }
+                var ddlBrand = document.getElementById('ddlBrand'), ddlvendor = document.getElementById('ddlvendor'), hdnProductCode = document.getElementById('hdnProductCode');
+                if (!ddlBrand || ddlBrand.value === '') { setFieldError('ddlBrand', 'valBrand', 'Please select Brand.', false); hasError = true; }
+                if (!ddlvendor || ddlvendor.value === '') { setFieldError('ddlvendor', 'valVendor', 'Please select Vendor.', false); hasError = true; }
+                if (!hdnProductCode || hdnProductCode.value.trim() === '') { setFieldError('txtProductSearch', 'valProduct', 'Please enter Product.', false); hasError = true; }
+                rows.forEach(function (x) { x.ratioEl.classList.remove('field-invalid'); x.rateEl.classList.remove('field-invalid'); });
+                var bad = false;
+                rows.forEach(function (x) { if (x.ratio <= 0) { x.ratioEl.classList.add('field-invalid'); bad = true; } if (x.rate <= 0) { x.rateEl.classList.add('field-invalid'); bad = true; } });
+                if (rows.length === 0) { setGridFieldError('Please enter at least one record in the grid.'); hasError = true; }
+                else if (bad) { setGridFieldError('Every raw material needs a Consumption Ratio and a Price greater than 0.'); hasError = true; }
+                else if (getVendorRawMatGridRatioTotal() !== 100) { setGridFieldError('Total Consumption Ratio should be equal 100%.'); hasError = true; }
+                if (hasError) { scrollToFirstInvalidField(); return false; }
+                return rmConfirmPostback('btnSubmit', 'submit');
+            }
+
             /* canonical text of the data - must stay in sync with BuildSnapshot() in the code-behind */
             function f2(v) { var n = parseFloat((v || '').toString().replace(/[^0-9.\-]/g, '')); return (isNaN(n) ? 0 : n).toFixed(2); }
             function buildSnapshot() {
                 var s = '';
                 document.querySelectorAll('#gvVendorRawMat tbody tr.tlrowlight').forEach(function (tr) {
-                    var code = tr.querySelector("input[id$='hdnRawMatCode']"), ratio = tr.querySelector("span[id$='lblRatio']"), rate = tr.querySelector("span[id$='lblRate']");
-                    if (code) { s += code.value.trim() + '|' + f2(ratio ? ratio.innerText : '') + '|' + f2(rate ? rate.innerText : '') + ';'; }
+                    var code = tr.querySelector("input[id$='hdnRawMatCode']"), ratio = tr.querySelector('input.pf-row-ratio'), rate = tr.querySelector('input.pf-row-rate');
+                    if (code) { s += code.value.trim() + '|' + f2(ratio ? ratio.value : '') + '|' + f2(rate ? rate.value : '') + ';'; }
                 });
                 s += '#';
                 document.querySelectorAll('.pf-pack').forEach(function (pack) {
@@ -784,7 +835,7 @@
                 if (!validateAllPacks()) { return false; }
                 var snap = document.getElementById('hdnSnapshot').value;
                 if (snap !== '' && snap === buildSnapshot()) {
-                    rmFailValidation('No changes to save - the current version already has this formulation and packaging cost.');
+                    rmFailValidation('No changes to save - this formulation and packaging cost is identical to what is already recorded.');
                     return false;
                 }
                 return validateFormulationSubmit();
@@ -869,7 +920,8 @@
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Consumption Ratio (%) *">
                                     <ItemTemplate>
-                                        <asp:Label ID="lblRatio" runat="server" Text='<%# Bind("ratio") %>'></asp:Label>
+                                        <asp:TextBox ID="txtRowRatio" runat="server" CssClass="pf-num pf-row-ratio" Text='<%# Bind("ratio") %>' AutoComplete="Off"
+                                            onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfGridRecalc();" onblur="formatRateTwoDecimal(this); pfGridRecalc();"></asp:TextBox>
                                         <asp:Label ID="lblUnit" runat="server" Text='<%# Bind("unit") %>' Visible="false"></asp:Label>
                                     </ItemTemplate>
                                     <FooterTemplate>
@@ -882,7 +934,8 @@
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Price (&#8377;) *">
                                     <ItemTemplate>
-                                        <asp:Label ID="lblRate" runat="server" Text='<%# Bind("rate") %>'></asp:Label>
+                                        <asp:TextBox ID="txtRowRate" runat="server" CssClass="pf-num pf-row-rate" Text='<%# Bind("rate") %>' AutoComplete="Off"
+                                            onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfGridRecalc();" onblur="formatRateTwoDecimal(this); pfGridRecalc();"></asp:TextBox>
                                     </ItemTemplate>
                                     <FooterTemplate>
                                         SKU price<br />&#8377;
@@ -969,7 +1022,8 @@
                     <div class="pf-head-grid" style="margin-top: 8px;">
                         <div>
                             <label class="pf-label">Version / Status</label>
-                            <div style="height: 26px; line-height: 26px; font-weight: 600; color: var(--pf-theme);"><asp:Label ID="lblVersionInfo" runat="server" Text="New (version 1 on submit)"></asp:Label></div>
+                            <div style="height: 26px; line-height: 26px; font-weight: 600; color: var(--pf-theme);"><asp:Label ID="lblVersionInfo" runat="server" Text="New - goes to HO for approval on submit"></asp:Label></div>
+                            <div style="font-size: 11.5px;"><asp:Literal ID="litLinks" runat="server"></asp:Literal> <asp:Label ID="lblReadOnlyNote" runat="server" Style="color: #856404;"></asp:Label></div>
                         </div>
                         <div style="grid-column: span 2;">
                             <label class="pf-label">Remarks / reason for change</label>
@@ -982,16 +1036,27 @@
 
                     <%-- HO approval (visible to HO only while the version is pending) --%>
                     <asp:Panel ID="pnlApproval" runat="server" Visible="false" Style="margin-top: 10px; padding: 10px; border: 1px solid #ffc107; background: #fffbe8; border-radius: 6px;">
-                        <label class="pf-label">HO approval - remarks (mandatory to reject; e.g. the negotiated price)</label>
+                        <label class="pf-label">HO approval - remarks (mandatory to reject or to send a revised rate; e.g. the negotiated price)</label>
                         <asp:TextBox ID="txtHoRemarks" runat="server" TextMode="MultiLine" Rows="2" MaxLength="1000" Style="width: 100%;"></asp:TextBox>
                         <asp:Label ID="valHoRemarks" runat="server" CssClass="dispatch-field-error"></asp:Label>
                         <div class="pf-actions" style="margin-top: 6px;">
                             <asp:Button ID="btnApprove" runat="server" Text="Approve" CssClass="pf-btn pf-btn-save" ClientIDMode="Static" OnClick="btnApprove_Click" OnClientClick="return rmConfirmPostback('btnApprove', 'approve');" />
                             <asp:Button ID="btnReject" runat="server" Text="Reject" CssClass="pf-btn" Style="background: #dc3545; border-color: #dc3545; color: #fff; font-weight: 600;" ClientIDMode="Static" OnClick="btnReject_Click" OnClientClick="return rmConfirmPostback('btnReject', 'submit');" />
+                            <asp:Button ID="btnRevise" runat="server" Text="Revise rate &amp; send to vendor" CssClass="pf-btn pf-btn-primary" ClientIDMode="Static" OnClick="btnRevise_Click" />
+                        </div>
+                        <asp:Label ID="lblReviseNote" runat="server" CssClass="pf-muted" Style="display: block; margin-top: 4px;"></asp:Label>
+                    </asp:Panel>
+
+                    <%-- vendor side of a HO counter-offer --%>
+                    <asp:Panel ID="pnlVendorAccept" runat="server" Visible="false" Style="margin-top: 10px; padding: 10px; border: 1px solid #17a2b8; background: #e8f7fa; border-radius: 6px;">
+                        <b>HO has revised the rate.</b> Accept it as-is to approve the formulation now, or change the figures above and submit a counter-proposal to HO.
+                        <div class="pf-actions" style="margin-top: 6px;">
+                            <asp:Button ID="btnAccept" runat="server" Text="Accept revised rate" CssClass="pf-btn pf-btn-save" ClientIDMode="Static" OnClick="btnAccept_Click" OnClientClick="return rmConfirmPostback('btnAccept', 'approve');" />
                         </div>
                     </asp:Panel>
 
                     <div class="pf-actions">
+                        <asp:Button ID="btnPropose" runat="server" Text="Propose change to this release" CssClass="pf-btn pf-btn-primary" ClientIDMode="Static" Visible="false" OnClick="btnPropose_Click" />
                         <asp:Button ID="btnSubmit" runat="server" Text="Submit" CssClass="pf-btn pf-btn-save" ClientIDMode="Static" Visible="false" OnClick="btnSubmit_Click" />
                         <asp:Button ID="btnCancel" runat="server" Text="Back" CssClass="pf-btn" OnClick="btnCancel_Click1" />
                     </div>
@@ -1057,6 +1122,22 @@
                                                                 </tr>
                                                             </ItemTemplate>
                                                         </asp:Repeater>
+                                                        <%-- entry line: type a cost and press Add (same pattern as the SKU grid) --%>
+                                                        <tr class="pf-entry-row pf-line-entry">
+                                                            <td class="pf-col-sn"><i class="fas fa-plus"></i></td>
+                                                            <td>
+                                                                <asp:TextBox ID="txtNewCostName" runat="server" CssClass="pf-new-name" MaxLength="100" Placeholder="Cost name, e.g. Cap, Bottle, Label" AutoComplete="Off"
+                                                                    oninput="this.classList.remove('field-invalid');"></asp:TextBox>
+                                                            </td>
+                                                            <td class="pf-col-amt">
+                                                                <asp:TextBox ID="txtNewAmount" runat="server" CssClass="pf-num pf-new-amt" Placeholder="0.00" AutoComplete="Off"
+                                                                    onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); this.classList.remove('field-invalid');" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
+                                                            </td>
+                                                            <td class="pf-col-act">
+                                                                <asp:LinkButton ID="btnAddLine" runat="server" CssClass="pf-btn pf-btn-primary" CommandName="AddLine" CommandArgument='<%# Eval("pack_key") %>' Text="Add"
+                                                                    OnClientClick="return validateNewLine(this);"></asp:LinkButton>
+                                                            </td>
+                                                        </tr>
                                                         <%-- fixed lines of every pack: processing fee, labour charge, margin % --%>
                                                         <tr class="pf-fixed-line">
                                                             <td class="pf-col-sn"><i class="fas fa-cog" style="color: #888;"></i></td>
@@ -1109,9 +1190,6 @@
                                                         </tr>
                                                     </tfoot>
                                                 </table>
-                                            </div>
-                                            <div style="text-align: center; margin-top: 6px;">
-                                                <asp:LinkButton ID="btnAddLine" runat="server" CssClass="pf-btn" CommandName="AddLine" CommandArgument='<%# Eval("pack_key") %>' Text="+ Add cost line"></asp:LinkButton>
                                             </div>
                                         </div>
                                     </div>

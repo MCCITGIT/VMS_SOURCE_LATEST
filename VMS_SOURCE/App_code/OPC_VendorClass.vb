@@ -1096,6 +1096,8 @@ Public Class OPC_VendorClass
         Public Property Message As String = ""
         Public Property HeaderId As Integer
         Public Property Version As Integer
+        Public Property Cycle As Integer        ' V3: negotiation cycle (= release being negotiated)
+        Public Property Revision As Integer     ' V3: revision inside the cycle
     End Class
 
     ''' <summary>Empty TVP tables with the exact column layout of the three table types.</summary>
@@ -1130,7 +1132,8 @@ Public Class OPC_VendorClass
 
     ''' <summary>[opc_sku_formulation_save] - new version of brand+vendor+product with raw materials and packaging in one transaction.</summary>
     Function SaveSkuFormulation(ByVal brandCode As String, ByVal vendorCode As String, ByVal productCode As String, ByVal remarks As String,
-                                ByVal dtl As DataTable, ByVal packs As DataTable, ByVal lines As DataTable, ByVal userId As String) As SkuFormulationSaveResult
+                                ByVal dtl As DataTable, ByVal packs As DataTable, ByVal lines As DataTable, ByVal userId As String,
+                                Optional ByVal role As String = "VENDOR", Optional ByVal hoRemarks As String = "") As SkuFormulationSaveResult
         Dim result As New SkuFormulationSaveResult()
         Dim sqlConn As SqlConnection = Nothing
         Try
@@ -1145,12 +1148,20 @@ Public Class OPC_VendorClass
             Dim pPack As SqlParameter = sqlCmd.Parameters.Add("@packs", SqlDbType.Structured) : pPack.TypeName = "dbo.tbl_opc_packaging_pack" : pPack.Value = packs
             Dim pLine As SqlParameter = sqlCmd.Parameters.Add("@lines", SqlDbType.Structured) : pLine.TypeName = "dbo.tbl_opc_packaging_line" : pLine.Value = lines
             sqlCmd.Parameters.Add("@user_id", SqlDbType.VarChar, 50).Value = userId
+            sqlCmd.Parameters.Add("@role", SqlDbType.VarChar, 10).Value = If(role = "HO", "HO", "VENDOR")
+            sqlCmd.Parameters.Add("@ho_remarks", SqlDbType.VarChar, 1000).Value = If(String.IsNullOrWhiteSpace(hoRemarks), CObj(DBNull.Value), hoRemarks.Trim())
             Using dr As SqlDataReader = sqlCmd.ExecuteReader()
                 If dr.Read() Then
                     result.Status = If(IsDBNull(dr("Status")), 0, Convert.ToInt32(dr("Status")))
                     result.Message = If(IsDBNull(dr("Message")), "", Convert.ToString(dr("Message")))
                     result.HeaderId = If(IsDBNull(dr("HeaderID")), 0, Convert.ToInt32(dr("HeaderID")))
-                    result.Version = If(IsDBNull(dr("Version")), 0, Convert.ToInt32(dr("Version")))
+                    For i As Integer = 0 To dr.FieldCount - 1
+                        Select Case dr.GetName(i).ToUpperInvariant()
+                            Case "VERSION" : result.Version = If(dr.IsDBNull(i), 0, Convert.ToInt32(dr.GetValue(i)))
+                            Case "CYCLE" : result.Cycle = If(dr.IsDBNull(i), 0, Convert.ToInt32(dr.GetValue(i)))
+                            Case "REVISION" : result.Revision = If(dr.IsDBNull(i), 0, Convert.ToInt32(dr.GetValue(i)))
+                        End Select
+                    Next
                 End If
             End Using
         Finally
@@ -1160,27 +1171,43 @@ Public Class OPC_VendorClass
     End Function
 
     ''' <summary>[opc_sku_formulation_get] - table 0 header, 1 raw materials, 2 packs, 3 pack lines. Pass sfId, or 0 with the key for the current version.</summary>
-    Function GetSkuFormulation(ByVal sfId As Integer, Optional ByVal brandCode As String = Nothing, Optional ByVal vendorCode As String = Nothing, Optional ByVal productCode As String = Nothing) As DataSet
-        Dim sqlParams(3) As SqlParameter
+    Function GetSkuFormulation(ByVal sfId As Integer, Optional ByVal brandCode As String = Nothing, Optional ByVal vendorCode As String = Nothing, Optional ByVal productCode As String = Nothing, Optional ByVal mode As String = "LATEST") As DataSet
+        Dim sqlParams(4) As SqlParameter
         sqlParams(0) = New SqlParameter("@sf_id", SqlDbType.Int) With {.Value = If(sfId > 0, CObj(sfId), DBNull.Value)}
         sqlParams(1) = New SqlParameter("@brand_code", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(brandCode), CObj(DBNull.Value), brandCode)}
         sqlParams(2) = New SqlParameter("@vendor_code", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(vendorCode), CObj(DBNull.Value), vendorCode)}
         sqlParams(3) = New SqlParameter("@product_code", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(productCode), CObj(DBNull.Value), productCode)}
+        sqlParams(4) = New SqlParameter("@mode", SqlDbType.VarChar, 10) With {.Value = If(mode = "ACTIVE", "ACTIVE", "LATEST")}
         Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_get]", Data.CommandType.StoredProcedure, sqlParams)
     End Function
 
+    ''' <summary>[opc_sku_formulation_history] - table 0 SKU key + active release, table 1 every revision / release (newest first).</summary>
+    Function GetSkuFormulationHistory(ByVal sfId As Integer) As DataSet
+        Dim sqlParams(0) As SqlParameter
+        sqlParams(0) = New SqlParameter("@sf_id", SqlDbType.Int) With {.Value = sfId}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_history]", Data.CommandType.StoredProcedure, sqlParams)
+    End Function
+
     ''' <summary>[opc_sku_formulation_ho_email] - TOAddr / CCAddr / BCCAddr for the approval mail (same pattern as Indent_HO_Email).</summary>
+    ''' <summary>[opc_sku_formulation_vendor_email] - TOAddr / CCAddr / BCCAddr of the vendor for "HO revised the rate" mails.</summary>
+    Function GetSkuFormulationVendorEmail(ByVal vendorCode As String) As DataSet
+        Dim sqlParams(0) As SqlParameter
+        sqlParams(0) = New SqlParameter("@vendor_code", SqlDbType.VarChar, 50) With {.Value = vendorCode}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_vendor_email]", Data.CommandType.StoredProcedure, sqlParams)
+    End Function
+
     Function GetSkuFormulationHoEmail() As DataSet
         Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_ho_email]", Data.CommandType.StoredProcedure)
     End Function
 
     ''' <summary>[opc_sku_formulation_approve] - HO decision: action "A" approve / "R" reject (remarks mandatory). Returns the SP message; "" on success.</summary>
-    Function ApproveSkuFormulation(ByVal sfId As Integer, ByVal action As String, ByVal remarks As String, ByVal userId As String) As String
-        Dim sqlParams(3) As SqlParameter
+    Function ApproveSkuFormulation(ByVal sfId As Integer, ByVal action As String, ByVal remarks As String, ByVal userId As String, Optional ByVal role As String = "HO") As String
+        Dim sqlParams(4) As SqlParameter
         sqlParams(0) = New SqlParameter("@sf_id", SqlDbType.Int) With {.Value = sfId}
         sqlParams(1) = New SqlParameter("@action", SqlDbType.Char, 1) With {.Value = action}
         sqlParams(2) = New SqlParameter("@remarks", SqlDbType.VarChar, 1000) With {.Value = If(String.IsNullOrWhiteSpace(remarks), CObj(DBNull.Value), remarks.Trim())}
         sqlParams(3) = New SqlParameter("@user_id", SqlDbType.VarChar, 50) With {.Value = userId}
+        sqlParams(4) = New SqlParameter("@role", SqlDbType.VarChar, 10) With {.Value = If(role = "VENDOR", "VENDOR", "HO")}
         Dim ds As DataSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_approve]", Data.CommandType.StoredProcedure, sqlParams)
         If ds Is Nothing OrElse ds.Tables.Count = 0 OrElse ds.Tables(0).Rows.Count = 0 Then Return "No response from the approval procedure."
         Dim r As DataRow = ds.Tables(0).Rows(0)
@@ -1188,12 +1215,13 @@ Public Class OPC_VendorClass
     End Function
 
     ''' <summary>[opc_sku_formulation_list] - current versions (history = "N") or every version (history = "Y").</summary>
-    Function ListSkuFormulation(ByVal brandCode As String, ByVal vendorCode As String, ByVal productCode As String, ByVal history As String) As DataSet
-        Dim sqlParams(3) As SqlParameter
+    Function ListSkuFormulation(ByVal brandCode As String, ByVal vendorCode As String, ByVal productCode As String, ByVal history As String, Optional ByVal view As String = "ACTIVE") As DataSet
+        Dim sqlParams(4) As SqlParameter
         sqlParams(0) = New SqlParameter("@brand_code", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(brandCode), CObj(DBNull.Value), brandCode.Trim())}
         sqlParams(1) = New SqlParameter("@vendor_code", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(vendorCode), CObj(DBNull.Value), vendorCode.Trim())}
         sqlParams(2) = New SqlParameter("@product_code", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(productCode), CObj(DBNull.Value), productCode.Trim())}
         sqlParams(3) = New SqlParameter("@history", SqlDbType.Char, 1) With {.Value = If(history = "Y", "Y", "N")}
+        sqlParams(4) = New SqlParameter("@view", SqlDbType.VarChar, 12) With {.Value = If(String.IsNullOrWhiteSpace(view), "ACTIVE", view)}
         Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_list]", Data.CommandType.StoredProcedure, sqlParams)
     End Function
 #End Region
