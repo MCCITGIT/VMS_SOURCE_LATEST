@@ -27,7 +27,8 @@ Partial Class SupportOverrides
             Exit Sub
         End If
         userInfo = CType(Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
-        If userInfo.userGroupCodeEntity <> Constant.UserFormAccess.SYSADMIN Then
+        ' SYSADMIN group AND listed in the SUPPORT_PAGE_USERS override (seeded with murthy)
+        If userInfo.userGroupCodeEntity <> Constant.UserFormAccess.SYSADMIN OrElse Not SupportOverrideClass.CanOpenSupportPage(userInfo.userIDEntity) Then
             Response.Redirect("~/Home.aspx")
         End If
     End Sub

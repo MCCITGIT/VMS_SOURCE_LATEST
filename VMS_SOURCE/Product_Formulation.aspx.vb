@@ -3,6 +3,7 @@ Imports System.Data
 Imports System.Globalization
 Imports System.Linq
 Imports System.Text
+Imports System.Configuration
 Imports VMS.Web
 Imports System.Data.SqlClient
 
@@ -149,7 +150,7 @@ Partial Class Product_Formulation
         gvVendorRawMat.DataSource = dt
         gvVendorRawMat.DataBind()
         btnSubmit.Visible = dt.Rows.Count > 0
-        btnSubmit.Text = If(ParseInteger(hdnId.Value) > 0, "Save new version", "Submit")
+        btnSubmit.Text = If(ParseInteger(hdnId.Value) > 0, "Submit for HO approval", "Submit for HO approval")
         hdnSkuPrice.Value = CalculateSkuPrice(dt).ToString("0.00", CultureInfo.InvariantCulture)
         lblSkuPriceInfo.Text = hdnSkuPrice.Value
         LockHeaderIfRowsExist(dt)
@@ -186,13 +187,14 @@ Partial Class Product_Formulation
         If e.Row.RowType = DataControlRowType.Header Then
             e.Row.TableSection = TableRowSection.TableHeader
         ElseIf e.Row.RowType = DataControlRowType.DataRow Then
-            Dim lblRatio As Label = TryCast(e.Row.FindControl("lblRatio"), Label)
-            Dim lblRate As Label = TryCast(e.Row.FindControl("lblRate"), Label)
-            Dim ratio As Decimal = If(lblRatio Is Nothing, 0D, ParseDecimal(lblRatio.Text))
-            Dim rate As Decimal = If(lblRate Is Nothing, 0D, ParseDecimal(lblRate.Text))
+            Dim txtRowRatio As TextBox = TryCast(e.Row.FindControl("txtRowRatio"), TextBox)
+            Dim txtRowRate As TextBox = TryCast(e.Row.FindControl("txtRowRate"), TextBox)
+            Dim ratio As Decimal = If(txtRowRatio Is Nothing, 0D, ParseDecimal(txtRowRatio.Text))
+            Dim rate As Decimal = If(txtRowRate Is Nothing, 0D, ParseDecimal(txtRowRate.Text))
             gridRatioTotal += ratio
             gridSkuPrice += ratio / 100D * rate
-            If lblRate IsNot Nothing Then lblRate.Text = rate.ToString("0.00", CultureInfo.InvariantCulture)
+            If txtRowRatio IsNot Nothing Then txtRowRatio.Text = ratio.ToString("0.##", CultureInfo.InvariantCulture)
+            If txtRowRate IsNot Nothing Then txtRowRate.Text = rate.ToString("0.00", CultureInfo.InvariantCulture)
         ElseIf e.Row.RowType = DataControlRowType.Footer Then
             e.Row.TableSection = TableRowSection.TableFooter
             SetRatioFooterLabels(e.Row, gridRatioTotal, gridSkuPrice)
@@ -397,7 +399,7 @@ Partial Class Product_Formulation
 
             ' no-change guard (server side; the SP checks again)
             If ViewState(SnapshotKey) IsNot Nothing AndAlso Convert.ToString(ViewState(SnapshotKey)) <> "" AndAlso Convert.ToString(ViewState(SnapshotKey)) = BuildSnapshot() Then
-                RmActionPopup.ShowError(Me, "No changes to save - the current version already has this formulation and packaging cost.")
+                RmActionPopup.ShowError(Me, "No changes to save - this formulation and packaging cost is identical to what is already recorded.")
                 BindPacks()
                 Exit Sub
             End If
@@ -425,14 +427,27 @@ Partial Class Product_Formulation
                 Next
             Next
 
+            ' who is submitting: HO revising the vendor's proposal (goes to the vendor) or the vendor (goes to HO)
+            Dim hoRevising As Boolean = Convert.ToString(ViewState("ReviseMode")) = "Y" AndAlso IsHoUser()
+            If hoRevising AndAlso String.IsNullOrWhiteSpace(txtHoRemarks.Text) Then
+                pnlApproval.Visible = True
+                valHoRemarks.Text = "Please write the reason / negotiated price for the vendor before sending the revised rate."
+                BindPacks()
+                Exit Sub
+            End If
+
             Dim obj As New OPC_VendorClass()
             Dim result As OPC_VendorClass.SkuFormulationSaveResult =
-                obj.SaveSkuFormulation(ddlBrand.SelectedValue.Trim(), ddlvendor.SelectedValue.Trim(), hdnProductCode.Value.Trim(), txtRemarks.Text, dtl, packs, lines, userInfo.userIDEntity)
+                obj.SaveSkuFormulation(ddlBrand.SelectedValue.Trim(), ddlvendor.SelectedValue.Trim(), hdnProductCode.Value.Trim(), txtRemarks.Text, dtl, packs, lines, userInfo.userIDEntity,
+                                       If(hoRevising, "HO", "VENDOR"), If(hoRevising, txtHoRemarks.Text, ""))
 
             Select Case result.Status
                 Case 1
                     ClearInlineValidation()
-                    RmActionPopup.ShowSuccess(Me, "Saved successfully as version " & result.Version & ".", "Product_Formulation.aspx?id=" & result.HeaderId)
+                    ViewState("ReviseMode") = Nothing
+                    Dim mailNote As String = SendNegotiationMail(result.HeaderId, result.Cycle, result.Revision, hoRevising, If(hoRevising, txtHoRemarks.Text, ""))
+                    RmActionPopup.ShowSuccess(Me, "Submitted as cycle " & result.Cycle & " / revision " & result.Revision &
+                                              If(mailNote = "", If(hoRevising, " and sent to the vendor for acceptance.", " and sent to HO for approval."), ". " & mailNote), "Product_Formulation.aspx?id=" & result.HeaderId)
                 Case 2
                     RmActionPopup.ShowError(Me, result.Message)
                 Case Else
@@ -464,8 +479,21 @@ Partial Class Product_Formulation
         hdnProductCode.Value = Convert.ToString(h("sf_product_code")).Trim()
         hdnProductName.Value = Convert.ToString(h("product_name")).Trim()
         txtProductSearch.Text = hdnProductCode.Value & "-" & hdnProductName.Value
-        lblVersionInfo.Text = "Version " & Convert.ToString(h("sf_version")) &
-            If(Convert.ToString(h("sf_is_current")) = "Y", " (current)", " (history - valid till " & Convert.ToString(h("sf_valid_to")) & ")")
+        Dim status As String = If(h.Table.Columns.Contains("sf_status"), Convert.ToString(h("sf_status")).Trim().ToUpperInvariant(), "APPROVED")
+        Dim hoRemarks As String = If(h.Table.Columns.Contains("sf_ho_remarks"), Convert.ToString(h("sf_ho_remarks")).Trim(), "")
+        Dim approvedBy As String = If(h.Table.Columns.Contains("sf_approved_by"), Convert.ToString(h("sf_approved_by")).Trim(), "")
+        Dim releaseNo As Integer = If(h.Table.Columns.Contains("sf_release_no") AndAlso Not IsDBNull(h("sf_release_no")), Convert.ToInt32(h("sf_release_no")), 0)
+        Dim cycleNo As Integer = If(h.Table.Columns.Contains("sf_cycle_no"), ParseInteger(Convert.ToString(h("sf_cycle_no"))), 0)
+        Dim revision As Integer = If(h.Table.Columns.Contains("sf_revision"), ParseInteger(Convert.ToString(h("sf_revision"))), 0)
+        Dim isLatest As Boolean = Convert.ToString(h("sf_is_current")) = "Y"
+        Dim activeId As Integer = If(h.Table.Columns.Contains("active_sf_id"), ParseInteger(Convert.ToString(h("active_sf_id"))), 0)
+        Dim latestId As Integer = If(h.Table.Columns.Contains("latest_sf_id"), ParseInteger(Convert.ToString(h("latest_sf_id"))), 0)
+        If releaseNo > 0 Then
+            lblVersionInfo.Text = "Release " & releaseNo & If(status = "APPROVED", " - ACTIVE since " & Convert.ToString(h("sf_valid_from")), " - INACTIVE (valid " & Convert.ToString(h("sf_valid_from")) & " to " & Convert.ToString(h("sf_valid_to")) & ")") &
+                If(approvedBy <> "", ", approved by " & approvedBy, "")
+        Else
+            lblVersionInfo.Text = "Cycle " & cycleNo & " / Revision " & revision & " - " & StatusText(status, approvedBy)
+        End If
         txtRemarks.Text = ""
 
         Dim dtGrid As DataTable = GetGridTable()
@@ -514,6 +542,8 @@ Partial Class Product_Formulation
         ViewState(PackDtlKey) = dtl
         BindPacks()
 
+        ' after both sections are bound: banner, HO panel, and who may edit this row
+        ApplyApprovalState(status, hoRemarks, releaseNo, isLatest, sfId, activeId, latestId)
         ViewState(SnapshotKey) = BuildSnapshot()
     End Sub
 
@@ -543,6 +573,268 @@ Partial Class Product_Formulation
     Protected Sub btnCancel_Click1(sender As Object, e As EventArgs)
         Response.Redirect("~/FormulationMstrList.aspx")
     End Sub
+#End Region
+
+#Region "HO approval + mail"
+    ''' <summary>HO groups decide; SYSADMIN can do both sides (testing / support).</summary>
+    Private Function IsHoUser() As Boolean
+        Dim g As String = Convert.ToString(userInfo.userGroupCodeEntity)
+        Return g = Constant.UserFormAccess.HO OrElse g = Constant.UserFormAccess.HOMARKETING OrElse g = Constant.UserFormAccess.HOACCOUNTS OrElse g = Constant.UserFormAccess.SYSADMIN
+    End Function
+
+    Private Shared Function StatusText(ByVal status As String, ByVal approvedBy As String) As String
+        Select Case status
+            Case "APPROVED" : Return "APPROVED" & If(approvedBy <> "", " by " & approvedBy, "")
+            Case "REJECTED" : Return "REJECTED" & If(approvedBy <> "", " by " & approvedBy, "")
+            Case "PENDING_VENDOR" : Return "WAITING FOR VENDOR (HO revised the rate)"
+            Case "SUPERSEDED" : Return "SUPERSEDED (a newer revision was submitted)"
+            Case "INACTIVE" : Return "INACTIVE (replaced by a newer release)"
+            Case Else : Return "PENDING HO APPROVAL"
+        End Select
+    End Function
+
+    ''' <summary>Status banner, HO approve/reject panel, and who may edit:
+    ''' vendor edits only the newest revision (PENDING / REJECTED) or proposes a change on the active release;
+    ''' old releases / superseded revisions are read-only with links to the active release and the latest revision;
+    ''' HO (other than SYSADMIN) never edits.</summary>
+    Private Sub ApplyApprovalState(ByVal status As String, ByVal hoRemarks As String, ByVal releaseNo As Integer, ByVal isLatest As Boolean, ByVal sfId As Integer, ByVal activeId As Integer, ByVal latestId As Integer)
+        pnlHoRemarks.Visible = hoRemarks <> ""
+        If hoRemarks <> "" Then
+            lblHoRemarksTitle.Text = If(status = "REJECTED", "HO rejected this revision - ", If(status = "PENDING_VENDOR", "HO revised the rate - ", "HO remarks - "))
+            lblHoRemarks.Text = Server.HtmlEncode(hoRemarks)
+            pnlHoRemarks.Style("background") = If(status = "REJECTED", "#f8d7da", If(status = "PENDING_VENDOR", "#e8f7fa", "#d4edda"))
+            pnlHoRemarks.Style("color") = If(status = "REJECTED", "#721c24", If(status = "PENDING_VENDOR", "#0c5460", "#155724"))
+        End If
+        Dim reviseMode As Boolean = Convert.ToString(ViewState("ReviseMode")) = "Y"
+        Dim hoOnly As Boolean = IsHoUser() AndAlso userInfo.userGroupCodeEntity <> Constant.UserFormAccess.SYSADMIN
+        pnlApproval.Visible = IsHoUser() AndAlso status = "PENDING" AndAlso isLatest
+        btnRevise.Visible = pnlApproval.Visible AndAlso Not reviseMode
+        btnApprove.Visible = pnlApproval.Visible AndAlso Not reviseMode
+        btnReject.Visible = pnlApproval.Visible AndAlso Not reviseMode
+        lblReviseNote.Text = If(reviseMode, "Revise the ratios / prices / packaging above, write the reason in the remarks, then press 'Send revised rate to vendor'.", "")
+        pnlVendorAccept.Visible = status = "PENDING_VENDOR" AndAlso isLatest AndAlso Not hoOnly
+        valHoRemarks.Text = ""
+
+        ' navigation links to the other relevant rows of this SKU
+        Dim links As New StringBuilder()
+        If activeId > 0 AndAlso activeId <> sfId Then links.Append("<a href='Product_Formulation.aspx?id=" & activeId & "'>Open active release</a>&nbsp;&nbsp;")
+        If latestId > 0 AndAlso latestId <> sfId Then links.Append("<a href='Product_Formulation.aspx?id=" & latestId & "'>Open latest revision</a>&nbsp;&nbsp;")
+        links.Append("<a href='Product_Rate_Approval.aspx?id=" & sfId & "'><i class='fas fa-history'></i> Negotiation history</a>")
+        litLinks.Text = links.ToString()
+
+        ' who may edit: a read-only row shows the grid/packs but no entry controls
+        Dim editable As Boolean
+        btnPropose.Visible = False
+        If status = "APPROVED" AndAlso releaseNo > 0 Then
+            ' active release: read-only until the vendor presses "Propose change" (then a new negotiation cycle starts on submit)
+            Dim proposeMode As Boolean = Convert.ToString(ViewState("ProposeMode")) = "Y"
+            editable = isLatest AndAlso proposeMode
+            btnPropose.Visible = isLatest AndAlso Not proposeMode AndAlso Not (IsHoUser() AndAlso userInfo.userGroupCodeEntity <> Constant.UserFormAccess.SYSADMIN)
+            btnSubmit.Text = "Submit change for HO approval"
+        ElseIf status = "PENDING" Then
+            ' vendor may still replace their own proposal; HO edits only after "Revise rate"
+            editable = isLatest AndAlso (reviseMode OrElse Not hoOnly)
+            btnSubmit.Text = If(reviseMode, "Send revised rate to vendor", "Submit revised version")
+        ElseIf status = "PENDING_VENDOR" Then
+            ' HO's counter-offer: vendor accepts (panel) or edits and counters; HO waits
+            editable = isLatest AndAlso Not hoOnly
+            btnSubmit.Text = "Submit counter-proposal to HO"
+        ElseIf status = "REJECTED" Then
+            editable = isLatest AndAlso Not hoOnly
+            btnSubmit.Text = "Resubmit for HO approval"
+        Else
+            editable = False                        ' INACTIVE release / SUPERSEDED revision: history only
+        End If
+        If hoOnly AndAlso Not reviseMode Then editable = False
+        SetEditable(editable)
+        If Not editable Then
+            lblReadOnlyNote.Text = If(status = "INACTIVE" OrElse status = "SUPERSEDED", "This is a historical record and cannot be changed.",
+                                   If(Not isLatest, "A newer revision exists - open it to make changes.",
+                                   If(btnPropose.Visible, "Approved and in force. Press 'Propose change' to start a new negotiation.",
+                                   If(status = "PENDING_VENDOR", "Waiting for the vendor to accept or counter the revised rate.", "Read-only view."))))
+        Else
+            lblReadOnlyNote.Text = ""
+        End If
+    End Sub
+
+    Private Sub SetEditable(ByVal editable As Boolean)
+        btnSubmit.Visible = editable AndAlso GetGridTable().Rows.Count > 0
+        btnAdd.Visible = editable
+        btnAddPack.Visible = editable
+        txtPackSize.Visible = editable
+        txtSearchText.Enabled = editable : txtRatio.Enabled = editable : txtRate.Enabled = editable
+        txtRemarks.Enabled = editable
+        ' row delete buttons and pack inputs
+        For Each row As GridViewRow In gvVendorRawMat.Rows
+            Dim b As LinkButton = TryCast(row.FindControl("btnDeleteRow"), LinkButton)
+            If b IsNot Nothing Then b.Visible = editable
+            For Each id As String In New String() {"txtRowRatio", "txtRowRate"}
+                Dim t As TextBox = TryCast(row.FindControl(id), TextBox)
+                If t IsNot Nothing Then t.ReadOnly = Not editable
+            Next
+        Next
+        For Each item As RepeaterItem In rptPack.Items
+            For Each id As String In New String() {"btnRemovePack", "btnAddLine", "txtNewCostName", "txtNewAmount"}
+                Dim c As Control = item.FindControl(id)
+                If c IsNot Nothing Then c.Visible = editable
+            Next
+            For Each id As String In New String() {"txtProcessing", "txtLabour", "txtMarginPct"}
+                Dim t As TextBox = TryCast(item.FindControl(id), TextBox)
+                If t IsNot Nothing Then t.ReadOnly = Not editable
+            Next
+            Dim rptLines As Repeater = CType(item.FindControl("rptLines"), Repeater)
+            For Each li As RepeaterItem In rptLines.Items
+                Dim r As Control = li.FindControl("btnRemoveLine")
+                If r IsNot Nothing Then r.Visible = editable
+                For Each id As String In New String() {"txtCostName", "txtAmount"}
+                    Dim t As TextBox = TryCast(li.FindControl(id), TextBox)
+                    If t IsNot Nothing Then t.ReadOnly = Not editable
+                Next
+            Next
+        Next
+    End Sub
+
+    ''' <summary>Unlocks an active release for editing; the next Submit opens a new negotiation cycle.</summary>
+    Protected Sub btnPropose_Click(sender As Object, e As EventArgs)
+        ViewState("ProposeMode") = "Y"
+        Binddata(ParseInteger(hdnId.Value))
+    End Sub
+
+    Protected Sub btnApprove_Click(sender As Object, e As EventArgs)
+        Decide("A", "HO")
+    End Sub
+
+    Protected Sub btnReject_Click(sender As Object, e As EventArgs)
+        Decide("R", "HO")
+    End Sub
+
+    ''' <summary>HO: unlock the vendor's pending proposal for editing; the next Submit sends it to the vendor as a counter-offer.</summary>
+    Protected Sub btnRevise_Click(sender As Object, e As EventArgs)
+        ViewState("ReviseMode") = "Y"
+        Dim remarks As String = txtHoRemarks.Text
+        Binddata(ParseInteger(hdnId.Value))
+        txtHoRemarks.Text = remarks
+    End Sub
+
+    ''' <summary>Vendor: accept HO's revised rate -> approved directly (HO proposed it, no second approval).</summary>
+    Protected Sub btnAccept_Click(sender As Object, e As EventArgs)
+        Decide("A", "VENDOR")
+    End Sub
+
+    Private Sub Decide(ByVal action As String, ByVal role As String)
+        Dim sfId As Integer = ParseInteger(hdnId.Value)
+        If sfId <= 0 Then Exit Sub
+        If role = "HO" AndAlso Not IsHoUser() Then Exit Sub
+        If action = "R" AndAlso String.IsNullOrWhiteSpace(txtHoRemarks.Text) Then
+            CapturePackInputs() : BindPacks()
+            pnlApproval.Visible = True
+            valHoRemarks.Text = "Please enter the remarks / negotiated price before rejecting."
+            Exit Sub
+        End If
+        Dim obj As New OPC_VendorClass()
+        Dim err As String = obj.ApproveSkuFormulation(sfId, action, If(role = "HO", txtHoRemarks.Text, txtRemarks.Text), userInfo.userIDEntity, role)
+        If err <> "" Then
+            CapturePackInputs() : BindPacks()
+            If role = "HO" Then pnlApproval.Visible = True : valHoRemarks.Text = err Else valPack.Text = err
+            Exit Sub
+        End If
+        Dim msg As String
+        If role = "VENDOR" Then
+            msg = "Revised rate accepted - the formulation is approved and now in force."
+        ElseIf action = "A" Then
+            msg = "Formulation approved."
+        Else
+            msg = "Formulation rejected. The vendor will see your remarks when they open it."
+        End If
+        RmActionPopup.ShowSuccess(Me, msg, "Product_Formulation.aspx?id=" & sfId)
+    End Sub
+
+    ''' <summary>Mail to HO after a version is saved: header, raw materials with ratio/price, packs and a link.
+    ''' Recipients come from SP [opc_sku_formulation_ho_email] (TOAddr/CCAddr/BCCAddr), the same way as Indent_HO_Email.</summary>
+    ''' <returns>"" when the mail API accepted the mail, otherwise a short reason shown in the save popup (the save itself is never undone).</returns>
+    Private Function SendNegotiationMail(ByVal sfId As Integer, ByVal cycle As Integer, ByVal revision As Integer, ByVal toVendor As Boolean, ByVal hoRemarks As String) As String
+        Dim who As String = If(toVendor, "Vendor", "HO")
+        Dim toAddress As String = "", ccAddress As String = "", bccAddress As String = ""
+        Try
+            Dim dsMail As DataSet = If(toVendor, New OPC_VendorClass().GetSkuFormulationVendorEmail(ddlvendor.SelectedValue.Trim()), New OPC_VendorClass().GetSkuFormulationHoEmail())
+            If dsMail IsNot Nothing AndAlso dsMail.Tables.Count > 0 AndAlso dsMail.Tables(0).Rows.Count > 0 Then
+                toAddress = Convert.ToString(dsMail.Tables(0).Rows(0)("TOAddr")).Trim()
+                ccAddress = Convert.ToString(dsMail.Tables(0).Rows(0)("CCAddr")).Trim()
+                bccAddress = Convert.ToString(dsMail.Tables(0).Rows(0)("BCCAddr")).Trim()
+            End If
+        Catch ex As Exception
+            Return who & " mail NOT sent - recipient lookup failed (" & ex.Message & ")"
+        End Try
+        If toAddress = "" Then Return who & " mail NOT sent - no TOAddr returned"
+        Try
+            Dim sb As New StringBuilder()
+            Dim link As String = Request.Url.GetLeftPart(UriPartial.Authority) & ResolveUrl("~/Product_Formulation.aspx?id=" & sfId)
+            Dim td As String = "style='border:1px solid #999;padding:4px 8px;'"
+            If toVendor Then
+                sb.Append("<p>Dear Vendor,</p><p>HO has reviewed your SKU formulation and revised the rate. Please open it in VMS and either <b>accept</b> the revised rate or submit a counter-proposal.</p>")
+                sb.Append("<p style='color:#0c5460;'><b>HO remarks:</b> " & Server.HtmlEncode(hoRemarks) & "</p>")
+            Else
+                sb.Append("<p>Dear HO team,</p><p>A SKU formulation has been submitted and needs your approval.</p>")
+            End If
+            sb.Append("<table style='border-collapse:collapse;font-family:Segoe UI,Arial;font-size:13px;'>")
+            sb.Append("<tr><td " & td & "><b>Brand</b></td><td " & td & ">" & Server.HtmlEncode(ddlBrand.SelectedItem.Text) & "</td></tr>")
+            sb.Append("<tr><td " & td & "><b>Vendor</b></td><td " & td & ">" & Server.HtmlEncode(ddlvendor.SelectedItem.Text) & "</td></tr>")
+            sb.Append("<tr><td " & td & "><b>SKU</b></td><td " & td & ">" & Server.HtmlEncode(hdnProductCode.Value & " - " & hdnProductName.Value) & "</td></tr>")
+            sb.Append("<tr><td " & td & "><b>Negotiation</b></td><td " & td & ">Cycle " & cycle & " / Revision " & revision & If(revision > 1, " (resubmission)", " (new)") & "</td></tr>")
+            sb.Append("<tr><td " & td & "><b>Submitted by</b></td><td " & td & ">" & Server.HtmlEncode(userInfo.userIDEntity) & " on " & DateTime.Now.ToString("dd/MM/yyyy HH:mm") & "</td></tr>")
+            If txtRemarks.Text.Trim() <> "" Then sb.Append("<tr><td " & td & "><b>Vendor remarks</b></td><td " & td & ">" & Server.HtmlEncode(txtRemarks.Text.Trim()) & "</td></tr>")
+            sb.Append("</table><br/>")
+
+            sb.Append("<b>Raw materials</b><table style='border-collapse:collapse;font-family:Segoe UI,Arial;font-size:13px;'>")
+            sb.Append("<tr style='background:#375973;color:#fff;'><th " & td & ">Raw material</th><th " & td & ">Ratio %</th><th " & td & ">Price</th><th " & td & ">Amount</th></tr>")
+            Dim skuPrice As Decimal = 0D
+            For Each r As DataRow In GetGridTable().Rows
+                Dim ratio As Decimal = ParseDecimal(Convert.ToString(r("ratio"))), price As Decimal = ParseDecimal(Convert.ToString(r("rate")))
+                Dim amt As Decimal = Math.Round(ratio / 100D * price, 2) : skuPrice += amt
+                sb.Append("<tr><td " & td & ">" & Server.HtmlEncode(Convert.ToString(r("rawmat_name"))) & " (" & Server.HtmlEncode(Convert.ToString(r("rawmat_code"))) & ")</td><td " & td & " align='right'>" & ratio.ToString("0.00") & "</td><td " & td & " align='right'>" & price.ToString("0.00") & "</td><td " & td & " align='right'>" & amt.ToString("0.00") & "</td></tr>")
+            Next
+            sb.Append("<tr><td " & td & " colspan='3' align='right'><b>SKU price</b></td><td " & td & " align='right'><b>" & skuPrice.ToString("0.00") & "</b></td></tr></table><br/>")
+
+            sb.Append("<b>Packaging cost</b><table style='border-collapse:collapse;font-family:Segoe UI,Arial;font-size:13px;'>")
+            sb.Append("<tr style='background:#375973;color:#fff;'><th " & td & ">Pack size</th><th " & td & ">Material lines</th><th " & td & ">Processing</th><th " & td & ">Labour</th><th " & td & ">Margin %</th><th " & td & ">Total</th></tr>")
+            For Each h As DataRow In PackHdr().Select("", "pack_key")
+                Dim key As Integer = Convert.ToInt32(h("pack_key"))
+                Dim material As Decimal = 0D
+                Dim lines As New List(Of String)()
+                For Each l As DataRow In PackDtl().Select("pack_key = " & key, "srl, line_key")
+                    Dim name As String = Convert.ToString(l("cost_name")).Trim()
+                    If name = "" Then Continue For
+                    Dim amt As Decimal = ParseDecimal(Convert.ToString(l("amount")))
+                    material += amt
+                    lines.Add(Server.HtmlEncode(name) & " " & amt.ToString("0.00"))
+                Next
+                Dim proc As Decimal = ParseDecimal(Convert.ToString(h("processing_fee"))), lab As Decimal = ParseDecimal(Convert.ToString(h("labour_charge"))), pct As Decimal = ParseDecimal(Convert.ToString(h("margin_pct")))
+                Dim baseAmt As Decimal = skuPrice + material + proc + lab
+                Dim total As Decimal = Math.Round(baseAmt + baseAmt * pct / 100D, 2)
+                sb.Append("<tr><td " & td & ">" & Server.HtmlEncode(Convert.ToString(h("pack_size"))) & "</td><td " & td & ">" & String.Join(", ", lines.ToArray()) & " (= " & material.ToString("0.00") & ")</td><td " & td & " align='right'>" & proc.ToString("0.00") & "</td><td " & td & " align='right'>" & lab.ToString("0.00") & "</td><td " & td & " align='right'>" & pct.ToString("0.00") & "</td><td " & td & " align='right'><b>" & total.ToString("0.00") & "</b></td></tr>")
+            Next
+            sb.Append("</table><br/>")
+            sb.Append("<p><a href='" & link & "'>" & If(toVendor, "Open the formulation to accept or counter the revised rate", "Open the formulation to approve, reject or revise") & "</a></p>")
+            sb.Append("<h4 style='color:darkred;'>**This is an auto-generated mail. Please do not reply to this mail**</h4>")
+
+            Dim mailEntity As New MailEntity()
+            mailEntity.FromAddress = ConfigurationManager.AppSettings("EMAIL_ADDRESS")
+            mailEntity.ToAddress = toAddress
+            mailEntity.CCAddress = ccAddress
+            mailEntity.BCCAddress = bccAddress
+            mailEntity.MailSubject = If(toVendor, "SKU formulation - HO revised the rate: ", "SKU formulation approval required: ") & hdnProductCode.Value & " - " & ddlvendor.SelectedItem.Text & " (cycle " & cycle & " rev " & revision & ")"
+            mailEntity.MailBody = sb.ToString()
+            mailEntity.Sender_App = "VMS"
+            mailEntity.Sender_Task = "SkuFormulationApproval"
+            Dim mailobj As New EmailSMSsender()
+            Dim rc As Integer = mailobj.sendMail(mailEntity)
+            If rc = 0 Then Return who & " mail NOT sent - mail service rejected it (to: " & toAddress & ")"
+            Return ""
+        Catch ex As Exception
+            ' a mail failure must never undo a saved formulation
+            Return who & " mail NOT sent - " & ex.Message
+        End Try
+    End Function
 #End Region
 
 #Region "section 2 - packaging cost"
@@ -605,8 +897,19 @@ Partial Class Product_Formulation
         rptLines.DataBind()
     End Sub
 
-    ''' <summary>Copies every textbox of the packaging repeaters back into the ViewState tables before a command is handled.</summary>
+    ''' <summary>Copies the inline-edited ratio / price of every grid row, and every textbox of the packaging repeaters,
+    ''' back into the ViewState tables before a command is handled.</summary>
     Private Sub CapturePackInputs()
+        Dim grid As DataTable = GetGridTable()
+        For i As Integer = 0 To gvVendorRawMat.Rows.Count - 1
+            If i >= grid.Rows.Count Then Exit For
+            Dim txtRowRatio As TextBox = TryCast(gvVendorRawMat.Rows(i).FindControl("txtRowRatio"), TextBox)
+            Dim txtRowRate As TextBox = TryCast(gvVendorRawMat.Rows(i).FindControl("txtRowRate"), TextBox)
+            If txtRowRatio IsNot Nothing Then grid.Rows(i)("ratio") = ParseDecimal(txtRowRatio.Text).ToString("0.##", CultureInfo.InvariantCulture)
+            If txtRowRate IsNot Nothing Then grid.Rows(i)("rate") = ParseDecimal(txtRowRate.Text).ToString("0.00", CultureInfo.InvariantCulture)
+        Next
+        ViewState(GridTableKey) = grid
+
         Dim hdr As DataTable = PackHdr()
         Dim dtl As DataTable = PackDtl()
         For Each item As RepeaterItem In rptPack.Items
@@ -645,15 +948,14 @@ Partial Class Product_Formulation
         Dim key As Integer = NextKey(hdr, "pack_key")
         hdr.Rows.Add(key, 0, packSize, "", "", "")
         ViewState(PackHdrKey) = hdr
-        AddLine(key)
         hdnOpenPack.Value = key.ToString()
         txtPackSize.Text = ""
         BindPacks()
     End Sub
 
-    Private Sub AddLine(ByVal packKey As Integer)
+    Private Sub AddLine(ByVal packKey As Integer, Optional ByVal costName As String = "", Optional ByVal amount As String = "")
         Dim dtl As DataTable = PackDtl()
-        dtl.Rows.Add(NextKey(dtl, "line_key"), packKey, 0, "", "", dtl.Select("pack_key = " & packKey).Length + 1)
+        dtl.Rows.Add(NextKey(dtl, "line_key"), packKey, 0, costName, amount, dtl.Select("pack_key = " & packKey).Length + 1)
         ViewState(PackDtlKey) = dtl
     End Sub
 
@@ -664,7 +966,18 @@ Partial Class Product_Formulation
         hdnOpenPack.Value = packKey.ToString()
         Select Case e.CommandName
             Case "AddLine"
-                AddLine(packKey)
+                ' values come from the entry line of that pack (like the SKU grid): name + amount required
+                Dim item As RepeaterItem = TryCast(CType(source, Control).NamingContainer, RepeaterItem)
+                If item Is Nothing Then item = TryCast(CType(e.CommandSource, Control).NamingContainer, RepeaterItem)
+                Dim txtName As TextBox = If(item Is Nothing, Nothing, TryCast(item.FindControl("txtNewCostName"), TextBox))
+                Dim txtAmt As TextBox = If(item Is Nothing, Nothing, TryCast(item.FindControl("txtNewAmount"), TextBox))
+                Dim name As String = If(txtName Is Nothing, "", txtName.Text.Trim())
+                Dim amtText As String = If(txtAmt Is Nothing, "", txtAmt.Text.Trim())
+                If name = "" OrElse amtText = "" Then
+                    valPack.Text = "Enter the cost name and amount, then press Add."
+                Else
+                    AddLine(packKey, name, ParseDecimal(amtText).ToString("0.00", CultureInfo.InvariantCulture))
+                End If
             Case "RemovePack"
                 Dim hdr As DataTable = PackHdr()
                 For Each r As DataRow In hdr.Select("pack_key = " & packKey)
