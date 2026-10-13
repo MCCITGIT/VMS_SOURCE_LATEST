@@ -85,11 +85,12 @@ Partial Class Product_Rate_Approval
                 If Not rmName.ContainsKey(code) Then rmOrder.Add(code) : rmName(code) = Convert.ToString(d("rawmat_name"))
             Next
         Next
+        ' pack size is free text ("1LTR" / "1ltr"): group case-insensitively, show the first spelling seen
         Dim packOrder As New List(Of String)()
         For Each c As DataRow In cols
             For Each p As DataRow In packs.Select("pch_sf_id = " & Convert.ToInt32(c("sf_id")))
                 Dim ps As String = Convert.ToString(p("pch_pack_size")).Trim()
-                If Not packOrder.Contains(ps) Then packOrder.Add(ps)
+                If Not packOrder.Exists(Function(x) String.Equals(x, ps, StringComparison.OrdinalIgnoreCase)) Then packOrder.Add(ps)
             Next
         Next
 
@@ -154,7 +155,7 @@ Partial Class Product_Rate_Approval
                 sb.Append("<tr><td class='pra-rowhead'>" & Server.HtmlEncode(ps) & " packaging</td>")
                 Dim prevTot As Decimal? = Nothing, prevExists As Boolean = False
                 For Each c As DataRow In cols
-                    Dim p() As DataRow = packs.Select("pch_sf_id = " & Convert.ToInt32(c("sf_id")) & " AND pch_pack_size = '" & ps.Replace("'", "''") & "'")
+                    Dim p() As DataRow = packs.Select("pch_sf_id = " & Convert.ToInt32(c("sf_id")) & " AND UPPER(TRIM(pch_pack_size)) = '" & ps.ToUpperInvariant().Replace("'", "''") & "'")
                     If p.Length = 0 Then
                         sb.Append("<td class='pra-gone'>" & If(prevExists, "removed", "&mdash;") & "</td>")
                         prevExists = False : prevTot = Nothing
