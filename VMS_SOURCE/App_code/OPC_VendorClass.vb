@@ -1418,4 +1418,204 @@ Public Class OPC_VendorClass
         Return DS
     End Function
 #End Region
+#Region "FG Vebdor Despatch List"
+    Public Function Get_FG_Vendor_DispatchList(ByVal unit As String, ByVal rmVendorCode As String, ByVal dispatch_status As String) As DataSet
+        Try
+            Dim DS As DataSet
+            Dim sqlParams(2) As SqlParameter
+
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@unitcode"
+            sqlParams(0).DbType = DbType.String
+            sqlParams(0).Direction = System.Data.ParameterDirection.Input
+            sqlParams(0).Value = If(unit = "", DBNull.Value, CObj(unit))
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@rm_vendor_code"
+            sqlParams(1).DbType = DbType.String
+            sqlParams(1).Direction = System.Data.ParameterDirection.Input
+            sqlParams(1).Value = If(rmVendorCode = "", DBNull.Value, CObj(rmVendorCode))
+
+            sqlParams(2) = New SqlParameter()
+            sqlParams(2).ParameterName = "@dispatch_status"
+            sqlParams(2).DbType = DbType.String
+            sqlParams(2).Direction = System.Data.ParameterDirection.Input
+            sqlParams(2).Value = If(dispatch_status = "", DBNull.Value, CObj(dispatch_status))
+
+            DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_get_request_list_fgvendor]", System.Data.CommandType.StoredProcedure, sqlParams)
+            Return DS
+        Catch ex As Exception
+            Throw ex
+        End Try
+    End Function
+    Private Function NewReceivedDetailsTable() As DataTable
+        Dim dt As New DataTable()
+        dt.Columns.Add("rawmaterial_code", GetType(String))
+        dt.Columns.Add("sub_inventory", GetType(String))
+        dt.Columns.Add("locator", GetType(String))
+        dt.Columns.Add("received_qty", GetType(Decimal))
+        dt.Columns.Add("good_qty", GetType(Decimal))
+        dt.Columns.Add("short_qty", GetType(Decimal))
+        dt.Columns.Add("damage_qty", GetType(Decimal))
+        Return dt
+    End Function
+    Function InsertDispatchAndReceipt(ByRef dispatchEntity As DistpacthDetailsEntity, ByVal dtDetails As DataTable, ByVal dtReceived As DataTable, ByVal UserID As String) As Integer
+        Dim sqlConn As SqlConnection = Nothing
+        Dim sqlTrans As SqlTransaction = Nothing
+        Dim status As Integer = 0
+        Dim sqlParams(22) As SqlParameter
+
+        If dtReceived Is Nothing Then
+            dtReceived = NewReceivedDetailsTable()
+        End If
+
+        Try
+            sqlConn = DBFactory.GetHelper.OpenConnection()
+            sqlTrans = sqlConn.BeginTransaction()
+
+            sqlParams(0) = New SqlParameter("@RequestID", SqlDbType.Int)
+            sqlParams(0).Value = dispatchEntity.ReqID
+
+            sqlParams(1) = New SqlParameter("@DispatchDate", SqlDbType.Date)
+            sqlParams(1).Value = DateTime.Today
+
+            sqlParams(2) = New SqlParameter("@CourierID", SqlDbType.VarChar)
+            sqlParams(2).Value = If(String.IsNullOrEmpty(dispatchEntity.CourierId), CObj(DBNull.Value), dispatchEntity.CourierId)
+
+            sqlParams(3) = New SqlParameter("@CourierDate", SqlDbType.DateTime)
+            sqlParams(3).Value = If(dispatchEntity.CourDt = DateTime.MinValue, CObj(DBNull.Value), dispatchEntity.CourDt)
+
+            sqlParams(4) = New SqlParameter("@InvNo", SqlDbType.VarChar)
+            sqlParams(4).Value = If(String.IsNullOrEmpty(dispatchEntity.InvoiceNo), CObj(DBNull.Value), dispatchEntity.InvoiceNo)
+
+            sqlParams(5) = New SqlParameter("@InvDate", SqlDbType.Date)
+            sqlParams(5).Value = If(dispatchEntity.InvoiceDate = DateTime.MinValue, CObj(DBNull.Value), dispatchEntity.InvoiceDate)
+
+            sqlParams(6) = New SqlParameter("@TransName", SqlDbType.VarChar)
+            sqlParams(6).Value = If(String.IsNullOrEmpty(dispatchEntity.TransporterName), CObj(DBNull.Value), dispatchEntity.TransporterName)
+
+            sqlParams(7) = New SqlParameter("@LRNo", SqlDbType.VarChar)
+            sqlParams(7).Value = If(String.IsNullOrEmpty(dispatchEntity.LRNumber), CObj(DBNull.Value), dispatchEntity.LRNumber)
+
+            sqlParams(8) = New SqlParameter("@LRDate", SqlDbType.DateTime)
+            sqlParams(8).Value = If(dispatchEntity.LRDt = DateTime.MinValue, CObj(DBNull.Value), dispatchEntity.LRDt)
+
+            sqlParams(9) = New SqlParameter("@VehicleNo", SqlDbType.VarChar)
+            sqlParams(9).Value = If(String.IsNullOrEmpty(dispatchEntity.VehicleNumber), CObj(DBNull.Value), dispatchEntity.VehicleNumber)
+
+            sqlParams(10) = New SqlParameter("@DelType", SqlDbType.VarChar)
+            sqlParams(10).Value = If(String.IsNullOrEmpty(dispatchEntity.DeliveryType), CObj(DBNull.Value), dispatchEntity.DeliveryType)
+
+            sqlParams(11) = New SqlParameter("@DispatchUser", SqlDbType.VarChar)
+            sqlParams(11).Value = If(String.IsNullOrEmpty(dispatchEntity.rmVendorCode), CObj(DBNull.Value), dispatchEntity.rmVendorCode)
+
+            sqlParams(12) = New SqlParameter("@CreatedUser", SqlDbType.VarChar)
+            sqlParams(12).Value = UserID
+
+            sqlParams(13) = New SqlParameter("@Details", SqlDbType.Structured)
+            sqlParams(13).TypeName = "dbo.udt_DispatchDetails"
+            sqlParams(13).Value = dtDetails
+
+            sqlParams(14) = New SqlParameter("@ReceivedDetails", SqlDbType.Structured)
+            sqlParams(14).TypeName = "dbo.tbl_received_dtls"
+            sqlParams(14).Value = dtReceived
+
+            sqlParams(15) = New SqlParameter("@LRDocFileName", SqlDbType.VarChar)
+            sqlParams(15).Value = If(String.IsNullOrEmpty(dispatchEntity.LRDocFileName), CObj(DBNull.Value), dispatchEntity.LRDocFileName)
+
+            sqlParams(16) = New SqlParameter("@LRDocPath", SqlDbType.VarChar)
+            sqlParams(16).Value = If(String.IsNullOrEmpty(dispatchEntity.LRDocPath), CObj(DBNull.Value), dispatchEntity.LRDocPath)
+
+            sqlParams(17) = New SqlParameter("@InvDocFileName", SqlDbType.VarChar)
+            sqlParams(17).Value = If(String.IsNullOrEmpty(dispatchEntity.InvDocFileName), CObj(DBNull.Value), dispatchEntity.InvDocFileName)
+
+            sqlParams(18) = New SqlParameter("@InvDocPath", SqlDbType.VarChar)
+            sqlParams(18).Value = If(String.IsNullOrEmpty(dispatchEntity.InvDocPath), CObj(DBNull.Value), dispatchEntity.InvDocPath)
+
+            sqlParams(19) = New SqlParameter("@NewHdrID", SqlDbType.Int)
+            sqlParams(19).Direction = Data.ParameterDirection.Output
+
+            sqlParams(20) = New SqlParameter("@NewReceiptID", SqlDbType.Int)
+            sqlParams(20).Direction = Data.ParameterDirection.Output
+
+            sqlParams(21) = New SqlParameter("@Status", SqlDbType.Int)
+            sqlParams(21).Direction = Data.ParameterDirection.Output
+
+            sqlParams(22) = New SqlParameter("@ErrorMsg", SqlDbType.NVarChar, 4000)
+            sqlParams(22).Direction = Data.ParameterDirection.Output
+
+            Dim sqlCmd As New SqlCommand()
+            sqlCmd.Connection = sqlConn
+            sqlCmd.Transaction = sqlTrans
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.CommandText = "[dbo].[opc_insert_dispatch_and_receipt]"
+            sqlCmd.Parameters.AddRange(sqlParams)
+            sqlCmd.ExecuteNonQuery()
+
+            If sqlParams(21).Value IsNot Nothing AndAlso sqlParams(21).Value IsNot DBNull.Value Then
+                status = CType(sqlParams(21).Value, Integer)
+            End If
+
+            If status = 1 Then
+                sqlTrans.Commit()
+
+                If sqlParams(19).Value IsNot DBNull.Value Then
+                    dispatchEntity.HdrID = CType(sqlParams(19).Value, Integer)
+                End If
+                If sqlParams(20).Value IsNot DBNull.Value Then
+                    dispatchEntity.ReceiptID = CType(sqlParams(20).Value, Integer)
+                End If
+            Else
+                sqlTrans.Rollback()
+                If sqlParams(22).Value IsNot Nothing AndAlso sqlParams(22).Value IsNot DBNull.Value Then
+                    dispatchEntity.Message = CType(sqlParams(22).Value, String)
+                Else
+                    dispatchEntity.Message = "Dispatch and receipt not saved."
+                End If
+            End If
+        Catch ex As Exception
+            If sqlTrans IsNot Nothing Then
+                sqlTrans.Rollback()
+            End If
+            status = 0
+            dispatchEntity.Message = ex.Message
+            Throw
+        Finally
+            If sqlConn IsNot Nothing Then
+                sqlConn.Close()
+            End If
+        End Try
+
+        Return status
+    End Function
+    Public Function GetDispatchDetails(ByVal orhId As Integer, ByVal vendorCode As String, ByVal status As String) As DataSet
+        Try
+            Dim DS As DataSet
+            Dim sqlParams(2) As SqlParameter
+
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@odh_id"
+            sqlParams(0).DbType = DbType.Int32
+            sqlParams(0).Direction = System.Data.ParameterDirection.Input
+            sqlParams(0).Value = If(orhId > 0, CObj(orhId), DBNull.Value)
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@vendor_code"
+            sqlParams(1).DbType = DbType.String
+            sqlParams(1).Direction = System.Data.ParameterDirection.Input
+            sqlParams(1).Value = If(vendorCode = "", DBNull.Value, CObj(vendorCode))
+
+            sqlParams(2) = New SqlParameter()
+            sqlParams(2).ParameterName = "@status"
+            sqlParams(2).DbType = DbType.String
+            sqlParams(2).Direction = System.Data.ParameterDirection.Input
+            sqlParams(2).Value = If(status = "", DBNull.Value, CObj(status))
+
+            DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_get_dispatch_dtls_fgvendor]", System.Data.CommandType.StoredProcedure, sqlParams)
+            Return DS
+        Catch ex As Exception
+            Throw ex
+        End Try
+    End Function
+#End Region
 End Class
