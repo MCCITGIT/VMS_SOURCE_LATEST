@@ -764,7 +764,8 @@ Partial Class vrs_vendorrating_mstr
                 ' Add to chart
                 Chart1.Series.Add(obtainedSeries)
                 Chart1.Series.Add(remainingSeries)
-                Chart1.Width = 800
+                'Chart1.Width = 800
+                Chart1.Width = 630
                 Chart1.Height = 310
 
             Else

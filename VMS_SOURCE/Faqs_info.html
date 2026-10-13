@@ -1,19 +1,122 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <title>Manitenance</title>
+    <title>Faqs Info</title>
     <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
     <link href="includes/style.css?v=@DateTime.Now.ToString()" rel="stylesheet" type="text/css" />
     <link href="includes/bootstrap.min.css" rel="stylesheet" type="text/css" />
     <link href="includes/upgrad-style.css?v=@DateTime.Now.ToString()" rel="stylesheet" type="text/css" />
+
+
+    <style>
+        body {
+            margin: 0;
+            font-family: "Plus Jakarta Sans", Arial, sans-serif;
+            color: #141848;
+        }
+
+
+        /*.site-header {
+            position: absolute;
+            top: 20px;
+            right: 70px;
+        }*/
+
+        .logo {
+            height: 72px;
+        }
+
+        /* Main section */
+        .maintenance {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 0 60px;
+        }
+
+            .maintenance .container-fluid {
+                padding: 0;
+            }
+
+        .img-fluid {
+            max-height: 566px;
+        }
+
+
+
+        .maintenance-text h1 {
+            /*font-size: 34px;*/
+            font-weight: 700;
+            margin: 20px 0 31px;
+            color: #103859;
+        }
+
+        .maintenance-text p {
+            font-size: 18px;
+            line-height: 1.2;
+            color: #8f9ab5;
+            max-width: 400px;
+            margin-bottom: 30px;
+        }
+
+
+        h1, h2, h3, h4, h5, h6 {
+            margin: 0;
+            padding: 0;
+        }
+
+        /* tablets */
+        @media (max-width: 991px) {
+            .maintenance {
+                padding: 0 30px;
+            }
+
+            .maintenance-text h1 {
+                font-size: 28px;
+            }
+
+            .maintenance-text p {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .maintenance {
+                padding: 40px 20px;
+            }
+
+            .maintenance-text {
+                text-align: center;
+                margin-bottom: 24px;
+            }
+
+            .logo {
+                height: 56px;
+            }
+
+            .maintenance-text h1 {
+                font-size: 24px;
+                margin: 16px 0 12px;
+            }
+
+            .maintenance-text p {
+                margin: 0 auto;
+            }
+
+            .maintenance .img-fluid {
+                max-height: 320px;
+            }
+        }
+    </style>
 </head>
-<body class="newUIBody">
+
+<!--<body class="newUIBody">
     <form>
         <div class="faqPageWrap">
             <div class="card faqPageCard">
-                <div class="breadcrumbs faqPageBar">
+                <div class="breadcrumbs faqPageBar"style=" background-color: #f7f9fb !important;">
                     <div class="leftFung">
                         <div class="pageTitleWrap">
                             <h3 class="pageTitle">Manitenance</h3>
@@ -23,16 +126,39 @@
                 </div>
                 <div class="card-body">
                     <div class="faqPageInner">
-                        <div class="faqImgCol">
-                            <img alt="" src="images/underConstruction.gif" class="faqPageImg" />
+                        <div class="faqImgCol" style="background-color: #ffffff !important;">
+                            <img alt="" src="images/construction.png" class="faqPageImg" />
                         </div>
-                        <div class="faqMsgCol">
-                            <span class="faqPageMsg"><em> UNDER&nbsp; &nbsp;MAINTENANCE</em></span>
+                        <div class="faqMsgCol"style="background:#f7f9fb !important; border: 1px solid #eee8de !important;">
+                            <span class="faqPageMsg" style="color:black;"><em> UNDER&nbsp; &nbsp;MAINTENANCE</em></span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </form>
+             </form>
+        </body>-->
+
+
+<body>
+
+    <!--<header class="site-header">
+        <img alt="" src="images/logo-rbr.png" class="logo" />
+    </header>-->
+
+    <section class="maintenance">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-lg-5 col-md-6 maintenance-text">
+                    <img alt="" src="images/logo-rbr.png" class="logo" />
+                    <h1>Under Maintenance</h1>
+                    <p>We'll be back up and running shortly. Hang tight!</p>
+                </div>
+                <div class="col-lg-7 col-md-6 text-center">
+                    <img src="images/maintenance.png" alt="Website under construction" class="img-fluid" />
+                </div>
+            </div>
+        </div>
+    </section>
 </body>
 </html>

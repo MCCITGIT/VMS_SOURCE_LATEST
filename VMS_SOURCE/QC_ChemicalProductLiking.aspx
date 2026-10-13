@@ -59,7 +59,7 @@
 
 
 
-    <div class="rm-module rm-compact cpl-page">
+    <div class="cpl-page">
 
         <div class="breadcrumbs">
             <div class="leftFung">
