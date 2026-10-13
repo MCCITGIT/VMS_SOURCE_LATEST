@@ -6,6 +6,7 @@ Imports VMS.DataAccess
 Partial Class VprDashboard
     Inherits System.Web.UI.Page
     Dim userInfo As VMSUserEntity = New VMSUserEntity()
+    Private Const VendorPageSize As Integer = 10
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
         CheckLogin()
         If Not IsPostBack Then
@@ -103,7 +104,8 @@ Partial Class VprDashboard
                 Dim table As DataTable = ds.Tables(1)
                 If table IsNot Nothing AndAlso table.Rows.Count > 0 Then
                     gvFgVendorlist.Visible = True
-                    gvFgVendorlist.DataSource = table
+                    gvFgVendorlist.PageIndex = 0
+                    gvFgVendorlist.DataSource = FirstVendorPage(table)
                     gvFgVendorlist.DataBind()
                 Else
                     gvFgVendorlist.Visible = False
@@ -118,6 +120,63 @@ Partial Class VprDashboard
             Throw
         End Try
     End Sub
+
+    Private Function FirstVendorPage(ByVal dt As DataTable) As DataTable
+        Dim pageDt As DataTable = dt.Clone()
+        Dim take As Integer = Math.Min(VendorPageSize, dt.Rows.Count)
+        For i As Integer = 0 To take - 1
+            pageDt.ImportRow(dt.Rows(i))
+        Next
+        Return pageDt
+    End Function
+
+    <System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreVendorPayments(pageIndex As Integer, vendorName As String, fromDate As String, toDate As String) As Object
+        Dim userId As String = String.Empty
+        Dim sessionUser = System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo)
+        If sessionUser IsNot Nothing Then
+            userId = CType(sessionUser, VMSUserEntity).userIDEntity
+        End If
+
+        Dim obj As New POLinkingRequestClass()
+        Dim ds As DataSet = obj.GetVendorPaymentDashboardDetails(If(vendorName, String.Empty), ParseDashDate(fromDate), ParseDashDate(toDate), userId)
+        Dim rows As New List(Of Object)
+        Dim total As Integer = 0
+
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 1 AndAlso ds.Tables(1) IsNot Nothing Then
+            Dim dt As DataTable = ds.Tables(1)
+            total = dt.Rows.Count
+            Dim start As Integer = pageIndex * VendorPageSize
+            Dim last As Integer = Math.Min(start + VendorPageSize, total) - 1
+            For i As Integer = start To last
+                Dim r As DataRow = dt.Rows(i)
+                rows.Add(New With {
+                    .unit_name = r("unit_name").ToString(),
+                    .unit_code = r("unit_code").ToString(),
+                    .approved_challan_count = r("approved_challan_count").ToString(),
+                    .delivered_count = r("delivered_count").ToString(),
+                    .grn_not_done = r("grn_not_done").ToString(),
+                    .manual_grn = r("manual_grn").ToString(),
+                    .paid_status = r("paid_status").ToString()
+                })
+            Next
+        End If
+
+        Return New With {.rows = rows, .total = total}
+    End Function
+
+    Private Shared Function ParseDashDate(ByVal value As String) As Nullable(Of DateTime)
+        If String.IsNullOrWhiteSpace(value) Then
+            Return Nothing
+        End If
+
+        Dim parsedDate As DateTime
+        If DateTime.TryParseExact(value.Trim(), "dd-MM-yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, parsedDate) Then
+            Return parsedDate
+        End If
+
+        Return Nothing
+    End Function
 
     Public Function FormatDate(ByVal stringdate As String) As SqlDateTime
 

@@ -55,7 +55,7 @@
                 <div class="card-body">
                     <div class="row">
                         <!-- Factory Dropdown -->
-                        <div class="col-md-3">
+                        <div class="col-md-5">
                             <div class="form-group">
                                 <label class="form-control-label">Factory:</label>
                                 <asp:UpdatePanel runat="server" ID="UpdatePanelFactory">
@@ -79,7 +79,7 @@
                                 Style="margin-top: 19px" />
                         </div>
                     </div>
-                    <div class="mst-panel-header" style="padding: 15px 0;">
+                    <div class="mst-panel-header" style="padding: 15px 0px 0px 0px;">
                         <div class="mst-panel-header-left">
                             <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
                             <div>
