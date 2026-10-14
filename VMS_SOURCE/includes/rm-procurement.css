@@ -754,7 +754,7 @@
 
 /* Select2 (dropdown is often attached to body) */
 body:has(.rm-module) .select2-container--default .select2-selection--single {
-    height: 42px !important;
+    height: 36px !important;
     background: #f7f8fa !important;
     border: 1px solid #e4e7ec !important;
     border-radius: 10px !important;
