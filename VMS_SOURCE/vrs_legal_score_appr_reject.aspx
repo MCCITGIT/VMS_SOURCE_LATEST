@@ -82,40 +82,39 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row">
-                         <div class="col-md-2">
-                                    <div class="form-group pb-0">
-                                        <label class="form-control-label">Fin Year:</label>
-                                        <asp:DropDownList ID="ddlFinYear" class="form-control select2" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlFinYear_SelectedIndexChanged" />
-                                    </div>
-                                </div>
-                        <div class="col-md-2">
-                            <div class="form-group pb-0">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-control-label">Fin Year:</label>
+                                <asp:DropDownList ID="ddlFinYear" class="form-control select2" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlFinYear_SelectedIndexChanged" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
                                 <label class="form-control-label">Quarter:</label>
                                 <asp:DropDownList ID="ddlquartor" class="form-control select2" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlquartor_SelectedIndexChanged" />
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group pb-0">
+                        <div class="col-md-3">
+                            <div class="form-group">
                                 <label class="form-control-label">Status:</label>
                                 <asp:DropDownList ID="ddlStatus" class="form-control select2" AutoPostBack="true" OnSelectedIndexChanged="ddlStatus_SelectedIndexChanged" runat="server" />
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Vendor Unit:</label>
                                 <asp:DropDownList ID="ddlvendor" class="form-control select2" runat="server">
                                 </asp:DropDownList>
 
                             </div>
                         </div>
-
-                        <div class="col-md-3 form-btn-mt">
+                        <div class="col-md-12 form-btn-mt text-center">
                             <asp:Button ID="btnsearch" runat="server" Text="Search" CssClass="btn btn-primary btn-sm" />
                             <asp:LinkButton ID="btnReset" runat="server" Text="Reset" CssClass="btn btn-warning btn-sm" CausesValidation="false" />
                             <asp:Button ID="btnExport" runat="server" ToolTip="Click to Reset" Text="Export" OnClick="btnExport_Click" CssClass="btn btn-success btn-sm" />
-                            <asp:Label ID="lblError" CssClass="errormsg" Visible="true" runat="server"></asp:Label>
                         </div>
                     </div>
+                    <asp:Label ID="lblError" CssClass="errormsg" Visible="true" runat="server"></asp:Label>
                 </div>
             </div>
             <div class="card" runat="server" id="div2" visible="false">
@@ -255,11 +254,9 @@
                                                         <asp:Label ID="lblFileName" Text="" runat="server" Visible="False" />
 
                                                         <asp:LinkButton ID="lnkDownload" runat="server"
-                                                           
                                                             CommandArgument='<%# Eval("file_path") %>'
                                                             OnCommand="lnkDownload_Command"
                                                             Visible='<%# Not String.IsNullOrEmpty(Eval("file_path").ToString()) %>'
-                                                           
                                                             CausesValidation="false"
                                                             UseSubmitBehavior="false"><i class="fa fa-download" style="color:#3adede;"></i></asp:LinkButton>
                                                     </ItemTemplate>
