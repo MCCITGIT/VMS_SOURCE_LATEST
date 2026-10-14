@@ -12,6 +12,7 @@ Public Class RawMaterialRequisitionHeaderEntity
     Private deleted_date As DateTime
     Private active_status As String
     Private tran_type As Integer
+    Private po_no As String
 
     Public Sub New()
         request_id = Integer.MinValue
@@ -25,6 +26,7 @@ Public Class RawMaterialRequisitionHeaderEntity
         deleted_date = DateTime.MinValue
         active_status = String.Empty
         tran_type = Integer.MinValue
+        po_no = String.Empty
     End Sub
 
     Public Property RequestId() As Integer
@@ -122,6 +124,14 @@ Public Class RawMaterialRequisitionHeaderEntity
         End Get
         Set(ByVal value As Integer)
             tran_type = value
+        End Set
+    End Property
+    Public Property PONO() As String
+        Get
+            Return po_no
+        End Get
+        Set(ByVal value As String)
+            po_no = value
         End Set
     End Property
 End Class
@@ -305,4 +315,5 @@ Public Class RawMaterialRequisitionDetailEntity
             active_status = value
         End Set
     End Property
+
 End Class
