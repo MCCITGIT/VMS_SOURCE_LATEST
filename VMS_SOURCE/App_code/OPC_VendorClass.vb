@@ -781,7 +781,7 @@ Public Class OPC_VendorClass
         Dim sqlConn As SqlConnection = Nothing
         sqlConn = DBFactory.GetHelper.OpenConnection()
         Dim MsgID As Integer
-        Dim sqlParams(6) As SqlParameter
+        Dim sqlParams(7) As SqlParameter
 
         Try
 
@@ -829,6 +829,13 @@ Public Class OPC_VendorClass
             sqlParams(6).ParameterName = "@outputCode"
             sqlParams(6).SqlDbType = SqlDbType.Int
             sqlParams(6).Direction = Data.ParameterDirection.Output
+
+            sqlParams(7) = New SqlParameter()
+            sqlParams(7).ParameterName = "@pono"
+            sqlParams(7).SqlDbType = SqlDbType.VarChar
+            sqlParams(7).Size = 50
+            sqlParams(7).Direction = Data.ParameterDirection.Input
+            sqlParams(7).Value = entity.PONO
 
             Dim sqlCmd As New SqlCommand()
             sqlCmd.Connection = sqlConn
@@ -954,7 +961,26 @@ Public Class OPC_VendorClass
         Return PrjectList
 
     End Function
-    Function GetRawMaterial_Requesteditt(ByVal vendor_id As String, ByVal rawmat_vendorcode As String) As DataSet
+    'Function GetRawMaterial_Requesteditt(ByVal vendor_id As String, ByVal rawmat_vendorcode As String) As DataSet
+    '    Dim DS As System.Data.DataSet
+    '    Dim sqlParams(1) As SqlParameter
+
+    '    sqlParams(0) = New SqlParameter()
+    '    sqlParams(0).ParameterName = "@vendor_id"
+    '    sqlParams(0).DbType = DbType.String
+    '    sqlParams(0).Direction = Data.ParameterDirection.Input
+    '    sqlParams(0).Value = vendor_id
+
+    '    sqlParams(1) = New SqlParameter()
+    '    sqlParams(1).ParameterName = "@rawmat_vendorcode"
+    '    sqlParams(1).DbType = DbType.String
+    '    sqlParams(1).Direction = Data.ParameterDirection.Input
+    '    sqlParams(1).Value = rawmat_vendorcode
+
+    '    DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[getrawmaterial_vendorlink_data]", Data.CommandType.StoredProcedure, sqlParams)
+    '    Return DS
+    'End Function
+    Function GetRawMaterial_Requesteditt(ByVal vendor_id As String, ByVal pono As String) As DataSet
         Dim DS As System.Data.DataSet
         Dim sqlParams(1) As SqlParameter
 
@@ -965,15 +991,53 @@ Public Class OPC_VendorClass
         sqlParams(0).Value = vendor_id
 
         sqlParams(1) = New SqlParameter()
-        sqlParams(1).ParameterName = "@rawmat_vendorcode"
+        sqlParams(1).ParameterName = "@pono"
         sqlParams(1).DbType = DbType.String
         sqlParams(1).Direction = Data.ParameterDirection.Input
-        sqlParams(1).Value = rawmat_vendorcode
+        sqlParams(1).Value = pono
 
         DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[getrawmaterial_vendorlink_data]", Data.CommandType.StoredProcedure, sqlParams)
         Return DS
     End Function
+
+    Public Function GetPoList(ByVal unit As String, ByVal supplier As String) As DataSet
+        Dim PrjectList As DataSet
+
+        Dim sqlParams(1) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@unit"
+        sqlParams(0).DbType = DbType.String
+        sqlParams(0).Direction = Data.ParameterDirection.Input
+        sqlParams(0).Value = unit
+
+        sqlParams(1) = New SqlParameter()
+        sqlParams(1).ParameterName = "@supplier"
+        sqlParams(1).DbType = DbType.String
+        sqlParams(1).Direction = Data.ParameterDirection.Input
+        sqlParams(1).Value = supplier
+
+        PrjectList = DBFactory.GetHelper().ExecuteDataSet("[dbo].[GetVendorWisePo]", Data.CommandType.StoredProcedure, sqlParams)
+        Return PrjectList
+
+    End Function
+    Public Function GetRequest_PendingCount(ByVal po As String) As DataSet
+        Dim PrjectList As DataSet
+
+        Dim sqlParams(0) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@po_no"
+        sqlParams(0).DbType = DbType.String
+        sqlParams(0).Direction = Data.ParameterDirection.Input
+        sqlParams(0).Value = po
+
+        PrjectList = DBFactory.GetHelper().ExecuteDataSet("dbo.Get_Latest_Approved_OPC_Request", Data.CommandType.StoredProcedure, sqlParams)
+        Return PrjectList
+
+    End Function
 #End Region
+
 #Region "Receipt Raw Material"
     Function GetRawMaterialReceiptList(ByVal rmvendorcode As String, ByVal status As String) As DataSet
         Dim DS As System.Data.DataSet
@@ -1418,6 +1482,7 @@ Public Class OPC_VendorClass
         Return DS
     End Function
 #End Region
+
 #Region "FG Vebdor Despatch List"
     Public Function Get_FG_Vendor_DispatchList(ByVal unit As String, ByVal rmVendorCode As String, ByVal dispatch_status As String) As DataSet
         Try

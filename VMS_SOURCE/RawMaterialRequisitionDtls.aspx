@@ -22,6 +22,14 @@
             .dispatch-field-error:empty {
                 display: none;
             }
+
+        .rm-requisition-actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
     </style>
     <div class="rm-module rm-requisition-dtls">
     <script type="text/javascript" src="Scripts/rm-status-confirm.js?v=<%= DateTime.Now.Ticks %>"></script>
@@ -102,20 +110,26 @@
                                 <asp:DropDownList ID="ddlUnit" ClientIDMode="Static" runat="server" CssClass="form-control select2"></asp:DropDownList>
                                 <asp:Label ID="valUnit" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                             </div>
-                        </div>
-                        <div class="col-md-4">
+                        </div>                        
+                        <div class="col-md-4" runat="server">
                             <div class="form-group">
-                                <label class="form-control-label">RM Vendor:<span id="Span2" class="mandatory">*</span></label>
+                                <label class="form-control-label">Supplier:</label>
                                 <asp:DropDownList ID="ddlVendor" ClientIDMode="Static" CssClass="form-control select2" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlVendor_SelectedIndexChanged"></asp:DropDownList>
                                 <asp:Label ID="valVendor" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group rm-requisition-dtls-action">
-                                <label class="form-control-label">&nbsp;</label>
-                                <div class="rm-filter-actions">
-                                    <asp:LinkButton CssClass="btn btn-primary btn-sm rm-btn-icon" ID="imgbtnSearch" runat="server" ClientIDMode="Static" OnClick="imgbtnSearch_Click" OnClientClick="return validateRawMaterialRequisitionSearch();" ToolTip="Search"><i class="fas fa-search"></i></asp:LinkButton>
-                                </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-control-label">PO No:<span id="Span2" class="mandatory">*</span></label>
+                                <asp:DropDownList ID="ddlPono" ClientIDMode="Static" runat="server" CssClass="form-control select2" AutoPostBack="true" OnSelectedIndexChanged="ddlPono_SelectedIndexChanged"></asp:DropDownList>
+                                <asp:Label ID="valPO" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                                <asp:HiddenField ID="hdnSupplierCode" runat="server"/>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="rm-requisition-actions">
+                                <asp:LinkButton CssClass="btn btn-primary btn-sm rm-btn-icon" ID="imgbtnSearch" runat="server" ClientIDMode="Static" OnClick="imgbtnSearch_Click" OnClientClick="return validateRawMaterialRequisitionSearch();" ToolTip="Search"><i class="fas fa-search"></i></asp:LinkButton>
+                                <asp:LinkButton CssClass="btn btn-outline-secondary btn-sm rm-btn-icon" ID="btnRefresh" runat="server" ClientIDMode="Static" OnClick="btnRefresh_Click" CausesValidation="false" ToolTip="Refresh"><i class="fas fa-sync-alt"></i></asp:LinkButton>
                             </div>
                         </div>
                     </div>
@@ -129,7 +143,7 @@
                                     <Columns>
                                         <asp:TemplateField HeaderText="Vendor Name">
                                             <ItemTemplate>
-                                                <asp:HiddenField ID="hdnId" runat="server" Value='<%# Bind("id") %>' />
+                                                <%--<asp:HiddenField ID="hdnId" runat="server" Value='<%# Bind("id") %>' />--%>
                                                 <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vendor_name") %>'></asp:Label>
                                                 <asp:HiddenField ID="hdnVendorCode" runat="server" Value='<%# Bind("vendor_code") %>' />
                                                 <asp:HiddenField ID="hdnRate" runat="server" Value='<%# Bind("rate") %>' />
@@ -137,9 +151,15 @@
                                         </asp:TemplateField>
                                         <asp:BoundField DataField="rawmat_code" HeaderText="Raw Material Code" ReadOnly="true" />
                                         <asp:BoundField DataField="rawmat_name" HeaderText="Raw Material Name" ReadOnly="true" /> 
-                                        <asp:BoundField DataField="rate" HeaderText="Rate" ReadOnly="true" />                                                
+
+                                        <asp:BoundField DataField="qty" HeaderText="Quantity" ReadOnly="true" />   
+                                        <asp:BoundField DataField="rate" HeaderText="Rate" ReadOnly="true" />
+                                        <asp:BoundField DataField="amount" HeaderText="Amount" ReadOnly="true" />
+                                        <asp:BoundField DataField="pending_qty" HeaderText="Pending Quantity" ReadOnly="true" />  
+                                                                                          
                                         <asp:TemplateField HeaderText="Quantity Required">
                                             <ItemTemplate>
+                                                <asp:HiddenField ID="hdnPendingQty" runat="server" Value='<%# Eval("pending_qty") %>' />
                                                 <asp:TextBox ID="txtQuantity" runat="server" CssClass="form-control form-control-sm" AutoComplete="Off"
                                                     onkeypress="return allowRateTwoDecimal(event, this);"
                                                     oninput="sanitizeRateTwoDecimal(this); clearRequisitionGridFieldValidation(this);"
@@ -169,7 +189,7 @@
                     <asp:Label ID="valGrid" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                     <div class="row">
                         <div class="col-md-12 text-center">
-                            <asp:Button ID="btnSubmit" runat="server" Text="Submit" CssClass="btn btn-primary btn-sm" ClientIDMode="Static" Visible="false"/>
+                            <asp:Button ID="btnSubmit" runat="server" Text="Submit" CssClass="btn btn-primary btn-sm" ClientIDMode="Static" Visible="false" OnClientClick="return validateRawMaterialRequisitionSubmit();" />
                             <asp:Button ID="btnCancel" runat="server" Text="Back" CssClass="btn btn-secondary btn-sm" />
                            <%-- <asp:Button ID="btnReset" runat="server" Text="Reset" CssClass="btn btn-warning btn-sm" />--%>
                         </div>

@@ -150,6 +150,7 @@ Partial Class FGVendor_DispatchDtlsaspx
             lblVendorCode.Text = dr("orh_vendor_code").ToString()
             lblVendorName.Text = dr("unit_name").ToString()
             hdnRawMaterialVendorCode.Value = ds.Tables(0).Rows(0)("orh_rawmaterial_vender_code").ToString()
+            lblPono.Text = Convert.ToString(dr("po_no"))
             HideDispatchMeta()
         End If
 
@@ -197,6 +198,7 @@ Partial Class FGVendor_DispatchDtlsaspx
             'divMetaBar.CssClass = "rm-meta-bar has-dispatch"
             'divDispatchId.Visible = True
             'divDispatchDate.Visible = True
+            lblPono.Text = GetColumnText(dr, "po_no")
             lblVendorCode.Text = Convert.ToString(dr("orh_vendor_code"))
             lblVendorName.Text = Convert.ToString(dr("unit_name"))
 

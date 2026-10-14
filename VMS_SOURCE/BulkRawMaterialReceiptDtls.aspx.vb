@@ -179,15 +179,31 @@ Partial Class BulkRawMaterialReceiptDtls
                 txtinvdate.Text = Convert.ToDateTime(ds.Tables(0).Rows(0)("inv_date")).ToString("dd/MM/yyyy")
             End If
             txtTransporterNM.Text = ds.Tables(0).Rows(0)("trans_name")
-            txtlrno.Text = ds.Tables(0).Rows(0)("lrno")
+
+            If ds.Tables(0).Rows(0)("lrno").Equals(DBNull.Value) Then
+                txtlrno.Text = String.Empty
+            Else
+                txtlrno.Text = ds.Tables(0).Rows(0)("lrno")
+            End If
 
             If ds.Tables(0).Rows(0)("lrdate").Equals(DBNull.Value) Then
                 txtlrdate.Text = String.Empty
             Else
                 txtlrdate.Text = Convert.ToDateTime(ds.Tables(0).Rows(0)("lrdate")).ToString("dd/MM/yyyy")
             End If
-            txtVehicleno.Text = ds.Tables(0).Rows(0)("vehicle_no")
-            txtdeliverytype.Text = ds.Tables(0).Rows(0)("del_type")
+
+            If ds.Tables(0).Rows(0)("vehicle_no").Equals(DBNull.Value) Then
+                txtVehicleno.Text = String.Empty
+            Else
+                txtVehicleno.Text = ds.Tables(0).Rows(0)("vehicle_no")
+            End If
+
+            If ds.Tables(0).Rows(0)("del_type").Equals(DBNull.Value) Then
+                txtdeliverytype.Text = String.Empty
+            Else
+                txtdeliverytype.Text = ds.Tables(0).Rows(0)("del_type")
+            End If
+
 
             If hdr.Table.Columns.Contains("despatch_date") AndAlso Not hdr("despatch_date").Equals(DBNull.Value) Then
                 txtDOJ.Text = Convert.ToDateTime(hdr("despatch_date")).ToString("dd/MM/yyyy")
