@@ -65,7 +65,7 @@ Partial Class RawMaterialRequisitionDtls
             If (Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
                 gvVendorRawMat.DataSource = ds
                 gvVendorRawMat.DataBind()
-                btnSubmit.Visible = True
+                btnSubmit.Visible = HasAnyPendingQuantity(ds.Tables(0))
             Else
                 gvVendorRawMat.DataSource = Nothing
                 gvVendorRawMat.DataBind()
@@ -88,7 +88,7 @@ Partial Class RawMaterialRequisitionDtls
         Dim sourceTable As DataTable = ds.Tables(0)
         Dim firstRow As DataRow = sourceTable.Rows(0)
         Dim status As String = String.Empty
-        If ds.Tables(0).Rows(0)("approval_status") = "A" Then
+        If ds.Tables(0).Rows(0)("approval_status") = "A" OrElse Not HasAnyPendingQuantity(sourceTable) Then
             btnSubmit.Visible = False
         Else
             btnSubmit.Visible = True
@@ -352,6 +352,22 @@ Partial Class RawMaterialRequisitionDtls
 
         dt.AcceptChanges()
         Return dt
+    End Function
+
+    Private Function HasAnyPendingQuantity(ByVal table As DataTable) As Boolean
+        If table Is Nothing OrElse Not table.Columns.Contains("pending_qty") Then
+            Return False
+        End If
+
+        For Each dr As DataRow In table.Rows
+            Dim pendingQty As Decimal = 0D
+            Decimal.TryParse(Convert.ToString(dr("pending_qty")), pendingQty)
+            If pendingQty <> 0D Then
+                Return True
+            End If
+        Next
+
+        Return False
     End Function
 
     Private Function FormatQuantityValue(ByVal value As Object) As String
