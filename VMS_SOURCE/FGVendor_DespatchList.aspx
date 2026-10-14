@@ -36,7 +36,7 @@
                         <div class="rm-filter-fields">
                             <div class="rm-filter-inline">
                                 <div class="form-group pb-0">
-                                    <label class="form-control-label">Raw Material Vendor:</label>
+                                    <label class="form-control-label">Supplier:</label>
                                     <asp:DropDownList ID="ddlRawMatvendor" ClientIDMode="Static" CssClass="form-control select2" runat="server"></asp:DropDownList>
                                 </div>
                                 <div class="form-group pb-0">

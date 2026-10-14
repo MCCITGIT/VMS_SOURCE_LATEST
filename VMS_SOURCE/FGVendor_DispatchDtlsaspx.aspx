@@ -112,13 +112,12 @@
                 border-right: 0;
             }
 
-            .rm-meta-item.is-vendor-code,
-            .rm-meta-item.is-vendor {
+            .rm-meta-item.is-second-row {
                 border-top: 1px solid #f0ece4;
             }
 
             .rm-meta-item.is-vendor {
-                grid-column: span 3;
+                grid-column: span 2;
                 border-right: 0;
                 background: #eef4ff;
             }
@@ -776,7 +775,7 @@
                 border-right: 1px solid #f0ece4;
             }
 
-            .rm-meta-item.is-vendor-code,
+            .rm-meta-item.is-second-row,
             .rm-meta-item.is-vendor {
                 border-top: 0;
             }
@@ -868,19 +867,23 @@
                     <span class="rm-meta-label">Request Date</span>
                     <asp:Label ID="lblRequestDate" runat="server" CssClass="rm-meta-value"></asp:Label>
                 </div>
-                <div class="rm-meta-item" id="divDispatchId" runat="server">
+                <div class="rm-meta-item">
+                    <span class="rm-meta-label">PO No</span>
+                    <asp:Label ID="lblPono" runat="server" CssClass="rm-meta-value rm-meta-value-id"></asp:Label>
+                </div>
+                <div class="rm-meta-item is-row-end" id="divDispatchId" runat="server">
                     <span class="rm-meta-label">Despatch ID</span>
                     <asp:Label ID="lblDispatchID" runat="server" CssClass="rm-meta-value rm-meta-value-id"></asp:Label>
                 </div>
-                <div class="rm-meta-item is-row-end" id="divDispatchDate" runat="server">
+                <div class="rm-meta-item is-second-row" id="divDispatchDate" runat="server">
                     <span class="rm-meta-label">Despatch Date</span>
                     <asp:Label ID="lblDispatchDate" runat="server" CssClass="rm-meta-value"></asp:Label>
                 </div>
-                <div class="rm-meta-item is-vendor-code">
+                <div class="rm-meta-item is-second-row">
                     <span class="rm-meta-label">Vendor Code</span>
                     <asp:Label ID="lblVendorCode" runat="server" CssClass="rm-meta-value"></asp:Label>
                 </div>
-                <div class="rm-meta-item is-vendor">
+                <div class="rm-meta-item is-second-row is-vendor">
                     <span class="rm-meta-label">Vendor Name</span>
                     <span class="rm-vendor-name">
                         <i class="fas fa-building"></i>
