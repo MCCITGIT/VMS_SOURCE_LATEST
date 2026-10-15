@@ -39,7 +39,27 @@
             else if (event.keyCode == 120) { // button Search (F9 keypress)
                 __doPostBack(document.getElementById('btnReset').name, '');
             }
-        }       
+        }
+
+        function onVendorSelected(sender, e) {
+            var value = e.get_value();
+            var text = e.get_text();
+            document.getElementById('hdnVendorId').value = value;
+            document.getElementById('txtVendorSearch').value = text;
+            sender.get_element().value = text;
+            __doPostBack('<%= btnLoadVendor.UniqueID %>', '');
+        }
+
+        function clearVendorSelection() {
+            document.getElementById('hdnVendorId').value = '';
+        }
+
+        function resetVendorField() {
+            document.getElementById('txtVendorSearch').value = '';
+            document.getElementById('hdnVendorId').value = '';
+            __doPostBack('<%= btnLoadVendor.UniqueID %>', '');
+            return false;
+        }
     </script>
     <div class="breadcrumbs">
         <div class="leftFung">
@@ -69,20 +89,33 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label class="form-control-label">Vendor :<span id="lblGroup1" class="mandatory">*</span></label>
                                 <div class="fg-vendor-code-row">
-                                     <asp:DropDownList ID="ddlVendor" ClientIDMode="Static" CssClass="form-control select2" AutoPostBack="true" runat="server" OnSelectedIndexChanged="ddlVendor_SelectedIndexChanged"></asp:DropDownList>
+                                    <div class="input-group product-search-group">
+                                        <asp:TextBox ID="txtVendorSearch" ClientIDMode="Static" CssClass="form-control" runat="server" AutoComplete="Off" onkeyup="clearVendorSelection();" Placeholder="Enter Here"></asp:TextBox>
+                                        <div class="input-group-append">
+                                            <button type="button" class="btn btn-outline-secondary product-reset-btn" onclick="resetVendorField(); return false;" title="Reset Vendor"><i class="fas fa-sync-alt fa-xs"></i></button>
+                                        </div>
+                                    </div>
+                                    <asp:Button ID="btnLoadVendor" runat="server" ClientIDMode="Static" Text="Load" CssClass="btn btn-primary btn-sm" CausesValidation="false" UseSubmitBehavior="false" OnClick="btnLoadVendor_Click" />
                                 </div>
+                                <asp:HiddenField ID="hdnVendorId" ClientIDMode="Static" runat="server" />
+                                <asp:AutoCompleteExtender ID="aceVendorSearch" runat="server"
+                                    TargetControlID="txtVendorSearch"
+                                    ServiceMethod="VendorSearch"
+                                    CompletionInterval="200"
+                                    EnableCaching="false"
+                                    CompletionSetCount="20"
+                                    FirstRowSelected="true"
+                                    OnClientItemSelected="onVendorSelected"
+                                    CompletionListCssClass="vmsAutoComplete"
+                                    CompletionListItemCssClass="vmsAutoCompleteItem"
+                                    CompletionListHighlightedItemCssClass="vmsAutoCompleteItemHighlight">
+                                </asp:AutoCompleteExtender>
                             </div>
-                        </div>                      
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label class="form-control-label">Name:<span id="lblGroup2" class="mandatory">*</span></label>
-                                <asp:TextBox CssClass="form-control" ID="txtUnitName" MaxLength="20" runat="server"></asp:TextBox>
-                            </div>
-                        </div>                        
+                        </div>                
                     </div>
                 </div>
             </div>
@@ -167,12 +200,14 @@
                             <div class="form-group">
                                 <label class="form-control-label">Vendor Site Id:</label>
                                 <asp:TextBox CssClass="form-control" ID="txtsiteid" runat="server" ReadOnly="true"></asp:TextBox>
+                                <%--<asp:DropDownList ID="ddlsiteid" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true"></asp:DropDownList>--%>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label class="form-control-label">Vendor Site Code:</label>
                                 <asp:TextBox CssClass="form-control" ID="txtsitecode" runat="server" ReadOnly="true"></asp:TextBox>
+                               <%-- <asp:DropDownList ID="ddlsitecode" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true"></asp:DropDownList>--%>
                             </div>
                         </div>                       
                     </div>
@@ -180,14 +215,17 @@
                     <div id="divErrorMessage"></div>
                     <div class="row mt-3">
                         <div class="col-md-12 text-center">
-                            <asp:LinkButton ID="btnSubmit" TabIndex="31" runat="server" ClientIDMode="Static" CssClass="btn btn-success btn-sm" OnClientClick="return rmConfirmAction(this, 'submit');">Submit</asp:LinkButton>
-                            <asp:LinkButton ID="btnCancel" TabIndex="32" runat="server" CssClass="btn btn-secondary btn-sm">Cancel</asp:LinkButton>
+                            <asp:LinkButton ID="btnSubmit" TabIndex="31" runat="server" ClientIDMode="Static" CssClass="btn btn-success btn-sm" OnClientClick="return rmConfirmAction(this, 'submit');">Submit</asp:LinkButton>                            
                             <asp:LinkButton ID="btnReset" TabIndex="33" runat="server" CssClass="btn btn-danger btn-sm">Reset</asp:LinkButton>
+                            <asp:LinkButton ID="btnBack" TabIndex="34" runat="server" CssClass="btn btn-secondary btn-sm" CausesValidation="false" OnClick="btnBack_Click">Back</asp:LinkButton>
                         </div>
                     </div>
                 </div>
             </div>
         </ContentTemplate>
+        <Triggers>
+            <asp:PostBackTrigger ControlID="btnBack" />
+        </Triggers>
     </asp:UpdatePanel>
     </div>
 </asp:Content>
