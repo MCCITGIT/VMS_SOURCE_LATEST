@@ -391,6 +391,7 @@
                     <asp:Button ID="btnCancelPartner" runat="server" Font-Bold="true" Text="Cancel" Width="75px" class="btn btn-secondary" />
                 </div>
             </asp:Panel>
+
             <asp:Panel ID="Panel1" runat="server" CssClass="popup" Width="20%" Height="150px" Style="overflow: auto;">
                 <div style="background-color: #6699FF; height: 15px; text-align: center; padding: 2px;">
                     <asp:Label ID="Label2" runat="server" ForeColor="White" Font-Bold="true" Text="Vendor Despatch"></asp:Label>
