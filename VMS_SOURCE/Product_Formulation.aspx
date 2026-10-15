@@ -841,7 +841,7 @@
                 if (lblErrorMessage) { lblErrorMessage.innerHTML = ''; }
                 var ddlBrand = document.getElementById('ddlBrand'), ddlvendor = document.getElementById('ddlvendor'), hdnProductCode = document.getElementById('hdnProductCode');
                 if (!ddlBrand || ddlBrand.value === '') { setFieldError('ddlBrand', 'valBrand', 'Please select Brand.', false); hasError = true; }
-                if (!ddlvendor || ddlvendor.value === '') { setFieldError('ddlvendor', 'valVendor', 'Please select Vendor.', false); hasError = true; }
+                if (currentVendorUnit() === '') { setFieldError('ddlvendor', 'valVendor', 'Please select Vendor.', false); hasError = true; }
                 if (!hdnProductCode || hdnProductCode.value.trim() === '') { setFieldError('txtProductSearch', 'valProduct', 'Please enter Product.', false); hasError = true; }
                 var shadeSel = document.getElementById('ddlShade');
                 clearFieldValidation('ddlShade', 'valShade');
@@ -892,7 +892,13 @@
             }
 
             /* ---------- add a raw material that is not in the list (saved for this vendor only) ---------- */
-            function currentVendorUnit() { var d = document.getElementById('ddlvendor'); return d ? (d.value || '') : ''; }
+            /* a vendor (UNIT) login has no Vendor dropdown on the page (it is removed server-side), so fall back to the hidden field that carries its own unit */
+            function currentVendorUnit() {
+                var d = document.getElementById('ddlvendor');
+                if (d) { return d.value || ''; }
+                var h = document.getElementById('hdnVendorUnit');
+                return h ? (h.value || '') : '';
+            }
             function setRawMatContext() {       // product search (vendor scope) and raw material search (manual items) both depend on the vendor
                 if (typeof $find !== 'function') { return; }
                 var b = $find('bhvRawMat');
@@ -978,6 +984,7 @@
                 <asp:HiddenField ID="hdnId" runat="server" ClientIDMode="Static" />
                 <asp:HiddenField ID="hdnProductCode" ClientIDMode="Static" runat="server" />
                 <asp:HiddenField ID="hdnProductName" ClientIDMode="Static" runat="server" />
+                <asp:HiddenField ID="hdnVendorUnit" ClientIDMode="Static" runat="server" />
                 <asp:Button ID="btnProductPicked" runat="server" ClientIDMode="Static" Style="display: none;" OnClick="btnProductPicked_Click" UseSubmitBehavior="false" CausesValidation="false" />
                 <asp:HiddenField ID="hdnSkucode" runat="server" ClientIDMode="Static" />
                 <asp:HiddenField ID="txtrawmatid" ClientIDMode="Static" runat="server" />
