@@ -42,9 +42,9 @@ Partial Class Product_Rate_Approval
                 Exit Sub
             End If
             Dim h As DataRow = ds.Tables(0).Rows(0)
-            ' a unit (vendor) user may only see the history of suppliers it declared a scope for
+            ' a unit (vendor) user may only see the history of its own vendor's formulations
             If userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT AndAlso
-               Not obj.GetUserScopeSuppliers(userInfo.userIDEntity).Contains(Convert.ToString(h("sf_vendor_code")).Trim()) Then
+               Not String.Equals(Convert.ToString(h("sf_vendor_code")).Trim(), Convert.ToString(userInfo.userBranchEntity).Trim(), StringComparison.OrdinalIgnoreCase) Then
                 Response.Redirect("~/Home.aspx", False)
                 Context.ApplicationInstance.CompleteRequest()
                 Exit Sub

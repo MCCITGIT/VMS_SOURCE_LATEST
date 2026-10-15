@@ -1684,83 +1684,91 @@ Public Class OPC_VendorClass
     End Function
 #End Region
 
-#Region "Supplier Scope"
-    ' Author: MUKESH BHAGAT  Created: 14-Oct-2026
-    ' Scope the FG vendor declares for a supplier (vertical / product / shade / pack / packaging items).
+#Region "Vendor Scope (Author: MUKESH BHAGAT 14-Oct-2026; Modified-by MUKESH BHAGAT 15-Oct-2026: supplier -> vendor, packaging items removed)"
+    ' A vendor (FG vendor unit) declares what it makes: vertical > product > shade > pack (VendorScope.aspx).
+    ' Product_Formulation offers that vendor only what is declared here.
     Private Function ScopeParam(ByVal name As String, ByVal value As String, Optional ByVal size As Integer = 50) As SqlParameter
         Return New SqlParameter(name, SqlDbType.VarChar, size) With {.Value = If(String.IsNullOrWhiteSpace(value), CObj(DBNull.Value), value.Trim())}
     End Function
 
     Function GetScopeVerticals() As DataSet
-        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_supplier_scope_lookup_vertical]", CommandType.StoredProcedure)
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_scope_lookup_vertical]", CommandType.StoredProcedure)
     End Function
 
     Function GetScopeProducts(ByVal sbl As String, ByVal searchKey As String) As DataSet
         Dim p() As SqlParameter = {ScopeParam("@sbl", sbl), ScopeParam("@search_key", searchKey)}
-        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_supplier_scope_lookup_product]", CommandType.StoredProcedure, p)
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_scope_lookup_product]", CommandType.StoredProcedure, p)
     End Function
 
     Function GetScopePacks(ByVal sbl As String, ByVal prdCode As String) As DataSet
         Dim p() As SqlParameter = {ScopeParam("@sbl", sbl), ScopeParam("@prd_code", prdCode)}
-        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_supplier_scope_lookup_pack]", CommandType.StoredProcedure, p)
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_scope_lookup_pack]", CommandType.StoredProcedure, p)
     End Function
 
-    Function GetScopeItems(ByVal searchKey As String, Optional ByVal itemCode As String = Nothing) As DataSet
-        Dim p() As SqlParameter = {ScopeParam("@search_key", searchKey), ScopeParam("@item_code", itemCode)}
-        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_supplier_scope_lookup_item]", CommandType.StoredProcedure, p)
+    Function GetScopeList(ByVal vendorCode As String, ByVal activeOnly As String) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@vendor_code", vendorCode), ScopeParam("@active_only", activeOnly, 1)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_scope_list]", CommandType.StoredProcedure, p)
     End Function
 
-    Function GetScopeList(ByVal supplierCode As String, ByVal activeOnly As String) As DataSet
-        Dim p() As SqlParameter = {ScopeParam("@supplier_code", supplierCode), ScopeParam("@active_only", activeOnly, 1)}
-        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_supplier_scope_list]", CommandType.StoredProcedure, p)
+    ''' <summary>[opc_vendor_scope_get] - tables 0 header, 1 shades, 2 packs.</summary>
+    Function GetScope(ByVal vsId As Integer) As DataSet
+        Dim p() As SqlParameter = {New SqlParameter("@vs_id", SqlDbType.Int) With {.Value = vsId}}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_scope_get]", CommandType.StoredProcedure, p)
     End Function
 
-    ''' <summary>[opc_supplier_scope_get] - tables 0 header, 1 shades, 2 packs, 3 packaging items.</summary>
-    Function GetScope(ByVal ssId As Integer) As DataSet
-        Dim p() As SqlParameter = {New SqlParameter("@ss_id", SqlDbType.Int) With {.Value = ssId}}
-        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_supplier_scope_get]", CommandType.StoredProcedure, p)
-    End Function
-
-    ''' <summary>[opc_supplier_scope_deactivate] - returns the SP message.</summary>
-    Function SetScopeActive(ByVal ssId As Integer, ByVal active As String, ByVal userId As String) As String
-        Dim p() As SqlParameter = {New SqlParameter("@ss_id", SqlDbType.Int) With {.Value = ssId}, ScopeParam("@active", active, 1), ScopeParam("@user_id", userId)}
-        Dim ds As DataSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_supplier_scope_deactivate]", CommandType.StoredProcedure, p)
+    ''' <summary>[opc_vendor_scope_deactivate] - returns the SP message.</summary>
+    Function SetScopeActive(ByVal vsId As Integer, ByVal active As String, ByVal userId As String) As String
+        Dim p() As SqlParameter = {New SqlParameter("@vs_id", SqlDbType.Int) With {.Value = vsId}, ScopeParam("@active", active, 1), ScopeParam("@user_id", userId)}
+        Dim ds As DataSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_scope_deactivate]", CommandType.StoredProcedure, p)
         If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0).Rows.Count > 0 Then Return Convert.ToString(ds.Tables(0).Rows(0)("Message"))
         Return "No response from server."
     End Function
 
-    ''' <summary>Supplier codes a UNIT (FG vendor) user works with = suppliers it declared a scope for. Formulations belong to the supplier, not to the unit.</summary>
-    Function GetUserScopeSuppliers(ByVal userId As String) As HashSet(Of String)
-        Dim result As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
-        Dim p() As SqlParameter = {ScopeParam("@user_id", userId)}
-        Dim ds As DataSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_supplier_scope_user_suppliers]", CommandType.StoredProcedure, p)
-        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 Then
-            For Each r As DataRow In ds.Tables(0).Rows
-                result.Add(Convert.ToString(r("supplier_code")).Trim())
-            Next
-        End If
-        Return result
+    ''' <summary>[opc_vendor_scope_save] - shades / packs are single-column tables of codes (empty = all). Returns Status (1 = ok) and Message.</summary>
+    Function SaveScope(ByVal vendorCode As String, ByVal sbl As String, ByVal prdCode As String, ByVal shades As DataTable, ByVal packs As DataTable, ByVal userId As String, ByRef message As String) As Boolean
+        Dim sqlConn As SqlConnection = Nothing
+        Try
+            sqlConn = DBFactory.GetHelper.OpenConnection
+            Dim sqlCmd As New SqlCommand("[dbo].[opc_vendor_scope_save]", sqlConn)
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.Parameters.Add(ScopeParam("@vendor_code", vendorCode))
+            sqlCmd.Parameters.Add(ScopeParam("@sbl", sbl))
+            sqlCmd.Parameters.Add(ScopeParam("@prd_code", prdCode))
+            Dim pS As SqlParameter = sqlCmd.Parameters.Add("@shades", SqlDbType.Structured) : pS.TypeName = "dbo.tbl_opc_vendor_scope_shade" : pS.Value = shades
+            Dim pP As SqlParameter = sqlCmd.Parameters.Add("@packs", SqlDbType.Structured) : pP.TypeName = "dbo.tbl_opc_vendor_scope_pack" : pP.Value = packs
+            sqlCmd.Parameters.Add(ScopeParam("@user_id", userId))
+            Using dr As SqlDataReader = sqlCmd.ExecuteReader()
+                If dr.Read() Then
+                    message = Convert.ToString(dr("Message"))
+                    Return Convert.ToInt32(dr("Status")) = 1
+                End If
+            End Using
+            message = "No response from server."
+            Return False
+        Finally
+            If sqlConn IsNot Nothing Then sqlConn.Close()
+        End Try
     End Function
 
-    ' ---- used by Product_Formulation: everything is limited to the scope declared for the supplier ----
-    Function GetScopeProductSearch(ByVal supplierCode As String, ByVal searchKey As String) As DataSet
-        Dim p() As SqlParameter = {ScopeParam("@supplier_code", supplierCode), ScopeParam("@search_key", searchKey)}
-        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_supplier_scope_product_search]", CommandType.StoredProcedure, p)
+    ' ---- used by Product_Formulation: product / shade / pack are limited to the vendor's scope ----
+    Function GetScopeProductSearch(ByVal vendorCode As String, ByVal searchKey As String) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@vendor_code", vendorCode), ScopeParam("@search_key", searchKey)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_scope_product_search]", CommandType.StoredProcedure, p)
     End Function
 
-    Function GetScopeFormulationPacks(ByVal supplierCode As String, ByVal prdCode As String) As DataSet
-        Dim p() As SqlParameter = {ScopeParam("@supplier_code", supplierCode), ScopeParam("@prd_code", prdCode)}
-        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_supplier_scope_formulation_packs]", CommandType.StoredProcedure, p)
+    Function GetScopeFormulationShades(ByVal vendorCode As String, ByVal prdCode As String) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@vendor_code", vendorCode), ScopeParam("@prd_code", prdCode)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_scope_formulation_shades]", CommandType.StoredProcedure, p)
     End Function
 
-    Function GetScopeFormulationShades(ByVal supplierCode As String, ByVal prdCode As String) As DataSet
-        Dim p() As SqlParameter = {ScopeParam("@supplier_code", supplierCode), ScopeParam("@prd_code", prdCode)}
-        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_supplier_scope_formulation_shades]", CommandType.StoredProcedure, p)
+    Function GetScopeFormulationPacks(ByVal vendorCode As String, ByVal prdCode As String, Optional ByVal shadeCode As String = Nothing) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@vendor_code", vendorCode), ScopeParam("@prd_code", prdCode), ScopeParam("@shd_code", shadeCode, 10)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_scope_formulation_packs]", CommandType.StoredProcedure, p)
     End Function
 
-    Function GetScopeFormulationItems(ByVal supplierCode As String, ByVal prdCode As String) As DataSet
-        Dim p() As SqlParameter = {ScopeParam("@supplier_code", supplierCode), ScopeParam("@prd_code", prdCode)}
-        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_supplier_scope_formulation_items]", CommandType.StoredProcedure, p)
+    ''' <summary>Cost names of a pack = every active packaging (PKG) item, until the pack -> item master exists.</summary>
+    Function GetPackagingItemList() As DataSet
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_packaging_item_list]", CommandType.StoredProcedure)
     End Function
 
     Sub SetFormulationShade(ByVal sfId As Integer, ByVal shadeCode As String)
@@ -1775,31 +1783,21 @@ Public Class OPC_VendorClass
         Return ""
     End Function
 
-    ''' <summary>[opc_supplier_scope_save] - each list is a single-column table of codes. Returns Status (1 = ok) and Message.</summary>
-    Function SaveScope(ByVal supplierCode As String, ByVal sbl As String, ByVal prdCode As String, ByVal shades As DataTable, ByVal packs As DataTable, ByVal items As DataTable, ByVal userId As String, ByRef message As String) As Boolean
-        Dim sqlConn As SqlConnection = Nothing
-        Try
-            sqlConn = DBFactory.GetHelper.OpenConnection
-            Dim sqlCmd As New SqlCommand("[dbo].[opc_supplier_scope_save]", sqlConn)
-            sqlCmd.CommandType = CommandType.StoredProcedure
-            sqlCmd.Parameters.Add(ScopeParam("@supplier_code", supplierCode))
-            sqlCmd.Parameters.Add(ScopeParam("@sbl", sbl))
-            sqlCmd.Parameters.Add(ScopeParam("@prd_code", prdCode))
-            Dim pS As SqlParameter = sqlCmd.Parameters.Add("@shades", SqlDbType.Structured) : pS.TypeName = "dbo.tbl_opc_supplier_scope_shade" : pS.Value = shades
-            Dim pP As SqlParameter = sqlCmd.Parameters.Add("@packs", SqlDbType.Structured) : pP.TypeName = "dbo.tbl_opc_supplier_scope_pack" : pP.Value = packs
-            Dim pI As SqlParameter = sqlCmd.Parameters.Add("@items", SqlDbType.Structured) : pI.TypeName = "dbo.tbl_opc_supplier_scope_item" : pI.Value = items
-            sqlCmd.Parameters.Add(ScopeParam("@user_id", userId))
-            Using dr As SqlDataReader = sqlCmd.ExecuteReader()
-                If dr.Read() Then
-                    message = Convert.ToString(dr("Message"))
-                    Return Convert.ToInt32(dr("Status")) = 1
-                End If
-            End Using
-            message = "No response from server."
-            Return False
-        Finally
-            If sqlConn IsNot Nothing Then sqlConn.Close()
-        End Try
+    ''' <summary>Raw material search of Product_Formulation: the usual list plus the manual items of one vendor unit only.</summary>
+    Function SearchRawMaterialForFormulation(ByVal searchText As String, ByVal unitCode As String) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@search_key", searchText), ScopeParam("@unit_code", unitCode, 20)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_rawmat_search_formulation]", CommandType.StoredProcedure, p)
+    End Function
+
+    ''' <summary>Adds a raw material that is not in the master, visible to @unitCode only. Returns {status, message, code, display name}; status 1 added, 2 already added, 0 error.</summary>
+    Function AddManualRawMaterial(ByVal name As String, ByVal unitCode As String, ByVal userId As String) As String()
+        Dim p() As SqlParameter = {ScopeParam("@name", name, 200), ScopeParam("@unit_code", unitCode, 20), ScopeParam("@user_id", userId, 20)}
+        Dim ds As DataSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_rawmat_add_manual]", CommandType.StoredProcedure, p)
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0).Rows.Count > 0 Then
+            Dim r As DataRow = ds.Tables(0).Rows(0)
+            Return New String() {Convert.ToString(r("Status")), Convert.ToString(r("Message")), Convert.ToString(r("Code")), Convert.ToString(r("Name"))}
+        End If
+        Return New String() {"0", "No response from server.", "", ""}
     End Function
 #End Region
 #Region "FG Vendor Master"
