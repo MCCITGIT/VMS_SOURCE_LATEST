@@ -185,6 +185,34 @@
             .dispatch-field-error:empty {
                 display: none;
             }
+
+        .po-upload-success {
+            display: block;
+            color: #15803d;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 4px;
+            line-height: 1.35;
+        }
+
+            .po-upload-success:empty {
+                display: none;
+            }
+
+        .po-ref-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #15803d;
+        }
+
+            .po-ref-badge:empty {
+                display: none;
+            }
     </style>
     <div class="rm-module rm-compact rsm-page">
         <div class="breadcrumbs">
@@ -201,13 +229,43 @@
 
         <div class="card">
             <div class="card-body">
+                <div class="rm-filter-stats-row">
+                    <div class="rm-filter-fields">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-control-label">Upload Filled Template:</label>
+                                    <asp:FileUpload ID="fuPoTemplate" runat="server" ClientIDMode="Static" CssClass="form-control" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mt-3">
+                                    <asp:Button ID="btnUploadTemplate" runat="server" Text="Upload" CssClass="btn btn-primary btn-sm" ClientIDMode="Static" CausesValidation="False" OnClick="btnUploadTemplate_Click" OnClientClick="return validatePoTemplateUpload();" />
+                                    <asp:Button ID="btnDownloadTemplate" runat="server" Text="Download Template" CssClass="btn btn-success btn-sm" ClientIDMode="Static" CausesValidation="False" OnClick="btnDownloadTemplate_Click" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mt-3">
+                                    <asp:Label ID="lblRefPoNo" runat="server" ClientIDMode="Static" CssClass="po-ref-badge"></asp:Label>
+                                    <asp:HiddenField ID="hdnRefPoNo" runat="server" ClientIDMode="Static" />
+                                </div>
+                            </div>
+                        </div>
+                        <asp:Label ID="lblUploadMsg" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
                 <%--<asp:Label ID="lblErrorMessage" CssClass="errormsg" Visible="true" runat="server"></asp:Label>--%>
                 <div class="rm-filter-stats-row">
                     <div class="rm-filter-fields">
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label class="form-control-label">Vendor:<span id="spanVendor" class="mandatory p-vendor-select">*</span></label>
+                                    <label class="form-control-label">Supplier:<span id="spanVendor" class="mandatory p-vendor-select">*</span></label>
                                     <asp:DropDownList ID="ddlVendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="2" runat="server"></asp:DropDownList>
                                     <asp:Label ID="valVendor" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                                     <asp:HiddenField ID="hdnRmVendor" runat="server" ClientIDMode="Static" />
@@ -462,11 +520,27 @@
 
         function validatePoSubmit() {
             clearPoField("ddlVendor", "valVendor");
+            clearPoField("ddlGst", "lblGst");
+            clearPoField("txtFreight", "lblFreight");
             clearPoGridError();
 
             var vendor = document.getElementById("ddlVendor");
             if (!vendor || vendor.value.trim() === "") {
                 setPoFieldError("ddlVendor", "valVendor", "Please select a vendor.");
+                return false;
+            }
+
+            var gst = document.getElementById("ddlGst");
+            if (!gst || gst.value.trim() === "") {
+                setPoFieldError("ddlGst", "lblGst", "Please select GST.");
+                return false;
+            }
+
+            var freight = document.getElementById("txtFreight");
+            var freightText = freight ? freight.value.trim() : "";
+            var freightNumber = Number(freightText);
+            if (freightText === "" || isNaN(freightNumber) || freightNumber < 0) {
+                setPoFieldError("txtFreight", "lblFreight", "Please enter a valid freight.");
                 return false;
             }
 
@@ -476,6 +550,33 @@
             }
 
             return rmConfirmPostback("btnSubmit", "submit");
+        }
+
+        function validatePoTemplateUpload() {
+            var label = document.getElementById("lblUploadMsg");
+            var fileInput = document.getElementById("fuPoTemplate");
+            var fileName = fileInput ? fileInput.value.trim().toLowerCase() : "";
+
+            if (label) {
+                label.className = "dispatch-field-error";
+                label.innerHTML = "";
+            }
+
+            if (fileName === "") {
+                if (label) {
+                    label.innerHTML = "Please choose the filled template to upload.";
+                }
+                return false;
+            }
+
+            if (!/\.(xls|xlsx)$/.test(fileName)) {
+                if (label) {
+                    label.innerHTML = "Only Excel files (.xls, .xlsx) can be uploaded.";
+                }
+                return false;
+            }
+
+            return true;
         }
     </script>
 </asp:Content>
