@@ -102,17 +102,10 @@ Partial Class FormulationMstrList
         Dim ds As DataSet
         Dim obj As New OPC_VendorClass()
         ' V2 (MUKESH BHAGAT 09-Oct-2026): versioned SKU formulation list - current versions only; columns aliased for the existing grid
-        ds = obj.ListSkuFormulation(ddlBrand.SelectedValue, ddlvendor.SelectedValue, hdnProductCode.Value, "N", ddlView.SelectedValue)
+        Dim vendorFilter As String = If(IsUnitUser(), Convert.ToString(userInfo.userBranchEntity).Trim(), ddlvendor.SelectedValue)   ' a vendor user is always limited to its own unit
+        ds = obj.ListSkuFormulation(ddlBrand.SelectedValue, vendorFilter, hdnProductCode.Value, "N", ddlView.SelectedValue)
 
         Dim table As DataTable = RmGridHelper.GetTable(ds)
-        If IsUnitUser() AndAlso table IsNot Nothing Then
-            Dim allowed As HashSet(Of String) = obj.GetUserScopeSuppliers(userInfo.userIDEntity)
-            Dim kept As DataTable = table.Clone()
-            For Each r As DataRow In table.Rows
-                If allowed.Contains(Convert.ToString(r("sf_vendor_code")).Trim()) Then kept.ImportRow(r)
-            Next
-            table = kept
-        End If
         If table IsNot Nothing Then
             Dim map As New Dictionary(Of String, String) From {{"sf_id", "fh_id"}, {"brand_name", "Brand_Name"}, {"sf_brand_code", "Brand_Code"}, {"sf_vendor_code", "vendor_code"}, {"sf_product_code", "Sku_Code"}, {"product_name", "Sku_Desc"}}
             For Each kv In map
@@ -217,25 +210,26 @@ Partial Class FormulationMstrList
     Private Sub VendorDetailsListLoad()
         Dim ds As DataSet
         Dim obj As New OPC_VendorClass()
-        ds = obj.GetRawMaterialVendorList()      ' suppliers; a UNIT user gets only the ones it declared a scope for
-        If IsUnitUser() AndAlso ds IsNot Nothing AndAlso ds.Tables.Count > 0 Then
-            Dim allowed As HashSet(Of String) = obj.GetUserScopeSuppliers(userInfo.userIDEntity)
-            For i As Integer = ds.Tables(0).Rows.Count - 1 To 0 Step -1
-                If Not allowed.Contains(Convert.ToString(ds.Tables(0).Rows(i)("vendor_code")).Trim()) Then ds.Tables(0).Rows.RemoveAt(i)
-            Next
-        End If
+        ds = obj.GetUnitName(Constant.Common.ActiveStatus)
 
         If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0) Then
             If (Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
                 ddlvendor.DataSource = ds
-                ddlvendor.DataTextField = "vendor_name"
-                ddlvendor.DataValueField = "vendor_code"
+                ddlvendor.DataTextField = "unit_name"
+                ddlvendor.DataValueField = "unit_code"
                 ddlvendor.DataBind()
             Else
                 ddlvendor.DataSource = Nothing
                 ddlvendor.DataBind()
             End If
             ddlvendor.Items.Insert(0, New ListItem(Constant.Common.Selec, String.Empty, True))
+        End If
+        ' a vendor (UNIT) user sees only its own data: unit preselected and the filter hidden. HO and SYSADMIN choose the vendor.
+        If IsUnitUser() Then
+            Dim own As String = Convert.ToString(userInfo.userBranchEntity).Trim()
+            If ddlvendor.Items.FindByValue(own) IsNot Nothing Then ddlvendor.SelectedValue = own
+            ddlvendor.Enabled = False
+            colVendorFilter.Visible = False
         End If
     End Sub
 End Class

@@ -32,11 +32,13 @@ Partial Class Product_Formulation
             ScriptManager.RegisterStartupScript(Me, Me.GetType(), "lockProductSearch", "syncProductResetButtonState();", True)
         End If
         hdnSnapshot.Value = Convert.ToString(ViewState(SnapshotKey))
+        ' raw material search shows the manual items of this vendor unit only (HO: the vendor selected on the page; the browser keeps it in sync when the dropdown changes)
+        aceRawMaterialSearch.ContextKey = If(userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT, Convert.ToString(userInfo.userBranchEntity).Trim(), ddlvendor.SelectedValue)
+        aceProductSearch.ContextKey = CurrentVendor()      ' product search = the products declared for this vendor on Vendor Scope
     End Sub
 
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
         CheckLogin()
-        aceProductSearch.ContextKey = ddlvendor.SelectedValue
         btnSubmit.Attributes.Add("onclick", "return validateSubmitAll();")
         btnAdd.Attributes.Add("onclick", "return validateAddRow();")
 
@@ -75,7 +77,7 @@ Partial Class Product_Formulation
         End If
         Try
             Dim obj As New OPC_VendorClass()
-            Dim ds As DataSet = obj.GetScopeProductSearch(contextKey.Trim(), prefixText.Trim())   ' only products declared in the supplier scope
+            Dim ds As DataSet = obj.GetScopeProductSearch(contextKey.Trim(), prefixText.Trim())   ' only the products declared for this vendor on Vendor Scope
             If Not ds Is Nothing AndAlso ds.Tables.Count > 0 AndAlso Not ds.Tables(0) Is Nothing Then
                 For Each dr As DataRow In ds.Tables(0).Rows
                     Dim productCode As String = Convert.ToString(dr("product_code")).Trim()
@@ -94,14 +96,14 @@ Partial Class Product_Formulation
 
     <System.Web.Script.Services.ScriptMethod(),
     System.Web.Services.WebMethod()>
-    Public Shared Function RawMaterialSearch(ByVal prefixText As String) As String()
+    Public Shared Function RawMaterialSearch(ByVal prefixText As String, ByVal count As Integer, ByVal contextKey As String) As String()
         Dim rawMaterialDetails As List(Of String) = New List(Of String)()
         If String.IsNullOrWhiteSpace(prefixText) OrElse prefixText.Trim().Length < 3 Then
             Return rawMaterialDetails.ToArray()
         End If
         Try
             Dim obj As New OPC_VendorClass()
-            Dim ds As DataSet = obj.GetRawMatList(prefixText.Trim())
+            Dim ds As DataSet = obj.SearchRawMaterialForFormulation(prefixText.Trim(), contextKey)
             If Not ds Is Nothing AndAlso ds.Tables.Count > 0 AndAlso Not ds.Tables(0) Is Nothing Then
                 For Each dr As DataRow In ds.Tables(0).Rows
                     Dim rawMaterialId As String = Convert.ToString(dr("Raw_Mat_Code")).Trim()
@@ -118,6 +120,20 @@ Partial Class Product_Formulation
     End Function
 #End Region
 
+    ''' <summary>Quick add of a raw material that is not in the list (the + button). Saved for one vendor unit only: a UNIT user always gets its own unit, HO passes the vendor selected on the page.</summary>
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod(EnableSession:=True)>
+    Public Shared Function AddManualRawMaterial(ByVal name As String, ByVal unit As String) As String()
+        Try
+            Dim user As VMSUserEntity = TryCast(System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
+            If user Is Nothing Then Return New String() {"0", "Session expired - please log in again.", "", ""}
+            Dim unitCode As String = If(user.userGroupCodeEntity = Constant.UserFormAccess.UNIT, Convert.ToString(user.userBranchEntity).Trim(), Convert.ToString(unit).Trim())
+            Return New OPC_VendorClass().AddManualRawMaterial(name, unitCode, user.userIDEntity)
+        Catch ex As Exception
+            Return New String() {"0", "Could not save the raw material.", "", ""}
+        End Try
+    End Function
+
 #Region "section 1 - raw material grid"
     Private Sub InitializeGridTable()
         Dim dt As DataTable = New DataTable()
@@ -127,6 +143,8 @@ Partial Class Product_Formulation
         dt.Columns.Add(New DataColumn("vendor_name", GetType(String)))
         dt.Columns.Add(New DataColumn("product_code", GetType(String)))
         dt.Columns.Add(New DataColumn("product_name", GetType(String)))
+        dt.Columns.Add(New DataColumn("shade_code", GetType(String)))
+        dt.Columns.Add(New DataColumn("shade_name", GetType(String)))
         dt.Columns.Add(New DataColumn("rawmat_code", GetType(String)))
         dt.Columns.Add(New DataColumn("rawmat_name", GetType(String)))
         dt.Columns.Add(New DataColumn("ratio", GetType(String)))
@@ -158,11 +176,11 @@ Partial Class Product_Formulation
         LockHeaderIfRowsExist(dt)
     End Sub
 
-    ''' <summary>SKU price = Sum of (consumption ratio % x raw material price).</summary>
+    ''' <summary>SKU price = plain sum of the raw material prices (decided 15-Oct-2026); the ratio only has to total 100 %.</summary>
     Private Shared Function CalculateSkuPrice(ByVal dt As DataTable) As Decimal
         Dim total As Decimal = 0D
         For Each row As DataRow In dt.Rows
-            total += ParseDecimal(Convert.ToString(row("ratio"))) / 100D * ParseDecimal(Convert.ToString(row("rate")))
+            total += ParseDecimal(Convert.ToString(row("rate")))
         Next
         Return Math.Round(total, 2)
     End Function
@@ -178,6 +196,7 @@ Partial Class Product_Formulation
         ddlBrand.Enabled = Not locked
         ddlvendor.Enabled = Not locked
         txtProductSearch.Enabled = Not locked
+        ddlShade.Enabled = Not locked OrElse (ShadeRequired() AndAlso ddlShade.SelectedValue = "")      ' an old version saved without a shade must still be able to pick one
         If locked Then
             txtProductSearch.Attributes("readonly") = "readonly"
         Else
@@ -194,7 +213,7 @@ Partial Class Product_Formulation
             Dim ratio As Decimal = If(txtRowRatio Is Nothing, 0D, ParseDecimal(txtRowRatio.Text))
             Dim rate As Decimal = If(txtRowRate Is Nothing, 0D, ParseDecimal(txtRowRate.Text))
             gridRatioTotal += ratio
-            gridSkuPrice += ratio / 100D * rate
+            gridSkuPrice += rate
             If txtRowRatio IsNot Nothing Then txtRowRatio.Text = ratio.ToString("0.##", CultureInfo.InvariantCulture)
             If txtRowRate IsNot Nothing Then txtRowRate.Text = rate.ToString("0.00", CultureInfo.InvariantCulture)
         ElseIf e.Row.RowType = DataControlRowType.Footer Then
@@ -223,8 +242,9 @@ Partial Class Product_Formulation
     Private Function ValidateSubmitInputs() As Boolean
         ClearInlineValidation()
         Dim isValid As Boolean = True
+        If ShadeRequired() AndAlso ddlShade.SelectedValue = "" Then AppendInlineValidation("Shade", "Please select Shade.") : isValid = False
         If ddlBrand.SelectedIndex <= 0 Then AppendInlineValidation("Brand", "Please select Brand.") : isValid = False
-        If ddlvendor.SelectedIndex <= 0 Then AppendInlineValidation("Vendor", "Please select Supplier.") : isValid = False
+        If ddlvendor.SelectedIndex <= 0 Then AppendInlineValidation("Vendor", "Please select Vendor.") : isValid = False
         If String.IsNullOrWhiteSpace(hdnProductCode.Value) Then AppendInlineValidation("Product", "Please enter Product.") : isValid = False
 
         Dim dt As DataTable = GetGridTable()
@@ -246,8 +266,9 @@ Partial Class Product_Formulation
     Private Function ValidateAddInputs() As Boolean
         ClearInlineValidation()
         Dim isValid As Boolean = True
+        If ShadeRequired() AndAlso ddlShade.SelectedValue = "" Then AppendInlineValidation("Shade", "Please select Shade.") : isValid = False
         If ddlBrand.SelectedIndex <= 0 Then AppendInlineValidation("Brand", "Please select Brand.") : isValid = False
-        If ddlvendor.SelectedIndex <= 0 Then AppendInlineValidation("Vendor", "Please select Supplier.") : isValid = False
+        If ddlvendor.SelectedIndex <= 0 Then AppendInlineValidation("Vendor", "Please select Vendor.") : isValid = False
         If String.IsNullOrWhiteSpace(hdnProductCode.Value) Then AppendInlineValidation("Product", "Please enter Product.") : isValid = False
         If String.IsNullOrWhiteSpace(txtSearchText.Text.Trim()) Then
             AppendInlineValidation("RawMaterial", "Please enter Raw Material.") : isValid = False
@@ -275,6 +296,8 @@ Partial Class Product_Formulation
     Private Sub ClearInlineValidation()
         ddlBrand.CssClass = "form-control select2"
         ddlvendor.CssClass = "form-control select2"
+        ddlShade.CssClass = "form-control"
+        valShade.Text = ""
         txtProductSearch.CssClass = "form-control"
         txtSearchText.CssClass = "form-control"
         txtRatio.CssClass = "form-control pf-num"
@@ -284,6 +307,7 @@ Partial Class Product_Formulation
 
     Private Sub AppendInlineValidation(ByVal fieldKey As String, ByVal message As String)
         Select Case fieldKey
+            Case "Shade" : ddlShade.CssClass = "form-control field-invalid" : valShade.Text = message
             Case "Brand" : ddlBrand.CssClass = "form-control select2 field-invalid" : valBrand.Text = message
             Case "Vendor" : ddlvendor.CssClass = "form-control select2 field-invalid" : valVendor.Text = message
             Case "Product" : txtProductSearch.CssClass = "form-control field-invalid" : valProduct.Text = message
@@ -323,6 +347,8 @@ Partial Class Product_Formulation
         dr("vendor_name") = ddlvendor.SelectedItem.Text
         dr("product_code") = hdnProductCode.Value
         dr("product_name") = hdnProductName.Value
+        dr("shade_code") = ddlShade.SelectedValue
+        dr("shade_name") = If(ddlShade.SelectedValue = "", "", ddlShade.SelectedItem.Text)
         dr("rawmat_code") = selectedRawMatCode
         dr("rawmat_name") = rawMatName
         dr("ratio") = ParseDecimal(txtRatio.Text).ToString("0.##", CultureInfo.InvariantCulture)
@@ -376,24 +402,26 @@ Partial Class Product_Formulation
 
     Private Sub VendorDetailsListLoad()
         Dim obj As New OPC_VendorClass()
-        Dim ds As DataSet = obj.GetRawMaterialVendorList()   ' suppliers (RM001...) - sf_vendor_code now holds the supplier code
-        If userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT AndAlso ds IsNot Nothing AndAlso ds.Tables.Count > 0 Then      ' FG vendor: only the suppliers it declared a scope for
-            Dim allowed As HashSet(Of String) = obj.GetUserScopeSuppliers(userInfo.userIDEntity)
-            For i As Integer = ds.Tables(0).Rows.Count - 1 To 0 Step -1
-                If Not allowed.Contains(Convert.ToString(ds.Tables(0).Rows(i)("vendor_code")).Trim()) Then ds.Tables(0).Rows.RemoveAt(i)
-            Next
-        End If
+        Dim ds As DataSet = obj.GetUnitName(Constant.Common.ActiveStatus)
         If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0) Then
             If (Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
                 ddlvendor.DataSource = ds
-                ddlvendor.DataTextField = "vendor_name"
-                ddlvendor.DataValueField = "vendor_code"
+                ddlvendor.DataTextField = "unit_name"
+                ddlvendor.DataValueField = "unit_code"
                 ddlvendor.DataBind()
             Else
                 ddlvendor.DataSource = Nothing
                 ddlvendor.DataBind()
             End If
             ddlvendor.Items.Insert(0, New ListItem(Constant.Common.Selec, String.Empty, True))
+        End If
+        ' a vendor (UNIT) user always works for its own unit: preselected, dropdown hidden. HO and SYSADMIN choose the vendor.
+        If userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT Then
+            Dim own As String = Convert.ToString(userInfo.userBranchEntity).Trim()
+            If ddlvendor.Items.FindByValue(own) IsNot Nothing Then
+                ddlvendor.SelectedValue = own
+                pfSectionEntry.Attributes("class") = "pf-section pf-hide-vendor"      ' the Vendor column is for HO and SYSADMIN only
+            End If
         End If
     End Sub
 
@@ -488,6 +516,12 @@ Partial Class Product_Formulation
         hdnProductCode.Value = Convert.ToString(h("sf_product_code")).Trim()
         hdnProductName.Value = Convert.ToString(h("product_name")).Trim()
         txtProductSearch.Text = hdnProductCode.Value & "-" & hdnProductName.Value
+        BindScopeLookups()
+        Dim storedShade As String = obj.GetFormulationShade(sfId)
+        If storedShade <> "" AndAlso ddlShade.Items.FindByValue(storedShade) Is Nothing Then ddlShade.Items.Add(New ListItem(storedShade, storedShade))
+        ddlShade.SelectedValue = storedShade
+        BindPackList()      ' packs of the product + the stored shade
+        Dim storedShadeName As String = If(storedShade = "", "", ddlShade.SelectedItem.Text)
         Dim status As String = If(h.Table.Columns.Contains("sf_status"), Convert.ToString(h("sf_status")).Trim().ToUpperInvariant(), "APPROVED")
         Dim hoRemarks As String = If(h.Table.Columns.Contains("sf_ho_remarks"), Convert.ToString(h("sf_ho_remarks")).Trim(), "")
         Dim approvedBy As String = If(h.Table.Columns.Contains("sf_approved_by"), Convert.ToString(h("sf_approved_by")).Trim(), "")
@@ -513,6 +547,7 @@ Partial Class Product_Formulation
                 dr("brand_code") = brandCode : dr("brand_name") = Convert.ToString(h("brand_name"))
                 dr("vendor_code") = vendorCode : dr("vendor_name") = Convert.ToString(h("vendor_name"))
                 dr("product_code") = hdnProductCode.Value : dr("product_name") = hdnProductName.Value
+                dr("shade_code") = storedShade : dr("shade_name") = storedShadeName
                 dr("rawmat_code") = Convert.ToString(src("sfd_rawmat_code")).Trim()
                 dr("rawmat_name") = Convert.ToString(src("rawmat_name"))
                 dr("ratio") = ParseDecimal(Convert.ToString(src("sfd_ratio"))).ToString("0.##", CultureInfo.InvariantCulture)
@@ -552,12 +587,7 @@ Partial Class Product_Formulation
         BindPacks()
 
         ' after both sections are bound: banner, HO panel, and who may edit this row
-        BindScopeLookups()
-        Dim storedShade As String = obj.GetFormulationShade(sfId)
-        If storedShade <> "" AndAlso ddlShade.Items.FindByValue(storedShade) Is Nothing Then ddlShade.Items.Add(New ListItem(storedShade, storedShade))
-        If ddlShade.Items.FindByValue(storedShade) IsNot Nothing Then ddlShade.SelectedValue = storedShade
         ApplyApprovalState(status, hoRemarks, releaseNo, isLatest, sfId, activeId, latestId)
-        ddlShade.Enabled = btnAdd.Visible OrElse btnAddPack.Visible   ' same rule as the other inputs: read-only rows cannot change shade
         ViewState(SnapshotKey) = BuildSnapshot()
     End Sub
 
@@ -679,6 +709,7 @@ Partial Class Product_Formulation
         btnAddPack.Visible = editable
         txtPackSize.Visible = editable
         txtSearchText.Enabled = editable : txtRatio.Enabled = editable : txtRate.Enabled = editable
+        btnNewRawMat.Visible = editable
         txtRemarks.Enabled = editable
         ' row delete buttons and pack inputs
         For Each row As GridViewRow In gvVendorRawMat.Rows
@@ -794,7 +825,7 @@ Partial Class Product_Formulation
             End If
             sb.Append("<table style='border-collapse:collapse;font-family:Segoe UI,Arial;font-size:13px;'>")
             sb.Append("<tr><td " & td & "><b>Brand</b></td><td " & td & ">" & Server.HtmlEncode(ddlBrand.SelectedItem.Text) & "</td></tr>")
-            sb.Append("<tr><td " & td & "><b>Supplier</b></td><td " & td & ">" & Server.HtmlEncode(ddlvendor.SelectedItem.Text) & "</td></tr>")
+            sb.Append("<tr><td " & td & "><b>Vendor</b></td><td " & td & ">" & Server.HtmlEncode(ddlvendor.SelectedItem.Text) & "</td></tr>")
             sb.Append("<tr><td " & td & "><b>SKU</b></td><td " & td & ">" & Server.HtmlEncode(hdnProductCode.Value & " - " & hdnProductName.Value) & "</td></tr>")
             sb.Append("<tr><td " & td & "><b>Negotiation</b></td><td " & td & ">Cycle " & cycle & " / Revision " & revision & If(revision > 1, " (resubmission)", " (new)") & "</td></tr>")
             sb.Append("<tr><td " & td & "><b>Submitted by</b></td><td " & td & ">" & Server.HtmlEncode(userInfo.userIDEntity) & " on " & DateTime.Now.ToString("dd/MM/yyyy HH:mm") & "</td></tr>")
@@ -806,7 +837,7 @@ Partial Class Product_Formulation
             Dim skuPrice As Decimal = 0D
             For Each r As DataRow In GetGridTable().Rows
                 Dim ratio As Decimal = ParseDecimal(Convert.ToString(r("ratio"))), price As Decimal = ParseDecimal(Convert.ToString(r("rate")))
-                Dim amt As Decimal = Math.Round(ratio / 100D * price, 2) : skuPrice += amt
+                Dim amt As Decimal = Math.Round(price, 2) : skuPrice += amt
                 sb.Append("<tr><td " & td & ">" & Server.HtmlEncode(Convert.ToString(r("rawmat_name"))) & " (" & Server.HtmlEncode(Convert.ToString(r("rawmat_code"))) & ")</td><td " & td & " align='right'>" & ratio.ToString("0.00") & "</td><td " & td & " align='right'>" & price.ToString("0.00") & "</td><td " & td & " align='right'>" & amt.ToString("0.00") & "</td></tr>")
             Next
             sb.Append("<tr><td " & td & " colspan='3' align='right'><b>SKU price</b></td><td " & td & " align='right'><b>" & skuPrice.ToString("0.00") & "</b></td></tr></table><br/>")
@@ -1043,20 +1074,20 @@ Partial Class Product_Formulation
 #End Region
 
 #Region "supplier scope (Author: MUKESH BHAGAT, 14-Oct-2026)"
-    ''' <summary>Pack-size and shade dropdowns for the chosen supplier + product, limited to the scope declared on SupplierScope.aspx.
+    ''' <summary>Shade dropdown for the chosen product, limited to what the vendor declared on Vendor Scope (a scope with no shade rows = all shades of the product).
     ''' The cost-name dropdown of every pack is filled in rptPack_ItemDataBound (BindCostNameList).</summary>
     Private Sub BindScopeLookups()
-        Dim supplier As String = ddlvendor.SelectedValue.Trim()
         Dim prd As String = hdnProductCode.Value.Trim()
         Dim keepShade As String = ddlShade.SelectedValue
         ddlShade.Items.Clear()
-        ddlShade.Items.Add(New ListItem("(not shade specific)", ""))
+        ddlShade.Items.Add(New ListItem(Constant.Common.Selec, ""))
+        ViewState("HasShades") = "N"
         txtPackSize.Items.Clear()
         txtPackSize.Items.Add(New ListItem(Constant.Common.Selec, ""))
-        If supplier = "" OrElse prd = "" Then Exit Sub
+        If prd = "" Then Exit Sub
 
         Dim obj As New OPC_VendorClass()
-        Dim dsS As DataSet = obj.GetScopeFormulationShades(supplier, prd)
+        Dim dsS As DataSet = obj.GetScopeFormulationShades(CurrentVendor(), prd)
         If dsS IsNot Nothing AndAlso dsS.Tables.Count > 0 Then
             For Each r As DataRow In dsS.Tables(0).Rows
                 Dim code As String = Convert.ToString(r("shade_code")).Trim()
@@ -1064,25 +1095,42 @@ Partial Class Product_Formulation
             Next
         End If
         If ddlShade.Items.FindByValue(keepShade) IsNot Nothing Then ddlShade.SelectedValue = keepShade
+        ' a shade is mandatory (one only); when the product has a single shade it is selected automatically
+        If ddlShade.SelectedValue = "" AndAlso ddlShade.Items.Count = 2 Then ddlShade.SelectedIndex = 1
+        ' many products have no shade at all: then no shade is needed (and the pack list is not filtered by shade)
+        If ddlShade.Items.Count = 1 Then ddlShade.Items(0).Text = "(no shade)"
+        ViewState("HasShades") = If(ddlShade.Items.Count > 1, "Y", "N")
 
-        Dim dsP As DataSet = obj.GetScopeFormulationPacks(supplier, prd)
+        BindPackList()
+    End Sub
+
+    ''' <summary>Pack-size dropdown = the packs that exist for the chosen product and shade (a product with shades: empty until one shade is chosen; a product without shades: all its packs).</summary>
+    Private Sub BindPackList()
+        Dim prd As String = hdnProductCode.Value.Trim()
+        Dim keepPack As String = txtPackSize.SelectedValue
+        txtPackSize.Items.Clear()
+        txtPackSize.Items.Add(New ListItem(Constant.Common.Selec, ""))
+        If prd = "" Then Exit Sub
+        If ShadeRequired() AndAlso ddlShade.SelectedValue = "" Then Exit Sub      ' a product with shades: packs depend on the product and ONE shade
+        Dim dsP As DataSet = New OPC_VendorClass().GetScopeFormulationPacks(CurrentVendor(), prd, ddlShade.SelectedValue)
         If dsP IsNot Nothing AndAlso dsP.Tables.Count > 0 Then
             For Each r As DataRow In dsP.Tables(0).Rows
                 Dim desc As String = Convert.ToString(r("pack_desc")).Trim()
                 txtPackSize.Items.Add(New ListItem(desc, desc))
             Next
         End If
+        If txtPackSize.Items.FindByValue(keepPack) IsNot Nothing Then txtPackSize.SelectedValue = keepPack
     End Sub
 
     Private scopeItems As DataTable
-    ''' <summary>Fills the cost-name dropdown of one pack with the packaging items declared for the supplier + product.</summary>
+    ''' <summary>Fills the cost-name dropdown of one pack with the packaging (PKG) items (all of them until the pack -> item master exists).</summary>
     Private Sub BindCostNameList(ByVal ddl As DropDownList)
         If ddl Is Nothing Then Exit Sub
         If scopeItems Is Nothing Then
             scopeItems = New DataTable()
             scopeItems.Columns.Add("item_name", GetType(String))
-            If ddlvendor.SelectedValue <> "" AndAlso hdnProductCode.Value.Trim() <> "" Then
-                Dim ds As DataSet = New OPC_VendorClass().GetScopeFormulationItems(ddlvendor.SelectedValue.Trim(), hdnProductCode.Value.Trim())
+            If True Then      ' all PKG items until the pack -> item master exists
+                Dim ds As DataSet = New OPC_VendorClass().GetPackagingItemList()
                 If ds IsNot Nothing AndAlso ds.Tables.Count > 0 Then
                     For Each r As DataRow In ds.Tables(0).Rows
                         scopeItems.Rows.Add(Convert.ToString(r("item_name")).Trim())
@@ -1097,14 +1145,34 @@ Partial Class Product_Formulation
         Next
     End Sub
 
-    ''' <summary>Supplier changed: the product must be picked again from the new supplier's scope.</summary>
+    ''' <summary>The vendor the formulation is for: a vendor (UNIT) login = its own unit, HO / SYSADMIN = the vendor picked on the page.</summary>
+    Private Function CurrentVendor() As String
+        If userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT Then Return Convert.ToString(userInfo.userBranchEntity).Trim()
+        Return ddlvendor.SelectedValue.Trim()
+    End Function
+
+    ''' <summary>HO changed the vendor: product, shade and packs must be picked again from that vendor's scope.</summary>
     Protected Sub ddlvendor_SelectedIndexChanged(sender As Object, e As EventArgs)
+        CapturePackInputs()
         txtProductSearch.Text = ""
         hdnProductCode.Value = ""
         hdnProductName.Value = ""
         hdnSkucode.Value = ""
-        aceProductSearch.ContextKey = ddlvendor.SelectedValue
+        aceProductSearch.ContextKey = CurrentVendor()
+        aceRawMaterialSearch.ContextKey = CurrentVendor()
         BindScopeLookups()
+        BindPacks()
+    End Sub
+
+    ''' <summary>A shade must be chosen only when the product has shades (many products have none).</summary>
+    Private Function ShadeRequired() As Boolean
+        Return Convert.ToString(ViewState("HasShades")) = "Y"
+    End Function
+
+    ''' <summary>Shade changed: the pack sizes depend on product + shade, so the pack list is rebuilt.</summary>
+    Protected Sub ddlShade_SelectedIndexChanged(sender As Object, e As EventArgs)
+        CapturePackInputs()
+        BindPackList()
         BindPacks()
     End Sub
 

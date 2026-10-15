@@ -4,7 +4,7 @@ Imports VMS.Web
 ''' <summary>
 ''' Product Rate Approval list - SKU formulations under negotiation (default), approved releases, or
 ''' everything; links to the history page and to the formulation (HO approves there).
-''' A UNIT user sees only the suppliers it declared a scope for (formulations belong to the supplier). Added by MUKESH BHAGAT on 12-Oct-2026.
+''' A UNIT user sees only its own vendor. Added by MUKESH BHAGAT on 12-Oct-2026.
 ''' </summary>
 Partial Class Product_Rate_Approval_List
     Inherits System.Web.UI.Page
@@ -45,26 +45,28 @@ Partial Class Product_Rate_Approval_List
 
     Private Sub LoadVendors()
         Dim obj As New OPC_VendorClass()
-        Dim ds As DataSet = obj.GetRawMaterialVendorList()      ' suppliers
-        Dim allowed As HashSet(Of String) = If(IsUnitUser(), obj.GetUserScopeSuppliers(userInfo.userIDEntity), Nothing)
+        Dim ds As DataSet = obj.GetUnitName(Constant.Common.ActiveStatus)
         ddlvendor.Items.Clear()
         ddlvendor.Items.Add(New ListItem(Constant.Common.Selec, ""))
         If ds IsNot Nothing AndAlso ds.Tables.Count > 0 Then
             For Each dr As DataRow In ds.Tables(0).Rows
-                Dim code As String = Convert.ToString(dr("vendor_code")).Trim()
-                If allowed Is Nothing OrElse allowed.Contains(code) Then ddlvendor.Items.Add(New ListItem(Convert.ToString(dr("vendor_name")), code))
+                ddlvendor.Items.Add(New ListItem(Convert.ToString(dr("unit_name")), Convert.ToString(dr("unit_code"))))
             Next
+        End If
+        If IsUnitUser() Then
+            Dim own As String = Convert.ToString(userInfo.userBranchEntity).Trim()
+            If ddlvendor.Items.FindByValue(own) IsNot Nothing Then ddlvendor.SelectedValue = own
+            ddlvendor.Enabled = False
         End If
     End Sub
 
     Private Sub Binddata()
         Try
-            ' a unit (vendor) user only ever lists the suppliers it declared a scope for
+            ' a unit (vendor) user only ever lists its own vendor's formulations
+            Dim vendor As String = If(IsUnitUser(), Convert.ToString(userInfo.userBranchEntity).Trim(), ddlvendor.SelectedValue)
             Dim obj As New OPC_VendorClass()
-            Dim ds As DataSet = obj.ListSkuFormulation(ddlBrand.SelectedValue, ddlvendor.SelectedValue, "", "N", ddlView.SelectedValue)
-            Dim table As DataTable = If(ds IsNot Nothing AndAlso ds.Tables.Count > 0, ds.Tables(0), Nothing)
-            If IsUnitUser() AndAlso table IsNot Nothing Then table = FilterBySuppliers(table, obj.GetUserScopeSuppliers(userInfo.userIDEntity))
-            gvList.DataSource = table
+            Dim ds As DataSet = obj.ListSkuFormulation(ddlBrand.SelectedValue, vendor, "", "N", ddlView.SelectedValue)
+            gvList.DataSource = If(ds IsNot Nothing AndAlso ds.Tables.Count > 0, ds.Tables(0), Nothing)
             gvList.DataBind()
             lblErrorMessage.Text = ""
         Catch ex As Exception
@@ -73,15 +75,6 @@ Partial Class Product_Rate_Approval_List
             lblErrorMessage.Text = ex.Message
         End Try
     End Sub
-
-    ''' <summary>Keeps only the rows of the given suppliers (sf_vendor_code holds the supplier code).</summary>
-    Private Function FilterBySuppliers(ByVal table As DataTable, ByVal allowed As HashSet(Of String)) As DataTable
-        Dim result As DataTable = table.Clone()
-        For Each r As DataRow In table.Rows
-            If allowed.Contains(Convert.ToString(r("sf_vendor_code")).Trim()) Then result.ImportRow(r)
-        Next
-        Return result
-    End Function
 
     Protected Sub btnSearch_Click(sender As Object, e As EventArgs)
         gvList.PageIndex = 0
