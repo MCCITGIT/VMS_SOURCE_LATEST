@@ -12,26 +12,43 @@ Partial Class SupportOverrides
     Dim userInfo As VMSUserEntity = New VMSUserEntity()
 
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
-        CheckLogin()
-        If Not IsPostBack Then
-            LoadTypes()
-            LoadScopes()
-            ApplyTypeRules()
-            BindGrid()
-        End If
-    End Sub
-
-    Private Sub CheckLogin()
         If Session(Constant.SessionKeys.UserInfo) Is Nothing Then
-            Response.Redirect("~/Login.aspx")
+            Response.Redirect("~/Login.aspx", False)
+            Context.ApplicationInstance.CompleteRequest()
             Exit Sub
         End If
         userInfo = CType(Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
-        ' SYSADMIN group AND listed in the SUPPORT_PAGE_USERS override (seeded with murthy)
-        If userInfo.userGroupCodeEntity <> Constant.UserFormAccess.SYSADMIN OrElse Not SupportOverrideClass.CanOpenSupportPage(userInfo.userIDEntity) Then
-            Response.Redirect("~/Home.aspx")
+        If Not CheckAccess() Then Exit Sub
+        If Not IsPostBack Then
+            Try
+                LoadTypes()
+                LoadScopes()
+                ApplyTypeRules()
+                BindGrid()
+            Catch ex As Exception
+                lblErrorMessage.Text = "Page could not load: " & ex.Message
+            End Try
         End If
     End Sub
+
+    ''' <summary>SYSADMIN group AND listed in the SUPPORT_PAGE_USERS override. On failure the page shows why (no redirect, no Response.End).</summary>
+    Private Function CheckAccess() As Boolean
+        Dim groupOk As Boolean = String.Equals(Convert.ToString(userInfo.userGroupCodeEntity).Trim(), Constant.UserFormAccess.SYSADMIN, StringComparison.OrdinalIgnoreCase)
+        Dim userOk As Boolean = False, listed As String = ""
+        Try
+            userOk = SupportOverrideClass.CanOpenSupportPage(userInfo.userIDEntity)
+            listed = SupportOverrideClass.GetValue(SupportOverrideClass.SUPPORT_PAGE_USERS, "<no active row>")
+        Catch ex As Exception
+            listed = "<error reading overrides: " & ex.Message & ">"
+        End Try
+        If groupOk AndAlso userOk Then Return True
+        pnlContent.Visible = False
+        pnlDenied.Visible = True
+        litDenied.Text = "<p>Group: <b>" & Server.HtmlEncode(Convert.ToString(userInfo.userGroupCodeEntity)) & "</b> (must be SYSADMIN) - " & If(groupOk, "OK", "<span style='color:#dc3545'>NOT OK</span>") & "</p>" &
+                         "<p>User id: <b>" & Server.HtmlEncode(Convert.ToString(userInfo.userIDEntity)) & "</b> (must be listed in override SUPPORT_PAGE_USERS = '" & Server.HtmlEncode(listed) & "') - " &
+                         If(userOk, "OK", "<span style='color:#dc3545'>NOT OK</span>") & "</p>"
+        Return False
+    End Function
 
     Private Sub LoadTypes()
         ddlType.Items.Clear()
@@ -41,20 +58,34 @@ Partial Class SupportOverrides
         Next
     End Sub
 
+    ''' <summary>Unit / vendor list for the scope dropdown. Uses VendorMaster_GetUnitName (exists in live) - not the
+    ''' RM-procurement GetUnitList, which is UAT-only. If the list cannot be loaded the unit code can be typed instead.</summary>
     Private Sub LoadScopes()
         ddlScope.Items.Clear()
         ddlScope.Items.Add(New ListItem("All (*)", "*"))
         Try
-            Dim obj As New OPC_VendorClass()
+            Dim obj As New VendorMaster()
             Dim ds As DataSet = obj.GetUnitName(Constant.Common.ActiveStatus)
-            If ds IsNot Nothing AndAlso ds.Tables.Count > 0 Then
-                For Each dr As DataRow In ds.Tables(0).Rows
-                    ddlScope.Items.Add(New ListItem(Convert.ToString(dr("unit_name")) & " (" & Convert.ToString(dr("unit_code")) & ")", Convert.ToString(dr("unit_code"))))
+            If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0).Columns.Count >= 2 Then
+                Dim dt As DataTable = ds.Tables(0)
+                Dim codeCol As String = If(dt.Columns.Contains("unit_code"), "unit_code", dt.Columns(0).ColumnName)
+                Dim nameCol As String = If(dt.Columns.Contains("unit_name"), "unit_name", dt.Columns(1).ColumnName)
+                For Each dr As DataRow In dt.Rows
+                    ddlScope.Items.Add(New ListItem(Convert.ToString(dr(nameCol)) & " (" & Convert.ToString(dr(codeCol)) & ")", Convert.ToString(dr(codeCol))))
                 Next
             End If
         Catch
         End Try
+        ' no units available (SP missing / empty): let support type the unit code
+        txtScope.Visible = ddlScope.Items.Count <= 1
+        ddlScope.Visible = Not txtScope.Visible
     End Sub
+
+    ''' <summary>Selected unit code: dropdown, or the typed code when the list was unavailable.</summary>
+    Private Function SelectedScope() As String
+        If txtScope.Visible Then Return If(String.IsNullOrWhiteSpace(txtScope.Text), "*", txtScope.Text.Trim().ToUpperInvariant())
+        Return ddlScope.SelectedValue
+    End Function
 
     Protected Function TypeLabel(ByVal key As Object) As String
         Dim t As SupportOverrideClass.OverrideType = SupportOverrideClass.FindType(Convert.ToString(key))
@@ -73,7 +104,7 @@ Partial Class SupportOverrides
         txtValue.Enabled = t Is Nothing OrElse t.NeedsValue
         txtValue.Attributes("placeholder") = If(t Is Nothing, "", t.ValueHint)
         If t IsNot Nothing AndAlso Not t.NeedsValue Then txtValue.Text = ""
-        If t IsNot Nothing AndAlso Not t.NeedsScope Then ddlScope.SelectedValue = "*"
+        If t IsNot Nothing AndAlso Not t.NeedsScope Then ddlScope.SelectedValue = "*" : txtScope.Text = ""
     End Sub
 
     Private Sub BindGrid()
@@ -105,7 +136,7 @@ Partial Class SupportOverrides
         Dim t As SupportOverrideClass.OverrideType = SupportOverrideClass.FindType(ddlType.SelectedValue)
         Dim ok As Boolean = True
         If t Is Nothing Then valType.Text = "Please select the override." : ok = False
-        If t IsNot Nothing AndAlso t.NeedsScope AndAlso (ddlScope.SelectedValue = "" OrElse ddlScope.SelectedValue = "*") Then valScope.Text = "Please select the unit / vendor." : ok = False
+        If t IsNot Nothing AndAlso t.NeedsScope AndAlso (SelectedScope() = "" OrElse SelectedScope() = "*") Then valScope.Text = "Please select the unit / vendor." : ok = False
         If t IsNot Nothing AndAlso t.NeedsValue AndAlso String.IsNullOrWhiteSpace(txtValue.Text) Then valValue.Text = "Please enter the value (" & t.ValueHint & ")." : ok = False
         If t IsNot Nothing AndAlso t.NeedsValue AndAlso (t.Key = SupportOverrideClass.OCR_VALIDATION_ENABLED OrElse t.Key = SupportOverrideClass.OCR_FAIL_OPEN) Then
             Dim v As String = txtValue.Text.Trim().ToUpperInvariant()
@@ -126,7 +157,7 @@ Partial Class SupportOverrides
             Dim obj As New SupportOverrideClass()
             Dim id As Integer = 0
             Integer.TryParse(hdnId.Value, id)
-            Dim newId As Integer = obj.SaveOverride(id, t.Key, If(t.NeedsScope, ddlScope.SelectedValue, "*"), If(t.NeedsValue, txtValue.Text, ""), fromDate, toDate, txtRemarks.Text, userInfo.userIDEntity)
+            Dim newId As Integer = obj.SaveOverride(id, t.Key, If(t.NeedsScope, SelectedScope(), "*"), If(t.NeedsValue, txtValue.Text, ""), fromDate, toDate, txtRemarks.Text, userInfo.userIDEntity)
             If newId > 0 Then
                 ResetForm()
                 BindGrid()
@@ -146,7 +177,7 @@ Partial Class SupportOverrides
     Private Sub ResetForm()
         hdnId.Value = ""
         ddlType.SelectedIndex = 0
-        ddlScope.SelectedValue = "*"
+        ddlScope.SelectedValue = "*" : txtScope.Text = ""
         txtValue.Text = "" : txtFrom.Text = "" : txtTo.Text = "" : txtRemarks.Text = ""
         litFormTitle.Text = "Add override"
         btnSave.Text = "Save"
@@ -167,7 +198,7 @@ Partial Class SupportOverrides
                 Dim r As DataRow = rows(0)
                 hdnId.Value = id.ToString()
                 If ddlType.Items.FindByValue(Convert.ToString(r("so_key"))) IsNot Nothing Then ddlType.SelectedValue = Convert.ToString(r("so_key"))
-                If ddlScope.Items.FindByValue(Convert.ToString(r("so_scope"))) IsNot Nothing Then ddlScope.SelectedValue = Convert.ToString(r("so_scope"))
+                If ddlScope.Items.FindByValue(Convert.ToString(r("so_scope"))) IsNot Nothing Then ddlScope.SelectedValue = Convert.ToString(r("so_scope")) Else txtScope.Text = If(Convert.ToString(r("so_scope")) = "*", "", Convert.ToString(r("so_scope")))
                 txtValue.Text = Convert.ToString(r("so_value"))
                 txtFrom.Text = If(IsDBNull(r("so_valid_from")), "", Convert.ToDateTime(r("so_valid_from")).ToString("yyyy-MM-dd"))
                 txtTo.Text = If(IsDBNull(r("so_valid_to")), "", Convert.ToDateTime(r("so_valid_to")).ToString("yyyy-MM-dd"))

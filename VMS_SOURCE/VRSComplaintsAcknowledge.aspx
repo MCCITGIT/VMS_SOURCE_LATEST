@@ -42,7 +42,7 @@
                         </asp:UpdatePanel>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-control-label">Vendor:</label>
                         <asp:UpdatePanel runat="server" ID="UpdatePanel4">
@@ -52,7 +52,7 @@
                         </asp:UpdatePanel>
                     </div>
                 </div>
-                <div class="col-md-3 form-btn-mt">
+                <div class="col-md-4 form-btn-mt">
                     <asp:UpdatePanel runat="server" ID="UpdatePanel3">
                         <ContentTemplate>
                             <asp:Button ID="btnSearch" runat="server" ToolTip="Click to Search" Text="Search" CssClass="btn btn-primary btn-sm" />&nbsp;

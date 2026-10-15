@@ -150,6 +150,12 @@
             margin-bottom: 8px;
         }
 
+        /* version/status + remarks row: the status text is long, so it gets the wider column and may wrap */
+        .pf-head-grid.pf-ver-grid {
+            grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+            align-items: start;
+        }
+
         .pf-label {
             display: block;
             font-size: 11.5px;
@@ -348,15 +354,24 @@
             } 
 
             .pf-sku-table .pf-c-brand {
-                width: 13%;
+                width: 12%;
             }
 
             .pf-sku-table .pf-c-vendor {
-                width: 13%;
+                width: 12%;
+            }
+
+            /* a vendor (UNIT) login works for its own unit only: the Vendor column is for HO and SYSADMIN */
+            .pf-hide-vendor .pf-c-vendor {
+                display: none;
             }
 
             .pf-sku-table .pf-c-sku {
-                width: 17%;
+                width: 15%;
+            }
+
+            .pf-sku-table .pf-c-shade {
+                width: 12%;
             }
 
             .pf-sku-table .pf-c-rm {
@@ -595,6 +610,10 @@
                 grid-template-columns: 1fr;
             }
 
+            .pf-head-grid.pf-ver-grid {
+                grid-template-columns: 1fr;
+            }
+
             .pf-pack-label {
                 grid-template-columns: 1fr auto;
                 padding-right: 150px;
@@ -627,6 +646,7 @@
                 setProductSearchState(true);
                 if (typeof clearProductValidation === 'function') { clearProductValidation(); }
                 sender.get_element().value = text;
+                __doPostBack('<%=btnProductPicked.UniqueID%>', '');   // reload the shade and pack lists of the supplier scope
             }
 
             function clearProductSelection() {
@@ -704,6 +724,9 @@
 
             /* ---------- section 1 validation (wraps ValidateFormulationMstr.js) ---------- */
             function validateAddRow() {
+                var shadeEl = document.getElementById('ddlShade');
+                if (typeof clearFieldValidation === 'function') { clearFieldValidation('ddlShade', 'valShade'); }
+                if (shadeEl && shadeEl.options.length > 1 && shadeEl.value === '') { setFieldError('ddlShade', 'valShade', 'Please select Shade.', true); return false; }   // only products that have shades need one
                 var txtRate = document.getElementById('txtRate');
                 var rate = parseFloat((txtRate.value || '').trim());
                 if (typeof clearFieldValidation === 'function') { clearFieldValidation('txtRate', 'valRate'); }
@@ -745,7 +768,7 @@
 
             /* entry line of a pack: both fields required before the Add postback */
             function validateNewLine(btn) {
-                var tr = btn.closest('tr'), n = tr.querySelector('input.pf-new-name'), a = tr.querySelector('input.pf-new-amt'), ok = true;
+                var tr = btn.closest('tr'), n = tr.querySelector('.pf-new-name'), a = tr.querySelector('input.pf-new-amt'), ok = true;
                 if ((n.value || '').trim() === '') { n.classList.add('field-invalid'); ok = false; }
                 if ((a.value || '').trim() === '' || isNaN(parseFloat(a.value))) { a.classList.add('field-invalid'); ok = false; }
                 if (!ok) { n.focus(); }
@@ -756,7 +779,7 @@
                 var txt = document.getElementById('txtPackSize');
                 var val = (txt.value || '').trim();
                 clearFieldValidation('txtPackSize', 'valPackSize');
-                if (val === '') { setFieldError('txtPackSize', 'valPackSize', 'Please enter Pack size.', true); return false; }
+                if (val === '') { setFieldError('txtPackSize', 'valPackSize', 'Please select Pack size.', true); return false; }
                 var dup = false;
                 document.querySelectorAll('.pf-pack').forEach(function (p) { if ((p.getAttribute('data-name') || '').toLowerCase() === val.toLowerCase()) { dup = true; } });
                 if (dup) { setFieldError('txtPackSize', 'valPackSize', 'This Pack size is already added.', true); return false; }
@@ -802,7 +825,7 @@
             }
             function pfGridRecalc() {
                 var total = 0, sku = 0;
-                pfGridRows().forEach(function (x) { total += x.ratio; sku += x.ratio / 100 * x.rate; });
+                pfGridRows().forEach(function (x) { total += x.ratio; sku += x.rate; });
                 total = Math.round(total * 100) / 100; sku = Math.round(sku * 100) / 100;
                 var lt = document.getElementById('lblRatioTotal'), ls = document.getElementById('lblRatioStatus'), lp = document.getElementById('lblSkuPrice');
                 if (lt) { lt.innerText = total.toFixed(2) + '%'; }
@@ -820,6 +843,9 @@
                 if (!ddlBrand || ddlBrand.value === '') { setFieldError('ddlBrand', 'valBrand', 'Please select Brand.', false); hasError = true; }
                 if (!ddlvendor || ddlvendor.value === '') { setFieldError('ddlvendor', 'valVendor', 'Please select Vendor.', false); hasError = true; }
                 if (!hdnProductCode || hdnProductCode.value.trim() === '') { setFieldError('txtProductSearch', 'valProduct', 'Please enter Product.', false); hasError = true; }
+                var shadeSel = document.getElementById('ddlShade');
+                clearFieldValidation('ddlShade', 'valShade');
+                if (shadeSel && shadeSel.options.length > 1 && shadeSel.value === '') { setFieldError('ddlShade', 'valShade', 'Please select Shade.', false); hasError = true; }
                 rows.forEach(function (x) { x.ratioEl.classList.remove('field-invalid'); x.rateEl.classList.remove('field-invalid'); });
                 var bad = false;
                 rows.forEach(function (x) { if (x.ratio <= 0) { x.ratioEl.classList.add('field-invalid'); bad = true; } if (x.rate <= 0) { x.rateEl.classList.add('field-invalid'); bad = true; } });
@@ -865,11 +891,70 @@
                 return validateFormulationSubmit();
             }
 
+            /* ---------- add a raw material that is not in the list (saved for this vendor only) ---------- */
+            function currentVendorUnit() { var d = document.getElementById('ddlvendor'); return d ? (d.value || '') : ''; }
+            function setRawMatContext() {       // product search (vendor scope) and raw material search (manual items) both depend on the vendor
+                if (typeof $find !== 'function') { return; }
+                var b = $find('bhvRawMat');
+                if (b) { b.set_contextKey(currentVendorUnit()); }
+                var p = $find('bhvProduct');
+                if (p) { p.set_contextKey(currentVendorUnit()); }
+            }
+            function openNewRawMat() {
+                if (currentVendorUnit() === '') { setFieldError('ddlvendor', 'valVendor', 'Please select Vendor first.', false); return false; }
+                document.getElementById('txtNewRawMatName').value = '';
+                document.getElementById('lblNewRawMatMsg').innerText = '';
+                document.getElementById('pfRawMatModal').style.display = 'block';
+                document.getElementById('txtNewRawMatName').focus();
+                return false;
+            }
+            function closeNewRawMat() { document.getElementById('pfRawMatModal').style.display = 'none'; return false; }
+            function saveNewRawMat() {
+                var name = (document.getElementById('txtNewRawMatName').value || '').trim(), msg = document.getElementById('lblNewRawMatMsg');
+                msg.innerText = '';
+                if (name === '') { msg.innerText = 'Enter the raw material name.'; return false; }
+                var btn = document.getElementById('btnSaveNewRawMat'); btn.disabled = true;
+                fetch('<%= ResolveUrl("~/Product_Formulation.aspx") %>/AddManualRawMaterial', {
+                    method: 'POST', credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+                    body: JSON.stringify({ name: name, unit: currentVendorUnit() })
+                }).then(function (r) { return r.json(); }).then(function (j) {
+                    btn.disabled = false;
+                    var a = j.d || [];                       // status, message, code, display name
+                    if (a[0] === '1' || a[0] === '2') {
+                        document.getElementById('<%=txtrawmatid.ClientID%>').value = a[2];
+                        document.getElementById('<%=txtSearchText.ClientID%>').value = a[3];
+                        if (typeof clearFieldValidation === 'function') { clearFieldValidation('txtSearchText', 'valSearchText'); }
+                        closeNewRawMat();
+                    } else { msg.innerText = a[1] || 'Could not save. Try again.'; }
+                }).catch(function () { btn.disabled = false; msg.innerText = 'Could not save. Try again.'; });
+                return false;
+            }
             document.addEventListener('DOMContentLoaded', function () {
                 syncProductResetButtonState();
+                setRawMatContext();
+                var dv = document.getElementById('ddlvendor');
+                if (dv) {
+                    if (window.jQuery) { window.jQuery(dv).on('change', setRawMatContext); } else { dv.addEventListener('change', setRawMatContext); }
+                }
+                if (window.Sys && Sys.Application) { Sys.Application.add_load(setRawMatContext); }
                 document.querySelectorAll('.pf-pack').forEach(function (p) { var i = p.querySelector('input.pf-proc'); if (i) { pfRecalc(i); } });
             });
         </script>
+
+        <%-- quick add of a raw material that is not in the list: saved for the selected vendor only --%>
+        <div id="pfRawMatModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); z-index: 2000;">
+            <div style="background: #fff; max-width: 440px; margin: 12vh auto 0; padding: 16px 18px; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,.25);">
+                <h5 style="margin: 0 0 4px;">Add new raw material</h5>
+                <p style="font-size: 11.5px; color: #666; margin: 0 0 10px;">Use this only when the raw material is not found in the search. It is saved for your vendor only; other vendors cannot see it.</p>
+                <input type="text" id="txtNewRawMatName" maxlength="200" class="form-control" placeholder="Raw material name" autocomplete="off" onkeydown="if(event.key==='Enter'){return saveNewRawMat();}" />
+                <span id="lblNewRawMatMsg" class="dispatch-field-error"></span>
+                <div style="text-align: right; margin-top: 12px;">
+                    <button type="button" id="btnSaveNewRawMat" class="pf-btn pf-btn-primary" onclick="return saveNewRawMat();">Save</button>
+                    <button type="button" class="pf-btn" onclick="return closeNewRawMat();">Cancel</button>
+                </div>
+            </div>
+        </div>
 
         <div class="breadcrumbs">
             <div class="leftFung">
@@ -893,15 +978,16 @@
                 <asp:HiddenField ID="hdnId" runat="server" ClientIDMode="Static" />
                 <asp:HiddenField ID="hdnProductCode" ClientIDMode="Static" runat="server" />
                 <asp:HiddenField ID="hdnProductName" ClientIDMode="Static" runat="server" />
+                <asp:Button ID="btnProductPicked" runat="server" ClientIDMode="Static" Style="display: none;" OnClick="btnProductPicked_Click" UseSubmitBehavior="false" CausesValidation="false" />
                 <asp:HiddenField ID="hdnSkucode" runat="server" ClientIDMode="Static" />
                 <asp:HiddenField ID="txtrawmatid" ClientIDMode="Static" runat="server" />
                 <asp:HiddenField ID="hdnSkuPrice" ClientIDMode="Static" runat="server" Value="0" />
                 <asp:HiddenField ID="hdnOpenPack" ClientIDMode="Static" runat="server" />
 
                 <!-- ================= 1. SKU formulation entry ================= -->
-                <div class="pf-section">
+                <div class="pf-section" id="pfSectionEntry" runat="server">
                     <h4 class="pf-section-title">SKU formulation entry</h4>
-                    <p class="pf-section-sub">Add every raw material of the SKU in one line: Brand, Vendor and SKU are fixed after the first line. Total consumption ratio must be exactly 100 %.</p>
+                    <p class="pf-section-sub">Add every raw material of the SKU in one line: Brand, Vendor, SKU and Shade are fixed after the first line. Total consumption ratio must be exactly 100 %.</p>
 
                     <div class="pf-table-wrap">
                         <asp:GridView ID="gvVendorRawMat" ClientIDMode="Static" runat="server" AutoGenerateColumns="False" CssClass="pf-table pf-sku-table"
@@ -922,23 +1008,31 @@
                                     <ItemStyle CssClass="pf-c-sn" />
                                     <FooterStyle CssClass="pf-c-sn" />
                                 </asp:TemplateField>
-                                <asp:TemplateField HeaderText="Brand *">
-                                    <ItemTemplate>
-                                        <asp:Label ID="lblBrandName" runat="server" Text='<%# Bind("brand_name") %>'></asp:Label></ItemTemplate>
-                                    <HeaderStyle CssClass="pf-c-brand" />
-                                    <ItemStyle CssClass="pf-c-brand" />
-                                </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Vendor *">
                                     <ItemTemplate>
                                         <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vendor_name") %>'></asp:Label></ItemTemplate>
                                     <HeaderStyle CssClass="pf-c-vendor" />
                                     <ItemStyle CssClass="pf-c-vendor" />
                                 </asp:TemplateField>
+                                <asp:TemplateField HeaderText="Brand *">
+                                    <ItemTemplate>
+                                        <asp:Label ID="lblBrandName" runat="server" Text='<%# Bind("brand_name") %>'></asp:Label></ItemTemplate>
+                                    <HeaderStyle CssClass="pf-c-brand" />
+                                    <ItemStyle CssClass="pf-c-brand" />
+                                </asp:TemplateField>
                                 <asp:TemplateField HeaderText="SKU / Product *">
                                     <ItemTemplate>
                                         <asp:Label ID="lblProductName" runat="server" Text='<%# Bind("product_name") %>'></asp:Label></ItemTemplate>
                                     <HeaderStyle CssClass="pf-c-sku" />
                                     <ItemStyle CssClass="pf-c-sku" />
+                                </asp:TemplateField>
+                                <asp:TemplateField HeaderText="Shade *">
+                                    <ItemTemplate>
+                                        <asp:Label ID="lblShadeName" runat="server" Text='<%# Eval("shade_name") %>'></asp:Label>
+                                        <asp:HiddenField ID="hdnShadeCode" runat="server" Value='<%# Eval("shade_code") %>' />
+                                    </ItemTemplate>
+                                    <HeaderStyle CssClass="pf-c-shade" />
+                                    <ItemStyle CssClass="pf-c-shade" />
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Raw Material *">
                                     <ItemTemplate>
@@ -994,17 +1088,20 @@
                             <tbody>
                                 <tr class="pf-entry-row">
                                     <td class="pf-c-sn pf-center"><i class="fas fa-plus"></i></td>
+                                    <td class="pf-c-vendor">
+                                        <asp:Panel ID="pnlVendorDdl" runat="server">
+                                        <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlvendor_SelectedIndexChanged"
+                                            onchange="if(typeof clearVendorValidation==='function')clearVendorValidation();">
+                                        </asp:DropDownList>
+                                        </asp:Panel>
+                                        <asp:Label ID="lblVendorFixed" runat="server" Visible="false" Style="display: block; padding: 6px 4px; font-weight: 600;"></asp:Label>
+                                        <asp:Label ID="valVendor" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                                    </td>
                                     <td class="pf-c-brand">
-                                        <asp:DropDownList ID="ddlBrand" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server"
+                                        <asp:DropDownList ID="ddlBrand" ClientIDMode="Static" CssClass="form-control select2" TabIndex="2" runat="server"
                                             onchange="if(typeof clearBrandValidation==='function')clearBrandValidation();">
                                         </asp:DropDownList>
                                         <asp:Label ID="valBrand" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
-                                    </td>
-                                    <td class="pf-c-vendor">
-                                        <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="2" runat="server"
-                                            onchange="if(typeof clearVendorValidation==='function')clearVendorValidation();">
-                                        </asp:DropDownList>
-                                        <asp:Label ID="valVendor" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                                     </td>
                                     <td class="pf-c-sku">
                                         <div class="pf-input-group">
@@ -1012,18 +1109,23 @@
                                                 Placeholder="Type 3+ letters" onkeyup="clearProductSelection();"></asp:TextBox>
                                             <button type="button" id="btnResetProduct" class="pf-btn" onclick="return resetProductField();" title="Reset Product"><i class="fas fa-sync-alt fa-xs"></i></button>
                                         </div>
-                                        <asp:AutoCompleteExtender ID="aceProductSearch" runat="server" TargetControlID="txtProductSearch" ServiceMethod="ProductSearch" CompletionInterval="200" EnableCaching="false" CompletionSetCount="20" FirstRowSelected="true" OnClientItemSelected="onProductSelected"
+                                        <asp:AutoCompleteExtender ID="aceProductSearch" runat="server" TargetControlID="txtProductSearch" ServiceMethod="ProductSearch" UseContextKey="true" BehaviorID="bhvProduct" CompletionInterval="200" EnableCaching="false" CompletionSetCount="20" FirstRowSelected="true" OnClientItemSelected="onProductSelected"
                                             CompletionListCssClass="vmsAutoComplete" CompletionListItemCssClass="vmsAutoCompleteItem" CompletionListHighlightedItemCssClass="vmsAutoCompleteItemHighlight">
                                         </asp:AutoCompleteExtender>
                                         <asp:Label ID="valProduct" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                                    </td>
+                                    <td class="pf-c-shade">
+                                        <asp:DropDownList ID="ddlShade" runat="server" ClientIDMode="Static" CssClass="form-control" TabIndex="4" AutoPostBack="true" OnSelectedIndexChanged="ddlShade_SelectedIndexChanged"></asp:DropDownList>
+                                        <asp:Label ID="valShade" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                                     </td>
                                     <td class="pf-c-rm">
                                         <div class="pf-input-group">
                                             <asp:TextBox ID="txtSearchText" ClientIDMode="Static" CssClass="form-control" runat="server" AutoComplete="Off" onkeyup="clearRawMaterialSelection();"
                                                 Placeholder="Type 3+ letters"></asp:TextBox>
                                             <button type="button" class="pf-btn" onclick="return resetRawMaterialField();" title="Reset Raw Material"><i class="fas fa-sync-alt fa-xs"></i></button>
+                                            <button type="button" runat="server" id="btnNewRawMat" clientidmode="Static" class="pf-btn" onclick="return openNewRawMat();" title="Add a raw material that is not in the list (visible to you only)"><i class="fas fa-plus fa-xs"></i></button>
                                         </div>
-                                        <asp:AutoCompleteExtender ID="aceRawMaterialSearch" runat="server" TargetControlID="txtSearchText" ServiceMethod="RawMaterialSearch" CompletionInterval="200"
+                                        <asp:AutoCompleteExtender ID="aceRawMaterialSearch" runat="server" TargetControlID="txtSearchText" ServiceMethod="RawMaterialSearch" UseContextKey="true" BehaviorID="bhvRawMat" CompletionInterval="200"
                                             EnableCaching="false" CompletionSetCount="20" FirstRowSelected="true" OnClientItemSelected="onRawMaterialSelected"
                                             CompletionListCssClass="vmsAutoComplete" CompletionListItemCssClass="vmsAutoCompleteItem" CompletionListHighlightedItemCssClass="vmsAutoCompleteItemHighlight">
                                         </asp:AutoCompleteExtender>
@@ -1053,15 +1155,13 @@
                             <asp:Label ID="lblHoRemarksTitle" runat="server"></asp:Label></b>
                         <asp:Label ID="lblHoRemarks" runat="server"></asp:Label>
                     </asp:Panel>
-                    <div class="pf-head-grid" style="margin-top: 8px;">
+                    <div class="pf-head-grid pf-ver-grid" style="margin-top: 8px;">
                         <div>
                             <label class="pf-label">Version / Status</label>
-                            <div style="height: 26px; line-height: 26px; font-weight: 600; color: var(--pf-theme);">
-                                <asp:Label ID="lblVersionInfo" runat="server" Text="New (version 1 on submit)"></asp:Label></div>
-                            <div style="height: 26px; line-height: 26px; font-weight: 600; color: var(--pf-theme);"><asp:Label ID="lblVersionInfo" runat="server" Text="New - goes to HO for approval on submit"></asp:Label></div>
-                            <div style="font-size: 11.5px;"><asp:Literal ID="litLinks" runat="server"></asp:Literal> <asp:Label ID="lblReadOnlyNote" runat="server" Style="color: #856404;"></asp:Label></div>
+                            <div style="min-height: 26px; line-height: 1.4; font-weight: 600; color: var(--pf-theme);"><asp:Label ID="lblVersionInfo" runat="server" Text="New - goes to HO for approval on submit"></asp:Label></div>
+                            <div style="font-size: 11.5px; margin-top: 4px; line-height: 1.5;"><asp:Literal ID="litLinks" runat="server"></asp:Literal> <asp:Label ID="lblReadOnlyNote" runat="server" Style="color: #856404;"></asp:Label></div>
                         </div>
-                        <div style="grid-column: span 2;">
+                        <div>
                             <label class="pf-label">Remarks / reason for change</label>
                             <asp:TextBox ID="txtRemarks" runat="server" MaxLength="500" AutoComplete="Off" Placeholder="Optional - stored with this version"></asp:TextBox>
                         </div>
@@ -1148,7 +1248,7 @@
                                                                         <asp:HiddenField ID="hdnLineKey" runat="server" Value='<%# Eval("line_key") %>' />
                                                                     </td>
                                                                     <td>
-                                                                        <asp:TextBox ID="txtCostName" runat="server" CssClass="pf-name" Text='<%# Eval("cost_name") %>' MaxLength="100" Placeholder="e.g. Cap, Bottle, Label" AutoComplete="Off"></asp:TextBox>
+                                                                        <asp:TextBox ID="txtCostName" runat="server" CssClass="pf-name" ReadOnly="true" Text='<%# Eval("cost_name") %>' MaxLength="100" Placeholder="e.g. Cap, Bottle, Label" AutoComplete="Off"></asp:TextBox>
                                                                     </td>
                                                                     <td class="pf-col-amt">
                                                                         <asp:TextBox ID="txtAmount" runat="server" CssClass="pf-num pf-amt" Text='<%# Eval("amount") %>' Placeholder="0.00" AutoComplete="Off"
@@ -1160,6 +1260,21 @@
                                                                 </tr>
                                                             </ItemTemplate>
                                                         </asp:Repeater>
+                                                        <%-- entry line: type a cost and press Add (same pattern as the SKU grid) --%>
+                                                        <tr class="pf-entry-row pf-line-entry">
+                                                            <td class="pf-col-sn"><i class="fas fa-plus"></i></td>
+                                                            <td>
+                                                                <asp:DropDownList ID="txtNewCostName" runat="server" CssClass="pf-new-name" Style="width: 100%;" onchange="this.classList.remove('field-invalid');"></asp:DropDownList>
+                                                            </td>
+                                                            <td class="pf-col-amt">
+                                                                <asp:TextBox ID="txtNewAmount" runat="server" CssClass="pf-num pf-new-amt" Placeholder="0.00" AutoComplete="Off"
+                                                                    onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); this.classList.remove('field-invalid');" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
+                                                            </td>
+                                                            <td class="pf-col-act">
+                                                                <asp:LinkButton ID="btnAddLine" runat="server" CssClass="pf-btn pf-btn-primary" CommandName="AddLine" CommandArgument='<%# Eval("pack_key") %>' Text="Add"
+                                                                    OnClientClick="return validateNewLine(this);"></asp:LinkButton>
+                                                            </td>
+                                                        </tr>
                                                         <%-- fixed lines of every pack: processing fee, labour charge, margin % --%>
                                                         <tr class="pf-fixed-line">
                                                             <td class="pf-col-sn"><i class="fas fa-cog" style="color: #888;"></i></td>
@@ -1213,9 +1328,6 @@
                                                     </tfoot>
                                                 </table>
                                             </div>
-                                            <div style="text-align: center; margin-top: 6px;">
-                                                <asp:LinkButton ID="btnAddLine" runat="server" CssClass="pf-btn" CommandName="AddLine" CommandArgument='<%# Eval("pack_key") %>' Text="+ Add cost line"></asp:LinkButton>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1225,13 +1337,12 @@
 
                         <div class="pf-add-pack">
                             <div>
-                                <asp:TextBox ID="txtPackSize" runat="server" ClientIDMode="Static" Placeholder="Pack size, e.g. 1 ltr" MaxLength="50" AutoComplete="Off"
-                                    oninput="if(typeof clearFieldValidation==='function')clearFieldValidation('txtPackSize','valPackSize');"></asp:TextBox>
+                                <asp:DropDownList ID="txtPackSize" runat="server" ClientIDMode="Static" Style="width: 200px;" onchange="if(typeof clearFieldValidation==='function')clearFieldValidation('txtPackSize','valPackSize');"></asp:DropDownList>
                                 <asp:Label ID="valPackSize" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                             </div>
                             <asp:Button ID="btnAddPack" runat="server" Text="+ Add pack size" CssClass="pf-btn pf-btn-primary" ClientIDMode="Static" OnClientClick="return validateAddPack();" OnClick="btnAddPack_Click" />
                         </div>
-                        <p class="pf-hint">Pack size is free text for now; it will become a dropdown once the pack-size master is available.</p>
+                        <p class="pf-hint">Pack sizes are the ones declared for this vendor on Vendor Scope (product + shade); cost names come from the packaging items (PKG) master.</p>
                         <asp:Label ID="valPack" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                     </asp:Panel>
                 </div>

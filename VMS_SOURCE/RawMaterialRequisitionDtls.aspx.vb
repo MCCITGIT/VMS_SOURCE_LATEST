@@ -58,12 +58,14 @@ Partial Class RawMaterialRequisitionDtls
         Dim obj As New OPC_VendorClass()
         Dim ds As New DataSet()
         'ds = obj.GetVendorRawMatEditList(ddlVendor.SelectedValue.ToString())
-        ds = obj.GetRawMaterial_Requesteditt(ddlUnit.SelectedValue, ddlVendor.SelectedValue.ToString())
+        'ds = obj.GetRawMaterial_Requesteditt(ddlUnit.SelectedValue, ddlVendor.SelectedValue.ToString())
+        ds = obj.GetRawMaterial_Requesteditt(ddlUnit.SelectedValue, ddlPono.SelectedValue.ToString())
+
         If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0) Then
             If (Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
                 gvVendorRawMat.DataSource = ds
                 gvVendorRawMat.DataBind()
-                btnSubmit.Visible = True
+                btnSubmit.Visible = HasAnyPendingQuantity(ds.Tables(0))
             Else
                 gvVendorRawMat.DataSource = Nothing
                 gvVendorRawMat.DataBind()
@@ -86,7 +88,7 @@ Partial Class RawMaterialRequisitionDtls
         Dim sourceTable As DataTable = ds.Tables(0)
         Dim firstRow As DataRow = sourceTable.Rows(0)
         Dim status As String = String.Empty
-        If ds.Tables(0).Rows(0)("approval_status") = "A" Then
+        If ds.Tables(0).Rows(0)("approval_status") = "A" OrElse Not HasAnyPendingQuantity(sourceTable) Then
             btnSubmit.Visible = False
         Else
             btnSubmit.Visible = True
@@ -95,12 +97,18 @@ Partial Class RawMaterialRequisitionDtls
         'txtreqVendor.Text =Convert.ToString(firstRow("vendor_name")).Trim()
         ddlUnit.SelectedValue = ds.Tables(0).Rows(0)("vendor_code").ToString()
 
+
         Dim rawMatVendorCode As String = Convert.ToString(firstRow("rawmat_vendor_code")).Trim()
         If rawMatVendorCode <> "" AndAlso ddlVendor.Items.FindByValue(rawMatVendorCode) IsNot Nothing Then
             ddlVendor.SelectedValue = rawMatVendorCode
         End If
 
         ddlVendor.Enabled = False
+
+        PopulatePO()
+        ddlPono.SelectedValue = ds.Tables(0).Rows(0)("po_no").ToString()
+        ddlPono.Enabled = False
+
         imgbtnSearch.Visible = False
 
         Dim dtGrid As DataTable = BuildGridTableFromEditData(sourceTable)
@@ -118,7 +126,10 @@ Partial Class RawMaterialRequisitionDtls
         dtGrid.Columns.Add("vendor_name", GetType(String))
         dtGrid.Columns.Add("rawmat_code", GetType(String))
         dtGrid.Columns.Add("rawmat_name", GetType(String))
+        dtGrid.Columns.Add("qty", GetType(String))
         dtGrid.Columns.Add("rate", GetType(String))
+        dtGrid.Columns.Add("amount", GetType(String))
+        dtGrid.Columns.Add("pending_qty", GetType(String))
         dtGrid.Columns.Add("quantity", GetType(String))
         dtGrid.Columns.Add("delivery_date", GetType(String))
         dtGrid.Columns.Add("remarks", GetType(String))
@@ -127,10 +138,13 @@ Partial Class RawMaterialRequisitionDtls
             Dim gridRow As DataRow = dtGrid.NewRow()
             gridRow("id") = Convert.ToString(dr("request_id"))
             gridRow("vendor_code") = Convert.ToString(dr("vendor_code"))
-            gridRow("vendor_name") = Convert.ToString(dr("rawmat_vendor_name"))
-            gridRow("rawmat_code") = Convert.ToString(dr("rawmaterial_code"))
-            gridRow("rawmat_name") = Convert.ToString(dr("rawmaterial_name"))
+            gridRow("vendor_name") = Convert.ToString(dr("vendor_name"))
+            gridRow("rawmat_code") = Convert.ToString(dr("rawmat_code"))
+            gridRow("rawmat_name") = Convert.ToString(dr("rawmat_name"))
+            gridRow("qty") = Convert.ToString(dr("qty"))
             gridRow("rate") = Convert.ToString(dr("rate"))
+            gridRow("amount") = Convert.ToString(dr("amount"))
+            gridRow("pending_qty") = Convert.ToString(dr("pending_qty"))
             gridRow("quantity") = FormatQuantityValue(dr("quantity"))
             gridRow("remarks") = Convert.ToString(dr("remarks"))
 
@@ -152,8 +166,16 @@ Partial Class RawMaterialRequisitionDtls
         If Not ValidateSearchInputs() Then
             Return
         End If
+        Populate_RequestPending_State()
+    End Sub
 
-        BindData()
+    Protected Sub btnRefresh_Click(sender As Object, e As EventArgs)
+        ddlVendor.Enabled = True
+        ddlPono.Enabled = True
+        ddlVendor.SelectedIndex = 0
+        ddlPono.Items.Clear()
+        gvVendorRawMat.DataSource = Nothing
+        gvVendorRawMat.DataBind()
     End Sub
 
     Protected Sub gvVendorRawMat_RowDataBound(sender As Object, e As GridViewRowEventArgs) Handles gvVendorRawMat.RowDataBound
@@ -174,6 +196,22 @@ Partial Class RawMaterialRequisitionDtls
             txtQuantity.Text = FormatQuantityValue(rowView("quantity"))
         End If
 
+        If rowView.Row.Table.Columns.Contains("pending_qty") Then
+            Dim pendingQty As Decimal = 0D
+            Decimal.TryParse(Convert.ToString(rowView("pending_qty")), pendingQty)
+            If pendingQty = 0D Then
+                If txtQuantity IsNot Nothing Then
+                    txtQuantity.Enabled = False
+                End If
+                If txtReqDate IsNot Nothing Then
+                    txtReqDate.Enabled = False
+                End If
+                If txtRemarks IsNot Nothing Then
+                    txtRemarks.Enabled = False
+                End If
+            End If
+        End If
+
         If txtRemarks IsNot Nothing AndAlso rowView.Row.Table.Columns.Contains("remarks") Then
             txtRemarks.Text = Convert.ToString(rowView("remarks")).Trim()
         End If
@@ -192,6 +230,8 @@ Partial Class RawMaterialRequisitionDtls
     End Sub
 
     Protected Sub ddlVendor_SelectedIndexChanged(sender As Object, e As EventArgs)
+        ddlVendor.Enabled = False
+        PopulatePO()
         gvVendorRawMat.DataSource = Nothing
         gvVendorRawMat.DataBind()
         btnSubmit.Visible = False
@@ -217,6 +257,7 @@ Partial Class RawMaterialRequisitionDtls
             headerEntity.CreatedUser = userInfo.userIDEntity
             headerEntity.ActiveStatus = "Y"
             headerEntity.Trantype = 1
+            headerEntity.PONO = ddlPono.SelectedValue.ToString()
 
             If Not String.IsNullOrWhiteSpace(Request.QueryString("request_id")) Then
                 Dim requestId As Integer = 0
@@ -313,6 +354,22 @@ Partial Class RawMaterialRequisitionDtls
         Return dt
     End Function
 
+    Private Function HasAnyPendingQuantity(ByVal table As DataTable) As Boolean
+        If table Is Nothing OrElse Not table.Columns.Contains("pending_qty") Then
+            Return False
+        End If
+
+        For Each dr As DataRow In table.Rows
+            Dim pendingQty As Decimal = 0D
+            Decimal.TryParse(Convert.ToString(dr("pending_qty")), pendingQty)
+            If pendingQty <> 0D Then
+                Return True
+            End If
+        Next
+
+        Return False
+    End Function
+
     Private Function FormatQuantityValue(ByVal value As Object) As String
         If value Is Nothing OrElse IsDBNull(value) Then
             Return String.Empty
@@ -360,7 +417,12 @@ Partial Class RawMaterialRequisitionDtls
         End If
 
         If ddlVendor.SelectedIndex <= 0 OrElse String.IsNullOrWhiteSpace(ddlVendor.SelectedValue) Then
-            AppendInlineValidation("Vendor", "Please select RM Vendor.")
+            AppendInlineValidation("Vendor", "Please select Supplier.")
+            isValid = False
+        End If
+
+        If ddlPono.SelectedIndex <= 0 OrElse String.IsNullOrWhiteSpace(ddlPono.SelectedValue) Then
+            AppendInlineValidation("PONo", "Please select PoNo.")
             isValid = False
         End If
 
@@ -373,7 +435,16 @@ Partial Class RawMaterialRequisitionDtls
         Dim isValid As Boolean = True
 
         If ddlVendor.SelectedIndex <= 0 OrElse String.IsNullOrWhiteSpace(ddlVendor.SelectedValue) Then
-            AppendInlineValidation("Vendor", "Please select RM Vendor.")
+            AppendInlineValidation("Vendor", "Please select Supplier.")
+            isValid = False
+        End If
+
+        If ddlPono.SelectedIndex <= 0 OrElse String.IsNullOrWhiteSpace(ddlPono.SelectedValue) Then
+            AppendInlineValidation("PONo", "Please select Po No.")
+            isValid = False
+        End If
+
+        If Not ValidateRequiredQuantityAgainstPending() Then
             isValid = False
         End If
 
@@ -381,6 +452,40 @@ Partial Class RawMaterialRequisitionDtls
         If dtDetails.Rows.Count = 0 Then
             AppendInlineValidation("Grid", "Please enter Quantity greater than 0 for at least one Raw Material.")
             isValid = False
+        End If
+
+        Return isValid
+    End Function
+
+    Private Function ValidateRequiredQuantityAgainstPending() As Boolean
+        Dim isValid As Boolean = True
+
+        For Each gridRow As GridViewRow In gvVendorRawMat.Rows
+            If gridRow.RowType <> DataControlRowType.DataRow Then
+                Continue For
+            End If
+
+            Dim txtQuantity As TextBox = TryCast(gridRow.FindControl("txtQuantity"), TextBox)
+            Dim hdnPendingQty As HiddenField = TryCast(gridRow.FindControl("hdnPendingQty"), HiddenField)
+            Dim requiredQty As Decimal = 0D
+            Dim pendingQty As Decimal = 0D
+
+            If txtQuantity Is Nothing OrElse Not Decimal.TryParse(txtQuantity.Text.Trim(), requiredQty) OrElse requiredQty <= 0D Then
+                Continue For
+            End If
+
+            If hdnPendingQty IsNot Nothing Then
+                Decimal.TryParse(hdnPendingQty.Value.Trim(), pendingQty)
+            End If
+
+            If requiredQty > pendingQty Then
+                txtQuantity.CssClass = "form-control form-control-sm field-invalid"
+                isValid = False
+            End If
+        Next
+
+        If Not isValid Then
+            AppendInlineValidation("Grid", "Quantity Required cannot be greater than Pending Quantity.")
         End If
 
         Return isValid
@@ -399,9 +504,9 @@ Partial Class RawMaterialRequisitionDtls
             Case "Unit"
                 ddlUnit.CssClass = "form-control select2 field-invalid"
                 valUnit.Text = message
-            Case "Vendor"
-                ddlVendor.CssClass = "form-control select2 field-invalid"
-                valVendor.Text = message
+            Case "PONo"
+                ddlPono.CssClass = "form-control select2 field-invalid"
+                valPO.Text = message
             Case "Grid"
                 valGrid.Text = message
         End Select
@@ -410,5 +515,50 @@ Partial Class RawMaterialRequisitionDtls
     Private Sub ShowInlineValidation(ByVal fieldKey As String, ByVal message As String)
         ClearInlineValidation()
         AppendInlineValidation(fieldKey, message)
+    End Sub
+#Region "PopulatePO"
+    Public Sub PopulatePO()
+        Dim obj As New OPC_VendorClass()
+        Dim ds As New DataSet()
+        ds = obj.GetPoList(ddlUnit.SelectedValue.ToString(), ddlVendor.SelectedValue.ToString())
+
+        ddlPono.Items.Clear()
+
+        If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
+            ddlPono.DataSource = ds.Tables(0)
+            ddlPono.DataTextField = "poname"
+            ddlPono.DataValueField = "pono"
+            ddlPono.DataBind()
+        End If
+
+        ddlPono.Items.Insert(0, New ListItem(Constant.Common.Selec, String.Empty, True))
+    End Sub
+    Protected Sub ddlUnit_SelectedIndexChanged(sender As Object, e As EventArgs)
+        PopulatePO()
+    End Sub
+#End Region
+
+    Protected Sub ddlPono_SelectedIndexChanged(sender As Object, e As EventArgs)
+        ddlPono.Enabled = False
+    End Sub
+    Public Sub Populate_RequestPending_State()
+        Dim obj As New OPC_VendorClass()
+        Dim ds As DataSet = obj.GetRequest_PendingCount(ddlPono.SelectedValue())
+        Dim pendingValue As Integer = 0
+
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing AndAlso ds.Tables(0).Rows.Count > 0 Then
+            Integer.TryParse(Convert.ToString(ds.Tables(0).Rows(0)("pending_request_exists")), pendingValue)
+        End If
+
+        If pendingValue = 1 Then
+            gvVendorRawMat.DataSource = Nothing
+            gvVendorRawMat.DataBind()
+            btnSubmit.Visible = False
+            lblErrorMessage.Text = ""
+            RmActionPopup.ShowError(Me, "This request is pending approval. Please review and approve the request.")
+            Return
+        End If
+
+        BindData()
     End Sub
 End Class

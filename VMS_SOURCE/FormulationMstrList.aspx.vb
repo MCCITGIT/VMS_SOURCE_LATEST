@@ -15,6 +15,10 @@ Partial Class FormulationMstrList
             Binddata()
         End If
     End Sub
+    Private Function IsUnitUser() As Boolean
+        Return userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT
+    End Function
+
     Private Sub CheckLogin()
         If (Not (Session(Constant.SessionKeys.UserInfo) Is Nothing)) Then
             userInfo = CType(Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
@@ -98,7 +102,8 @@ Partial Class FormulationMstrList
         Dim ds As DataSet
         Dim obj As New OPC_VendorClass()
         ' V2 (MUKESH BHAGAT 09-Oct-2026): versioned SKU formulation list - current versions only; columns aliased for the existing grid
-        ds = obj.ListSkuFormulation(ddlBrand.SelectedValue, ddlvendor.SelectedValue, hdnProductCode.Value, "N", ddlView.SelectedValue)
+        Dim vendorFilter As String = If(IsUnitUser(), Convert.ToString(userInfo.userBranchEntity).Trim(), ddlvendor.SelectedValue)   ' a vendor user is always limited to its own unit
+        ds = obj.ListSkuFormulation(ddlBrand.SelectedValue, vendorFilter, hdnProductCode.Value, "N", ddlView.SelectedValue)
 
         Dim table As DataTable = RmGridHelper.GetTable(ds)
         If table IsNot Nothing Then
@@ -218,6 +223,13 @@ Partial Class FormulationMstrList
                 ddlvendor.DataBind()
             End If
             ddlvendor.Items.Insert(0, New ListItem(Constant.Common.Selec, String.Empty, True))
+        End If
+        ' a vendor (UNIT) user sees only its own data: unit preselected and the filter hidden. HO and SYSADMIN choose the vendor.
+        If IsUnitUser() Then
+            Dim own As String = Convert.ToString(userInfo.userBranchEntity).Trim()
+            If ddlvendor.Items.FindByValue(own) IsNot Nothing Then ddlvendor.SelectedValue = own
+            ddlvendor.Enabled = False
+            colVendorFilter.Visible = False
         End If
     End Sub
 End Class

@@ -945,6 +945,244 @@ Public Class POLinkingRequestClass
         End Try
     End Function
 
+    Public Function InsertRawMaterialPo(ByVal vendor_code As String, ByVal supplier_code As String, ByVal user_id As String, ByVal tbl As DataTable, ByVal gstValue As Decimal, ByVal freightCost As Decimal, Optional ByVal refPoNo As String = "") As String
+        Dim sqlConn As SqlConnection = Nothing
+        Dim sqlTrans As SqlTransaction = Nothing
+        Dim poNo As String = String.Empty
+        sqlConn = DBFactory.GetHelper.OpenConnection
+        sqlTrans = sqlConn.BeginTransaction
+
+        Dim sqlParams(6) As SqlParameter
+        Try
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@vendor_code"
+            sqlParams(0).SqlDbType = SqlDbType.VarChar
+            sqlParams(0).Size = 50
+            sqlParams(0).Direction = Data.ParameterDirection.Input
+            sqlParams(0).Value = vendor_code
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@supplier_code"
+            sqlParams(1).SqlDbType = SqlDbType.VarChar
+            sqlParams(1).Size = 50
+            sqlParams(1).Direction = Data.ParameterDirection.Input
+            sqlParams(1).Value = supplier_code
+
+            sqlParams(2) = New SqlParameter()
+            sqlParams(2).ParameterName = "@gst"
+            sqlParams(2).SqlDbType = SqlDbType.Decimal
+            sqlParams(2).Precision = 18
+            sqlParams(2).Scale = 2
+            sqlParams(2).Direction = Data.ParameterDirection.Input
+            sqlParams(2).Value = gstValue
+
+            sqlParams(3) = New SqlParameter()
+            sqlParams(3).ParameterName = "@freight"
+            sqlParams(3).SqlDbType = SqlDbType.Decimal
+            sqlParams(3).Precision = 18
+            sqlParams(3).Scale = 2
+            sqlParams(3).Direction = Data.ParameterDirection.Input
+            sqlParams(3).Value = freightCost
+
+            sqlParams(4) = New SqlParameter()
+            sqlParams(4).ParameterName = "@created_user"
+            sqlParams(4).SqlDbType = SqlDbType.VarChar
+            sqlParams(4).Size = 50
+            sqlParams(4).Direction = Data.ParameterDirection.Input
+            sqlParams(4).Value = user_id
+
+            sqlParams(5) = New SqlParameter()
+            sqlParams(5).ParameterName = "@dtls"
+            sqlParams(5).SqlDbType = SqlDbType.Structured
+            sqlParams(5).TypeName = "dbo.tbl_raw_mtrl_po_dtls"
+            sqlParams(5).Direction = Data.ParameterDirection.Input
+            sqlParams(5).Value = tbl
+
+            sqlParams(6) = New SqlParameter()
+            sqlParams(6).ParameterName = "@ref_po_no"
+            sqlParams(6).SqlDbType = SqlDbType.VarChar
+            sqlParams(6).Size = 20
+            sqlParams(6).Direction = Data.ParameterDirection.Input
+            sqlParams(6).Value = If(String.IsNullOrWhiteSpace(refPoNo), CObj(DBNull.Value), refPoNo.Trim())
+
+            Dim poNoParam As New SqlParameter()
+            poNoParam.ParameterName = "@rmph_po_no"
+            poNoParam.SqlDbType = SqlDbType.VarChar
+            poNoParam.Size = 10
+            poNoParam.Direction = Data.ParameterDirection.Output
+
+            Dim sqlCmd As New SqlCommand()
+            sqlCmd.Connection = sqlConn
+            sqlCmd.Transaction = sqlTrans
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.CommandText = "[dbo].[raw_mtrl_po_insert]"
+            sqlCmd.Parameters.AddRange(sqlParams)
+            sqlCmd.Parameters.Add(poNoParam)
+            sqlCmd.ExecuteNonQuery()
+
+            poNo = Convert.ToString(poNoParam.Value).Trim()
+
+            If poNo <> "" Then
+                sqlTrans.Commit()
+            Else
+                sqlTrans.Rollback()
+            End If
+        Catch ex As SqlException
+            If (sqlTrans IsNot Nothing) Then
+                sqlTrans.Rollback()
+            End If
+            Throw
+        Finally
+            If (sqlConn IsNot Nothing) Then
+                sqlConn.Close()
+            End If
+        End Try
+        Return poNo
+    End Function
+
+    Public Function GetRawMaterialPoList(ByVal vendorCode As String) As DataSet
+        Dim sqlParams(0) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@vendor_code"
+        sqlParams(0).DbType = DbType.String
+        sqlParams(0).Direction = ParameterDirection.Input
+        sqlParams(0).Value = If(String.IsNullOrWhiteSpace(vendorCode), CObj(DBNull.Value), vendorCode.Trim())
+
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[raw_mtrl_po_list]", CommandType.StoredProcedure, sqlParams)
+    End Function
+
+    Public Function GetRawMaterialPoDocument(ByVal poNo As String) As DataSet
+        Dim sqlParams(0) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@po_no"
+        sqlParams(0).SqlDbType = SqlDbType.VarChar
+        sqlParams(0).Size = 10
+        sqlParams(0).Direction = ParameterDirection.Input
+        sqlParams(0).Value = poNo
+
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[raw_mtrl_po_doc_get]", CommandType.StoredProcedure, sqlParams)
+    End Function
+
+    Public Function UpdatePoDocPath(ByVal docPath As String, ByVal docName As String, ByVal poNo As String) As Integer
+        Dim sqlConn As SqlConnection = Nothing
+        Dim sqlTrans As SqlTransaction = Nothing
+        Dim rowAffected As Integer
+        sqlConn = DBFactory.GetHelper.OpenConnection
+        sqlTrans = sqlConn.BeginTransaction
+
+        Dim sqlParams(2) As SqlParameter
+        Try
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@doc_path"
+            sqlParams(0).SqlDbType = SqlDbType.VarChar
+            sqlParams(0).Size = 50
+            sqlParams(0).Direction = Data.ParameterDirection.Input
+            sqlParams(0).Value = docPath
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@doc_name"
+            sqlParams(1).SqlDbType = SqlDbType.VarChar
+            sqlParams(1).Size = -1
+            sqlParams(1).Direction = Data.ParameterDirection.Input
+            sqlParams(1).Value = docName
+
+            sqlParams(2) = New SqlParameter()
+            sqlParams(2).ParameterName = "@po_no"
+            sqlParams(2).SqlDbType = SqlDbType.VarChar
+            sqlParams(2).Size = 10
+            sqlParams(2).Direction = Data.ParameterDirection.Input
+            sqlParams(2).Value = poNo
+
+            Dim sqlCmd As New SqlCommand()
+            sqlCmd.Connection = sqlConn
+            sqlCmd.Transaction = sqlTrans
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.CommandText = "[dbo].[po_update_doc_path]"
+            sqlCmd.Parameters.AddRange(sqlParams)
+            rowAffected = sqlCmd.ExecuteNonQuery()
+
+            If rowAffected > 0 Then
+                sqlTrans.Commit()
+            Else
+                sqlTrans.Rollback()
+            End If
+        Catch ex As SqlException
+            If (sqlTrans IsNot Nothing) Then
+                sqlTrans.Rollback()
+            End If
+            Throw
+        Finally
+            If (sqlConn IsNot Nothing) Then
+                sqlConn.Close()
+            End If
+        End Try
+        Return poNo
+    End Function
+
+#End Region
+
+#Region "Brand Product Linking"
+    Public Function GetBrandProductLinkBrands() As DataSet
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_brand_product_linking_brand_list]", CommandType.StoredProcedure)
+    End Function
+
+    Public Function GetBrandProductLinkProducts() As DataSet
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_brand_product_linking_product_list]", CommandType.StoredProcedure)
+    End Function
+
+    Public Function InsertBrandProductLinks(ByVal userId As String, ByVal tbl As DataTable) As DataSet
+        Dim sqlConn As SqlConnection = Nothing
+        Dim sqlTrans As SqlTransaction = Nothing
+        Dim ds As New DataSet()
+
+        sqlConn = DBFactory.GetHelper.OpenConnection()
+        sqlTrans = sqlConn.BeginTransaction()
+
+        Dim sqlParams(1) As SqlParameter
+
+        Try
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@user_id"
+            sqlParams(0).SqlDbType = SqlDbType.VarChar
+            sqlParams(0).Size = 20
+            sqlParams(0).Direction = Data.ParameterDirection.Input
+            sqlParams(0).Value = If(String.IsNullOrWhiteSpace(userId), CObj(DBNull.Value), userId.Trim())
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@tbl"
+            sqlParams(1).SqlDbType = SqlDbType.Structured
+            sqlParams(1).TypeName = "dbo.tbl_opc_brand_product_linking"
+            sqlParams(1).Direction = Data.ParameterDirection.Input
+            sqlParams(1).Value = tbl
+
+            Dim sqlCmd As New SqlCommand()
+            sqlCmd.Connection = sqlConn
+            sqlCmd.Transaction = sqlTrans
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.CommandText = "[dbo].[opc_brand_product_linking_insert]"
+            sqlCmd.Parameters.AddRange(sqlParams)
+
+            Dim adapter As New SqlDataAdapter(sqlCmd)
+            adapter.Fill(ds)
+
+            sqlTrans.Commit()
+
+        Catch ex As SqlException
+            If sqlTrans IsNot Nothing Then
+                sqlTrans.Rollback()
+            End If
+            Throw
+
+        Finally
+            If sqlConn IsNot Nothing Then
+                sqlConn.Close()
+            End If
+        End Try
+
+        Return ds
+    End Function
 #End Region
 
 #Region "Cancelled by Vendor (Vendor Payment Dashboard)"

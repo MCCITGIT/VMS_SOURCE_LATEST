@@ -194,14 +194,18 @@ function validateRawMaterialRequisitionSearch() {
     var hasError = false;
 
     clearRequisitionSearchValidation();
-
+   
     if (!isDropDownSelected(getRmControl("ddlUnit"))) {
         setFieldError("ddlUnit", "valUnit", "Please select Vendor Name.", false);
         hasError = true;
     }
-
     if (!isDropDownSelected(getRmControl("ddlVendor"))) {
         setFieldError("ddlVendor", "valVendor", "Please select RM Vendor.", false);
+        hasError = true;
+    }
+    
+    if (!isDropDownSelected(getRmControl("ddlPono"))) {
+        setFieldError("ddlPono", "valPO", "Please select Po No.", false);
         hasError = true;
     }
 
@@ -224,13 +228,14 @@ function validateRawMaterialRequisitionSubmit() {
     var hasPartialRowError = false;
     var hasMissingDateError = false;
     var hasMissingQtyError = false;
+    var hasPendingQtyError = false;
     var grid = getRmControl("gvVendorRawMat");
     var valGrid = getRmControl("valGrid");
 
     clearRequisitionSubmitValidation();
 
-    if (!isDropDownSelected(getRmControl("ddlVendor"))) {
-        setFieldError("ddlVendor", "valVendor", "Please select RM Vendor.", false);
+    if (!isDropDownSelected(getRmControl("ddlPono"))) {
+        setFieldError("ddlPono", "valPO", "Please select PO No.", false);
         hasError = true;
     }
 
@@ -247,6 +252,7 @@ function validateRawMaterialRequisitionSubmit() {
             var row = dataRows[i];
             var qtyControl = row.querySelector("input[id$='txtQuantity']");
             var dateControl = row.querySelector("input[id$='txtReqDate']");
+            var pendingControl = row.querySelector("input[id$='hdnPendingQty']");
 
             if (!qtyControl || !dateControl) {
                 continue;
@@ -264,6 +270,19 @@ function validateRawMaterialRequisitionSubmit() {
                 continue;
             }
 
+            if (hasQty) {
+                var pendingNumber = pendingControl ? parseFloat((pendingControl.value || "0").trim()) : 0;
+                if (isNaN(pendingNumber)) {
+                    pendingNumber = 0;
+                }
+                if (qtyNumber > pendingNumber) {
+                    qtyControl.classList.add("field-invalid");
+                    hasPendingQtyError = true;
+                    hasError = true;
+                    continue;
+                }
+            }
+
             if (hasQty && hasDate) {
                 hasValidRow = true;
             } else if (hasQty && !hasDate) {
@@ -279,7 +298,12 @@ function validateRawMaterialRequisitionSubmit() {
             }
         }
 
-        if (!hasValidRow && !hasPartialRowError) {
+        if (hasPendingQtyError) {
+            if (valGrid) {
+                valGrid.innerHTML = "Quantity Required cannot be greater than Pending Quantity.";
+            }
+            hasError = true;
+        } else if (!hasValidRow && !hasPartialRowError) {
             if (valGrid) {
                 valGrid.innerHTML = "Please enter Quantity and Requisition Date for at least one Raw Material.";
             }

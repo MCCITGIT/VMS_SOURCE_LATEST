@@ -13,6 +13,10 @@
         .p-rm-supply-table table tbody tr:nth-child(4) {
             box-shadow: none !important;
         }
+
+        .upgradDataGrid .tlrowlight {
+            box-shadow: none !important;
+        }
     </style>
 
     <div class="breadcrumbs">
@@ -125,8 +129,8 @@
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="" HeaderStyle-HorizontalAlign="Center" Visible="true">
                                     <ItemTemplate>
-                                          <asp:LinkButton ID="btnView" runat="server" Visible="true"  CommandName="ViewDetails" CommandArgument='<%# Eval("vendorid") & "|" & Eval("vendorid") %>' ToolTip="Click To View Details"><i class="fa fa-eye"></i></asp:LinkButton>
-                                       <%-- <asp:Button ID="btnView" CommandName="ViewDetails" Visible="true" runat="server" CssClass="btn btn-info gridBtn" Text="View" title="View" ToolTip="Click To View Details" CommandArgument='<%# Eval("vendorid") & "|" & Eval("vendorid") %>'></asp:Button>--%>
+                                        <asp:LinkButton ID="btnView" runat="server" Visible="true" CommandName="ViewDetails" CommandArgument='<%# Eval("vendorid") & "|" & Eval("vendorid") %>' ToolTip="Click To View Details"><i class="fa fa-eye"></i></asp:LinkButton>
+                                        <%-- <asp:Button ID="btnView" CommandName="ViewDetails" Visible="true" runat="server" CssClass="btn btn-info gridBtn" Text="View" title="View" ToolTip="Click To View Details" CommandArgument='<%# Eval("vendorid") & "|" & Eval("vendorid") %>'></asp:Button>--%>
                                     </ItemTemplate>
                                     <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
                                     <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />

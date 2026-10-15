@@ -48,7 +48,7 @@
                                             <asp:DropDownList ID="ddlBrand" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server"></asp:DropDownList>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-3" id="colVendorFilter" runat="server">
                                         <div class="form-group">
                                             <label class="form-control-label">Vendor:<span id="Span2" class="mandatory">*</span></label>
                                             <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="2" runat="server"></asp:DropDownList>

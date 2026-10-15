@@ -62,6 +62,7 @@ Partial Class Product_Rate_Approval_List
 
     Private Sub Binddata()
         Try
+            ' a unit (vendor) user only ever lists its own vendor's formulations
             Dim vendor As String = If(IsUnitUser(), Convert.ToString(userInfo.userBranchEntity).Trim(), ddlvendor.SelectedValue)
             Dim obj As New OPC_VendorClass()
             Dim ds As DataSet = obj.ListSkuFormulation(ddlBrand.SelectedValue, vendor, "", "N", ddlView.SelectedValue)

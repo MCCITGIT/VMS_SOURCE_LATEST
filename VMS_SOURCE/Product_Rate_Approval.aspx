@@ -26,13 +26,25 @@
         .pra-matrix thead th.pra-col-inactive { background: #5a6268; }
         .pra-matrix th.pra-rowhead, .pra-matrix td.pra-rowhead { position: sticky; left: 0; background: #f4f6f8; text-align: left; font-weight: 600; color: #375973; min-width: 220px; white-space: normal; z-index: 1; }
         .pra-matrix td.pra-val { text-align: right; }
-        .pra-matrix td.pra-up { background: #fde8e8; color: #9b1c1c; }       /* price went up vs previous column */
-        .pra-matrix td.pra-down { background: #e6f6ea; color: #136f2d; }     /* price went down */
-        .pra-matrix td.pra-new { background: #fff3cd; }                      /* raw material / pack added */
-        .pra-matrix td.pra-gone { background: #f1f3f5; color: #adb5bd; text-align: center; }
+        /* change highlighting: strong tint + thick accent bar + bold figure + delta badge */
+        .pra-matrix td.pra-up { background: #ffd6d6; box-shadow: inset 5px 0 0 #d62828; color: #7a0c0c; }       /* price went up vs previous column */
+        .pra-matrix td.pra-down { background: #c9f2d6; box-shadow: inset 5px 0 0 #1b9e4b; color: #0b5a28; }     /* price went down */
+        .pra-matrix td.pra-new { background: #ffe9a8; box-shadow: inset 5px 0 0 #e09b00; color: #6b4b00; }      /* raw material / pack added, or ratio changed */
+        .pra-matrix td.pra-gone { background: #e3e6ea; color: #6c757d; text-align: center; vertical-align: middle; }
+        .pra-fig { font-size: 15px; font-weight: 700; line-height: 1.2; }
+        .pra-fig-big { font-size: 17px; }
+        .pra-sub { font-size: 10.5px; font-weight: 400; opacity: .8; margin-top: 2px; white-space: normal; max-width: 200px; margin-left: auto; }
+        .pra-delta { display: inline-block; margin-top: 3px; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; color: #fff; white-space: nowrap; }
+        .pra-d-up { background: #d62828; } .pra-d-down { background: #1b9e4b; } .pra-d-new { background: #e09b00; } .pra-d-gone { background: #6c757d; } .pra-d-ratio { background: #6f42c1; margin-left: 4px; }
+        .pra-matrix td.pra-val .pra-delta { display: table; margin-left: auto; margin-right: 0; }
         .pra-matrix tr.pra-total td { background: #eaf0f4; font-weight: 700; }
         .pra-matrix tr.pra-section td { background: #dde7ee; font-weight: 700; color: #375973; text-align: left; }
         .pra-hdr-sub { font-size: 10.5px; font-weight: 400; opacity: .9; display: block; }
+        .pra-who { display: inline-block; margin: 4px 0 2px; padding: 2px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 700; color: #fff; border: 1px solid rgba(255,255,255,.6); letter-spacing: .2px; }
+        .pra-who small { font-size: 9.5px; font-weight: 700; opacity: .85; }
+        .pra-who-vendor { background: #0d6efd; }       /* vendor / unit user */
+        .pra-who-ho { background: #6f42c1; }           /* HO user */
+        .pra-who-na { background: rgba(255,255,255,.25); }
         .pra-legend { font-size: 11px; color: #555; margin-top: 6px; }
         .pra-legend span { display: inline-block; padding: 1px 8px; margin-right: 6px; border: 1px solid #d9dee3; }
     </style>
@@ -84,8 +96,13 @@
             <div class="card-body">
                 <div class="pra-wrap"><asp:Literal ID="litMatrix" runat="server"></asp:Literal></div>
                 <div class="pra-legend">
-                    <span class="pra-up" style="background:#fde8e8;">price up</span><span style="background:#e6f6ea;">price down</span><span style="background:#fff3cd;">added</span><span style="background:#f1f3f5;color:#adb5bd;">removed</span>
-                    Hover a column header for the remarks of that submission.
+                    <span style="background:#ffd6d6;border-left:5px solid #d62828;"><b style="color:#d62828;">&#9650;</b> price up</span>
+                    <span style="background:#c9f2d6;border-left:5px solid #1b9e4b;"><b style="color:#1b9e4b;">&#9660;</b> price down</span>
+                    <span style="background:#ffe9a8;border-left:5px solid #e09b00;">new / ratio changed</span>
+                    <span style="background:#e3e6ea;color:#6c757d;">removed</span>
+                    <span style="background:#0d6efd;color:#fff;border-radius:10px;">VENDOR</span>
+                    <span style="background:#6f42c1;color:#fff;border-radius:10px;">HO</span> (who submitted the column)
+                    Change is shown against the column on its left. Hover a column header for the remarks of that submission.
                 </div>
             </div>
         </div>

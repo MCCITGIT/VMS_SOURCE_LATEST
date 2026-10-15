@@ -1,58 +1,315 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Contact Us</title>
     <link rel="shortcut icon" href="images/favicon.png" type="image/x-icon" />
-    <link href="includes/style.css?v=@DateTime.Now.ToString()" rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
     <link href="includes/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="includes/style.css?v=@DateTime.Now.ToString()" rel="stylesheet" type="text/css" />
     <link href="includes/upgrad-style.css?v=@DateTime.Now.ToString()" rel="stylesheet" type="text/css" />
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
+            background: #f0f4f9;
+            color: #0f172a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 64px;
+        }
+
+        /* Main card */
+        .contact-card {
+            width: 100%;
+            /*max-width: 1152px;*/
+            background: #fff;
+            border-left: 3px solid #002b4a;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        /* Page heading */
+        .page-head {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: linear-gradient(90deg, rgba(18, 59, 91, 1) 0%, rgba(13, 51, 87, 1) 100%);
+            border-radius: 16px;
+            padding: 18px 16px;
+        }
+
+            .page-head .bar {
+                width: 6px;
+                height: 48px;
+                border-radius: 4px;
+                background: #ffffff;
+                ;
+            }
+
+            .page-head h1 {
+                font-size: 30px;
+                font-weight: 800;
+                letter-spacing: -0.5px;
+                line-height: 1.15;
+                color: #ffffff;
+                margin-bottom: 16px;
+            }
+
+            .page-head p {
+                margin-top: 4px;
+                /*font-size: 16px;*/
+                color: #ffffff;
+            }
+
+        /* Section header */
+        .section-head {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 32px;
+            height: 60px;
+            padding: 0 20px;
+            background: #ffffff;
+            border-radius: 14px;
+            color: #fff;
+            border: 1px solid #e2e8f0;
+        }
+
+            .section-head .icon {
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(90deg, rgba(18, 59, 91, 1) 0%, rgba(13, 51, 87, 1) 100%);
+                border: 1px solid rgba(96, 165, 250, 0.35);
+                border-radius: 8px;
+                color: #ffffff;
+            }
+
+                .section-head .icon svg {
+                    width: 16px;
+                    height: 16px;
+                }
+
+            .section-head h2 {
+                font-size: 18px;
+                font-weight: 700;
+                letter-spacing: 0.3px;
+                color: #103859;
+                margin-bottom: 0px;
+            }
+
+        /* Email cards */
+        .email-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .email-item {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 14px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            color: inherit;
+            text-decoration: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+            .email-item:hover {
+                border-color: #bfdbfe;
+                box-shadow: 0 4px 14px rgba(37, 99, 235, 0.1);
+                text-decoration: none;
+                color: inherit;
+            }
+
+            .email-item .mail-icon {
+                width: 40px;
+                height: 40px;
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #a2b9cd;
+                border-radius: 10px;
+                color: #ffffff;
+            }
+
+        .mail-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .email-text {
+            flex: 1;
+            min-width: 0;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.3;
+            /*color: #103859;*/
+            /*word-break: break-all;*/
+        }
+
+        p {
+            margin-bottom: 0px;
+        }
+
+
+
+        bLogo {
+            width: 80px;
+            height: auto;
+            object-fit: contain;
+        }
+
+        /* laptops */
+        @media (max-width: 1199px) {
+            .email-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* tablets */
+        @media (max-width: 991px) {
+            body {
+                padding: 32px;
+            }
+
+            .contact-card {
+                padding: 28px;
+            }
+
+            .page-head h1 {
+                font-size: 26px;
+            }
+        }
+
+        /* phones */
+        @media (max-width: 767px) {
+            body {
+                padding: 16px;
+                align-items: flex-start;
+            }
+
+            .contact-card {
+                padding: 16px;
+            }
+
+            .head-inner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .page-head h1 {
+                font-size: 22px;
+            }
+
+            .page-head p {
+                font-size: 14px;
+            }
+
+            .bLogo {
+                width: 64px;
+            }
+
+            .section-head {
+                margin-top: 20px;
+                padding: 10px 14px;
+            }
+
+                .section-head h2 {
+                    font-size: 16px;
+                }
+
+            .email-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+    </style>
 </head>
-<body class="newUIBody">
-    <form>
-        <div class="contactPageWrap">
-            <div class="card contactPageCard">
-                <div class="breadcrumbs contactPageBar">
-                    <div class="leftFung">
-                        <div class="pageTitleWrap">
-                            <h3 class="pageTitle">Contact Us</h3>
-                            <p class="pageSubTitle">Reach the support team for assistance</p>
-                        </div>
-                    </div>
+
+<body>
+    <main class="contact-card">
+        <header class="page-head">
+            <span class="bar"></span>
+            <div class="row" style="width:100%;">
+                <div class="col-md-10">
+                    <h1>Contact Us</h1>
+                    <p>Reach the support team for assistance</p>
                 </div>
-                <div class="card-body">
-                    <div class="contactPageInner">
-                        <div class="contactLogoCol">
-                            <img alt="" src="images/Contact_us_logo.png" class="contactPageLogo" />
-                        </div>
-                        <div class="contactSupportCol">
-                            <div class="contactSupportHead">
-                                <span>For Software Support</span>
-                            </div>
-                            <div class="contactEmailGrid">
-                                <div class="contactEmailItem">
-                                    <img alt="" src="images/email_us.jpg" />
-                                    <span>hodistribution@bergerindia.com</span>
-                                </div>
-                                <div class="contactEmailItem">
-                                    <img alt="" src="images/email_us.jpg" />
-                                    <span>hodistribution2@bergerindia.com</span>
-                                </div>
-                                <div class="contactEmailItem">
-                                    <img alt="" src="images/email_us.jpg" />
-                                    <span>hodistribution3@bergerindia.com</span>
-                                </div>
-                                <div class="contactEmailItem">
-                                    <img alt="" src="images/email_us.jpg" />
-                                    <span>anishbasu@bergerindia.com</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="col-md-2" style="text-align:center">
+                    <img id="logo" class="bLogo" src="images/logo-rbr.png" alt="Best Wall Paint Colors, House Painting Colors" title="Berger Paints">
                 </div>
             </div>
+        </header>
+
+        <div class="section-head">
+            <span class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="8 6 2 12 8 18"></polyline>
+                    <polyline points="16 6 22 12 16 18"></polyline>
+                </svg>
+            </span>
+            <h2>For Software Support</h2>
         </div>
-    </form>
+
+        <div class="email-grid">
+            <div class="email-item">
+                <span class="mail-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                        <path d="m22 7-10 6L2 7"></path>
+                    </svg>
+                </span>
+                <span class="email-text">hodistribution@bergerindia.com</span>
+            </div>
+
+            <div class="email-item">
+                <span class="mail-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                        <path d="m22 7-10 6L2 7"></path>
+                    </svg>
+                </span>
+                <span class="email-text">hodistribution2@bergerindia.com</span>
+            </div>
+
+            <div class="email-item">
+                <span class="mail-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                        <path d="m22 7-10 6L2 7"></path>
+                    </svg>
+                </span>
+                <span class="email-text">hodistribution3@bergerindia.com</span>
+            </div>
+
+            <div class="email-item">
+                <span class="mail-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                        <path d="m22 7-10 6L2 7"></path>
+                    </svg>
+                </span>
+                <span class="email-text">anishbasu@bergerindia.com</span>
+            </div>
+        </div>
+    </main>
 </body>
 </html>
