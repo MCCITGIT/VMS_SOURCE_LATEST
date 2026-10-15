@@ -1800,4 +1800,111 @@ Public Class OPC_VendorClass
         Return New String() {"0", "No response from server.", "", ""}
     End Function
 #End Region
+#Region "FG Vendor Master"
+    Public Function Vendor_List_Get() As DataSet
+        Dim VendorListSet As New DataSet
+        VendorListSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[FG_VendorUnit_List]", Data.CommandType.StoredProcedure)
+        Return VendorListSet
+    End Function
+    Public Function RFQ_Vendor_List() As DataSet
+        Dim VendorListSet As New DataSet
+        VendorListSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[GetVendorList]", Data.CommandType.StoredProcedure)
+        Return VendorListSet
+    End Function
+    Public Function Get_FG_Vendor_dtlsList(ByVal vendorcode As Integer) As DataSet
+        Try
+            Dim DS As DataSet
+            Dim sqlParams(0) As SqlParameter
+
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@vendor_id"
+            sqlParams(0).DbType = DbType.String
+            sqlParams(0).Direction = System.Data.ParameterDirection.Input
+            sqlParams(0).Value = vendorcode
+
+            DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[Get_Vendor_Site_Details]", System.Data.CommandType.StoredProcedure, sqlParams)
+            Return DS
+        Catch ex As Exception
+            Throw ex
+        End Try
+    End Function
+
+    Public Function InsertFGVendor(ByVal unitCompany As String, ByVal unitName As String, ByVal unitRegn As String, ByVal add1 As String, ByVal add2 As String, ByVal add3 As String, ByVal stateName As String, ByVal cityName As String, ByVal pinCode As String, ByVal oracleId As String, ByVal siteId As Long, ByVal siteCode As String, ByVal createdUser As String, ByRef errorMessage As String) As Integer
+        Dim sqlConn As SqlConnection = Nothing
+        Dim status As Integer = 0
+
+        Try
+            sqlConn = DBFactory.GetHelper.OpenConnection()
+            Dim sqlParams(14) As SqlParameter
+
+            sqlParams(0) = New SqlParameter("@unit_company", SqlDbType.VarChar, 15)
+            sqlParams(0).Value = If(unitCompany = "", DBNull.Value, CObj(unitCompany))
+
+            sqlParams(1) = New SqlParameter("@unit_name", SqlDbType.VarChar, 50)
+            sqlParams(1).Value = unitName
+
+            sqlParams(2) = New SqlParameter("@unit_regn", SqlDbType.VarChar, 2)
+            sqlParams(2).Value = If(unitRegn = "", "00", CObj(Left(unitRegn, 2)))
+
+            sqlParams(3) = New SqlParameter("@unit_add_1", SqlDbType.VarChar, 30)
+            sqlParams(3).Value = If(add1 = "", DBNull.Value, CObj(Left(add1, 30)))
+
+            sqlParams(4) = New SqlParameter("@unit_add_2", SqlDbType.VarChar, 30)
+            sqlParams(4).Value = If(add2 = "", DBNull.Value, CObj(Left(add2, 30)))
+
+            sqlParams(5) = New SqlParameter("@unit_add_3", SqlDbType.VarChar, 30)
+            sqlParams(5).Value = If(add3 = "", DBNull.Value, CObj(Left(add3, 30)))
+
+            sqlParams(6) = New SqlParameter("@unit_state", SqlDbType.VarChar, 20)
+            sqlParams(6).Value = If(stateName = "", DBNull.Value, CObj(Left(stateName, 20)))
+
+            sqlParams(7) = New SqlParameter("@unit_city", SqlDbType.VarChar, 20)
+            sqlParams(7).Value = If(cityName = "", DBNull.Value, CObj(Left(cityName, 20)))
+
+            sqlParams(8) = New SqlParameter("@unit_pin", SqlDbType.VarChar, 6)
+            sqlParams(8).Value = If(pinCode = "", DBNull.Value, CObj(Left(pinCode, 6)))
+
+            sqlParams(9) = New SqlParameter("@unit_oracle_id", SqlDbType.VarChar, 10)
+            sqlParams(9).Value = oracleId
+
+            sqlParams(10) = New SqlParameter("@site_id", SqlDbType.BigInt)
+            sqlParams(10).Value = If(siteId > 0, CObj(siteId), DBNull.Value)
+
+            sqlParams(11) = New SqlParameter("@site_code", SqlDbType.VarChar, 500)
+            sqlParams(11).Value = If(siteCode = "", DBNull.Value, CObj(siteCode))
+
+            sqlParams(12) = New SqlParameter("@created_user", SqlDbType.VarChar, 20)
+            sqlParams(12).Value = createdUser
+
+            sqlParams(13) = New SqlParameter("@Status", SqlDbType.Int)
+            sqlParams(13).Direction = ParameterDirection.Output
+
+            sqlParams(14) = New SqlParameter("@ErrorMsg", SqlDbType.VarChar, 500)
+            sqlParams(14).Direction = ParameterDirection.Output
+
+            Dim sqlCmd As New SqlCommand()
+            sqlCmd.Connection = sqlConn
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.CommandText = "[dbo].[fg_vendor_mstr_insert]"
+            sqlCmd.Parameters.AddRange(sqlParams)
+            sqlCmd.ExecuteNonQuery()
+
+            If sqlParams(13).Value IsNot Nothing AndAlso sqlParams(13).Value IsNot DBNull.Value Then
+                status = Convert.ToInt32(sqlParams(13).Value)
+            End If
+
+            If sqlParams(14).Value IsNot Nothing AndAlso sqlParams(14).Value IsNot DBNull.Value Then
+                errorMessage = Convert.ToString(sqlParams(14).Value)
+            Else
+                errorMessage = String.Empty
+            End If
+        Finally
+            If sqlConn IsNot Nothing Then
+                sqlConn.Close()
+            End If
+        End Try
+
+        Return status
+    End Function
+#End Region
 End Class
