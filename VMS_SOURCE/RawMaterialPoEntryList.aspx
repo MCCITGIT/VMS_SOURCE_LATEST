@@ -79,7 +79,7 @@
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="PO No">
                                         <ItemTemplate>
-                                            <asp:Label ID="lblPoNo" runat="server" Text='<%# Eval("po_no") %>' />
+                                            <asp:Label ID="lblPoNo" runat="server" Text='<%# HttpUtility.HtmlEncode(Convert.ToString(Eval("display_po_no"))) %>' />
                                             <%--<asp:HiddenField ID="hdnPoId" runat="server" Value='<%# Eval("rmph_id") %>' />--%>
                                         </ItemTemplate>
                                         <HeaderStyle HorizontalAlign="Center" />

@@ -945,14 +945,14 @@ Public Class POLinkingRequestClass
         End Try
     End Function
 
-    Public Function InsertRawMaterialPo(ByVal vendor_code As String, ByVal supplier_code As String, ByVal user_id As String, ByVal tbl As DataTable, ByVal gstValue As Decimal, ByVal freightCost As Decimal) As String
+    Public Function InsertRawMaterialPo(ByVal vendor_code As String, ByVal supplier_code As String, ByVal user_id As String, ByVal tbl As DataTable, ByVal gstValue As Decimal, ByVal freightCost As Decimal, Optional ByVal refPoNo As String = "") As String
         Dim sqlConn As SqlConnection = Nothing
         Dim sqlTrans As SqlTransaction = Nothing
         Dim poNo As String = String.Empty
         sqlConn = DBFactory.GetHelper.OpenConnection
         sqlTrans = sqlConn.BeginTransaction
 
-        Dim sqlParams(5) As SqlParameter
+        Dim sqlParams(6) As SqlParameter
         Try
             sqlParams(0) = New SqlParameter()
             sqlParams(0).ParameterName = "@vendor_code"
@@ -997,6 +997,13 @@ Public Class POLinkingRequestClass
             sqlParams(5).TypeName = "dbo.tbl_raw_mtrl_po_dtls"
             sqlParams(5).Direction = Data.ParameterDirection.Input
             sqlParams(5).Value = tbl
+
+            sqlParams(6) = New SqlParameter()
+            sqlParams(6).ParameterName = "@ref_po_no"
+            sqlParams(6).SqlDbType = SqlDbType.VarChar
+            sqlParams(6).Size = 20
+            sqlParams(6).Direction = Data.ParameterDirection.Input
+            sqlParams(6).Value = If(String.IsNullOrWhiteSpace(refPoNo), CObj(DBNull.Value), refPoNo.Trim())
 
             Dim poNoParam As New SqlParameter()
             poNoParam.ParameterName = "@rmph_po_no"
