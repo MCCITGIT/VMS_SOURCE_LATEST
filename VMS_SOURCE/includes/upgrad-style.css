@@ -3,8 +3,8 @@
 
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -16,7 +16,7 @@
 ::-webkit-scrollbar-thumb {
     -webkit-border-radius: 30px;
     border-radius: 30px;
-    background: #dbe1e7;
+    background: #ced6dd;
 }
 
 body {
@@ -29,6 +29,7 @@ body {
     /*padding-bottom: 40px;*/
     height: 100vh;
     width: 100%;
+    background: rgb(242, 244, 247);
 }
 
 .header {
@@ -93,7 +94,7 @@ body {
     gap: 6px;*/
     padding: 8px 16px !important;
     min-height: 50px;
-    margin-bottom: 1rem !important;
+    margin-bottom: 0.5rem !important;
     border-radius: 14px !important;
     position: relative;
     z-index: 1;
@@ -290,19 +291,20 @@ body {
 }
 
 .card {
-    box-shadow: 0px 2px 6px rgb(0 0 0 / 25%);
-    margin-bottom: 1rem;
+    box-shadow: 0px 2px 6px rgb(0 0 0 / 8%);
+    margin-bottom: 0.55rem;
     border-radius: 16px;
-    /*background-color: #fbfbfb;*/
-    /*background-color: #f8f9fb;*/
-    background-color: #fcfcfd;
-    border-left: 3px solid #375973;
-    padding: 10px;
+    /* background-color: #fbfbfb; */
+    /* background-color: #f8f9fb; */
+    background-color: #ffffff;
+    border-left: 3px solid #375973 !important;
+    padding: 8px 12px;
+    border: 1px solid rgb(225, 230, 236);
 }
 
 .card-body {
-    padding: 10px;
-    background: #F5F9FD;
+    padding: 0;
+    /*background: #F5F9FD;*/
     border-radius: 15px;
 }
 
@@ -330,15 +332,17 @@ body {
     /*border: 1px solid #bfc9d3;*/
     border: 1px solid #b0b8c1;
     border-radius: 8px;
+    height: calc(1.5em + .7rem + 0px);
+    padding: .3rem .75rem;
 }
 
 .card .card-body .btn {
-    padding: .25rem .95rem;
-    border-radius: 16px;
+    padding: 4px 20px;
+    border-radius: 14px;
 }
 
 .form-group {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     position: relative;
 }
 
@@ -387,7 +391,7 @@ body {
 }
 
     .upgradDataGrid .gridBtn {
-        padding: 6px 12px !important;
+        padding: 4px 8px !important;
         font-size: 10px;
         line-height: 12px;
         text-transform: uppercase;
@@ -471,7 +475,7 @@ body {
         }*/
 
         .upgradDataGrid tr th a i, .upgradDataGrid tr td a i {
-            font-size: 12px;
+            font-size: 16px;
             margin: 0px 1px;
             font-weight: 600;
         }
@@ -482,7 +486,7 @@ body {
     }
 
     .upgradDataGrid .tlrowlight {
-        background-color: #ffffff;
+        background-color: #f1f4f7;
         height: auto !important;
         color: #333;
     }
@@ -503,7 +507,7 @@ body {
     .upgradDataGrid td {
         border: 0 !important;
         border-bottom: 1px solid #eef1f5 !important;
-        background: transparent !important;
+        /*background: transparent !important;*/
         vertical-align: middle !important;
     }
 
@@ -513,26 +517,27 @@ body {
         font-weight: 700 !important;
         letter-spacing: 0.04em;
         text-transform: uppercase !important;
-        padding: 11px 8px !important;
+        padding: 8px 8px !important;
         line-height: 13px !important;
         white-space: nowrap;
     }
 
     .upgradDataGrid td {
-        color: #1f2937 !important;
+        color: #001a2f !important;
         font-size: 12px !important;
-        padding: 7px 8px !important;
+        padding: 4px 8px !important;
         line-height: 15px !important;
         transition: background-color 0.18s ease;
+        /*text-align: center;*/
     }
 
     .upgradDataGrid tr td:last-child {
         border-right: 1px;
     }
 
-    .upgradDataGrid tr:hover td {
+    /*.upgradDataGrid tr:hover td {
         background: #fafbfd !important;
-    }
+    }*/
 
     .upgradDataGrid .btn,
     .upgradDataGrid .btn-sm {
@@ -552,7 +557,7 @@ body {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid #ccc;
+            border: 1px solid #10385a;
             border-radius: 6px;
             background: #10385a;
             font-size: 11px;
@@ -591,6 +596,27 @@ body {
     .upgradDataGrid tr.PagerGrid td {
         padding: 4px 2px !important;
         border-bottom: 0 !important;
+    }
+
+    .upgradDataGrid .grid-skel-bar {
+        display: inline-block;
+        height: 12px;
+        max-width: 100%;
+        border-radius: 3px;
+        vertical-align: middle;
+        background: linear-gradient(90deg, #ced7e0 25%, #e6ebee 37%, #ced7e0 63%);
+        background-size: 400% 100%;
+        animation: gvDispatchSkelShimmer 1.2s ease-in-out infinite;
+    }
+
+    @keyframes gvDispatchSkelShimmer {
+        0% {
+            background-position: 100% 0;
+        }
+
+        100% {
+            background-position: 0 0;
+        }
     }
 
 /* End Grid */
@@ -1135,8 +1161,9 @@ body {
 /* Content */
 .contentMainBody {
     margin-left: 250px;
-    padding: 4.6875rem 1rem 1rem 1rem;
+    padding: 4.5rem 1rem 1rem 1rem;
     transition: all 0.3s;
+    background: rgb(242, 244, 247);
 }
 
 .sideNavBarView.active + .contentMainBody {
@@ -1589,18 +1616,18 @@ body {
         }
 /*=================================================*/
 .select2-container .select2-selection--single {
-    height: 32px !important;
+    height: 31px !important;
     border-radius: 8px !important;
 }
 
 .select2-container--default .select2-selection--single .select2-selection__arrow {
-    height: 32px;
+    height: 30px;
     top: 0px;
 }
 
 .select2-container--default .select2-selection--single .select2-selection__rendered {
-    line-height: 30px;
-    height: 32px;
+    line-height: 28px;
+    height: 30px;
 }
 
 .SumoSelect {
@@ -1683,7 +1710,7 @@ body {
 
 .checkRadioGroup {
     margin: 0px;
-    padding: 8px 0px 0px 0px;
+    padding: 7px 0px 0px 0px;
 }
 
     .checkRadioGroup input {
@@ -2232,8 +2259,6 @@ body {
 .labelDataPoint {
     display: block;
     width: 100%;
-    min-height: calc(1.5em + .75rem + 2px);
-    padding: .375rem .75rem;
     font-weight: 400;
     /*font-size: 1rem;    
     line-height: 1.5;*/
@@ -2244,6 +2269,9 @@ body {
     transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
     font-size: 13px;
     line-height: 18px;
+    border: 1px solid #b0b8c1;
+    height: calc(1.5em + .7rem + 0px);
+    padding: .3rem .75rem;
 }
 
 .SumoSelect.disabled select.form-control:disabled, .SumoSelect.disabled select.form-control[readonly] {
@@ -3077,7 +3105,7 @@ body {
     justify-content: space-between;
     gap: 12px;
     padding: 0;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .mst-panel-header-left {
@@ -3135,7 +3163,7 @@ body {
 .upgradDataGrid {
     width: 100%;
     border-collapse: separate !important;
-    border-spacing: 0 6px;
+    border-spacing: 0 4px;
     background: transparent !important;
     border: 0 !important;
 }
@@ -3149,21 +3177,20 @@ body {
     .upgradDataGrid .tlrowlight {
         border: 1px solid #ededed !important;
         box-shadow: 0 0 2px 0 #00000020 !important;
-        /*background-color: #f9f9f9;*/
     }
 
 /* Hover lift */
-.table-hover > tbody > tr.t1rowlight:hover > td {
+/*.table-hover > tbody > tr.t1rowlight:hover > td {
     background: #fbfcfd !important;
     box-shadow: 0 3px 8px rgba(16, 24, 40, .08);
-}
+}*/
 
 
 /* Hover lift */
-.table-hover > tbody > tr.t1rowlight:hover > td {
+/*.table-hover > tbody > tr.t1rowlight:hover > td {
     background: #fbfcfd !important;
     box-shadow: 0 3px 8px rgba(16, 24, 40, .08);
-}
+}*/
 
 .table-responsive table {
     margin-bottom: 0;
@@ -3171,6 +3198,119 @@ body {
 
 .modalBackground {
     background: #00000070;
+}
+
+/* AjaxControlToolkit message panels (asp:Panel CssClass="popup").
+   Same chrome as the project modals: .modal-header (#253e50) and .card
+   (16px radius, #e1e6ec border). Position stays in the viewport. */
+.popup {
+    position: fixed !important;
+    z-index: 100010 !important;
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%);
+    margin: 0 !important;
+    box-sizing: border-box;
+    min-width: min(340px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+    padding: 0 !important;
+    background-color: #fff;
+    border: 1px solid #e1e6ec;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(16, 56, 90, 0.18);
+    overflow: auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.popup[style*="height:150px"],
+.popup[style*="height: 150px"],
+.popup[style*="height:170px"],
+.popup[style*="height: 170px"] {
+    height: auto !important;
+}
+
+.popup[style*="width:20%"],
+.popup[style*="width: 20%"] {
+    width: 360px !important;
+}
+
+.popup div[style*="background-color"] {
+    background: #253e50 !important;
+    color: #fff !important;
+    height: auto !important;
+    min-height: 0;
+    margin: 0;
+    padding: 0.5rem 0.75rem !important;
+    box-sizing: border-box;
+    line-height: 1.3;
+    text-align: left !important;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.25px;
+    border: 0 !important;
+}
+
+.popup div[style*="background-color"] span,
+.popup div[style*="background-color"] label {
+    color: #fff !important;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.25px;
+}
+
+.popup table {
+    width: 100% !important;
+    margin: 0;
+    border-spacing: 0 !important;
+    border-collapse: separate !important;
+}
+
+.popup table td {
+    padding: 10px 16px;
+}
+
+.popup input[type="submit"],
+.popup input[type="button"],
+.popup button {
+    background-color: #007bff;
+    border: 1px solid #007bff;
+    color: #fff !important;
+    border-radius: 14px;
+    padding: 4px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    min-width: 75px;
+    width: auto !important;
+    height: auto !important;
+    cursor: pointer;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.popup input[type="submit"]:hover,
+.popup input[type="button"]:hover,
+.popup button:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+.popup input[value="Cancel"],
+.popup input[value="cancel"],
+.popup input[value="Close"],
+.popup input[value="close"] {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.popup input[value="Cancel"]:hover,
+.popup input[value="cancel"]:hover,
+.popup input[value="Close"]:hover,
+.popup input[value="close"]:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
 }
 
 /* Responsive */
@@ -3875,36 +4015,86 @@ body {
             color: #2563eb;
         }
 
-/* Modified-by MUKESH BHAGAT on 28-09-2026 : the previous two rules here -
-   .ajax__calendar_container TABLE { width: 100% !important; }
-   .ajax__calendar_container { width: 175px !important; }
-   stretched all three tables inside the CalendarExtender popup (month/year header, day-name
-   row, AND the day-number grid) to the same fixed 175px. Combined with the site-wide Bootstrap
-   reset (*{box-sizing:border-box}), that shrank the toolkit's own cell padding out of the
-   available width - fine for a single-digit day, too narrow for two digits (10-31), so the day
-   number wrapped onto a second line and visually overlapped the row below. Confirmed on
-   VendorReleaseReconciliation.aspx and Monthly_Unit_Despatch_vr2.aspx; same markup, same fix,
-   on all 16 pages using CalendarExtender.
-   Fix: let the header/day-name tables size themselves (width: auto on the container), cancel
-   border-box only inside the popup so the toolkit's fixed cell padding renders as designed, and
-   keep width:100% only on the day-number grid (.ajax__calendar_days), which is the one table
-   that is actually meant to fill the container. */
+/* CalendarExtender popup.
+   The toolkit draws a 170x139 day grid and clips anything outside .ajax__calendar_body.
+   Page rules such as "table tr td { padding }" plus Bootstrap border-box were widening
+   those cells, so Friday/Saturday (and lower weeks) were cut off inside the popup.
+   Keep the toolkit size, content-box, and zero padding on its own cells only.
+   While the popup is open, let it paint outside a scrolling modal or grid so the
+   full calendar stays on screen. Closed calendars do not change those containers. */
+.ajax__calendar,
+div:has(> .ajax__calendar_container) {
+    z-index: 1000000 !important;
+    overflow: visible !important;
+}
+
 .ajax__calendar_container {
-    width: auto !important;
+    width: 170px !important;
+    padding: 4px !important;
+    box-sizing: content-box !important;
+    overflow: visible !important;
+    z-index: 1000000 !important;
+    background-color: #ffffff;
+}
+
+    .ajax__calendar_container table,
+    div:has(> .ajax__calendar_container) table {
+        width: auto !important;
+        margin: 0 auto !important;
+        border: 0 !important;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+    }
+
+    .ajax__calendar_container table,
+    .ajax__calendar_container table * {
+        box-sizing: content-box !important;
+    }
+
+    .ajax__calendar_container table td,
+    .ajax__calendar_container table th {
+        padding: 1px !important;
+        margin: 0 !important;
+        border: 0 !important;
+        width: auto !important;
+        height: auto !important;
+        box-sizing: content-box !important;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+.ajax__calendar_body {
+    width: 170px !important;
+    height: 139px !important;
+    overflow: hidden !important;
     box-sizing: content-box !important;
 }
 
-.ajax__calendar_container table,
-.ajax__calendar_container table * {
+.ajax__calendar_days,
+.ajax__calendar_months,
+.ajax__calendar_years {
+    width: 170px !important;
+    height: 139px !important;
     box-sizing: content-box !important;
 }
 
 .ajax__calendar_days table {
-    width: 100% !important;
+    width: auto !important;
 }
 
-.ajax__calendar_dayname {
-    white-space: nowrap;
+.ajax__calendar_dayname,
+.ajax__calendar_day {
+    white-space: nowrap !important;
+    box-sizing: content-box !important;
+}
+
+.popupvendor:has([style*="visibility: visible"] > .ajax__calendar_container),
+.popupvendor:has([style*="visibility:visible"] > .ajax__calendar_container),
+.modal-body:has([style*="visibility: visible"] > .ajax__calendar_container),
+.modal-body:has([style*="visibility:visible"] > .ajax__calendar_container),
+.table-responsive:has([style*="visibility: visible"] > .ajax__calendar_container),
+.table-responsive:has([style*="visibility:visible"] > .ajax__calendar_container) {
+    overflow: visible !important;
 }
 
 .PagerGrid {
@@ -3916,4 +4106,19 @@ body {
     justify-content: left;
     width: 100%;
     left: 0;
+}
+
+.dbStockAsOn {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: rgb(242, 244, 247);
+    color: rgb(16, 36, 58);
+    position: absolute;
+    top: 9px;
+    right: 18px;
 }

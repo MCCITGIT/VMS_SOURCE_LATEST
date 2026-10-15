@@ -178,6 +178,22 @@
             .errormsg {
                 font-size: 13px;
             }
+
+            #<%= gvFgVendorlist.ClientID %> .vpr-skel-bar {
+                display: inline-block;
+                height: 12px;
+                max-width: 100%;
+                border-radius: 3px;
+                vertical-align: middle;
+                background: linear-gradient(90deg, #e3e8ee 25%, #f7f9fb 37%, #e3e8ee 63%);
+                background-size: 400% 100%;
+                animation: vprSkelShimmer 1.2s ease-in-out infinite;
+            }
+
+            @keyframes vprSkelShimmer {
+                0% { background-position: 100% 0; }
+                100% { background-position: 0 0; }
+            }
         </style>
         <div class="breadcrumbs">
             <div class="leftFung">
@@ -245,11 +261,11 @@
                                             </ajaxToolkit:CalendarExtender>
                                         </div>
                                         <asp:Button ID="btnSubmit" ClientIDMode="Static" runat="server" Text="Search" CssClass="btn btn-primary btn-sm" OnClick="btnSubmit_Click" OnClientClick="return validateDateRange();" />
+                                        <%-- Modified-by MUKESH BHAGAT on 01-10-2026 : Excel download removed from here - client
+                                             wants it on the Dispatched / Delivered / GRN Not Done / Manual GRN / Paid detail
+                                             pages (VendorReleaseReconciliation.aspx, opened via the links below), not on this
+                                             summary dashboard. --%>
                                         <asp:Button ID="btnReset" runat="server" Text="Reset" CssClass="btn btn-outline-danger btn-sm" OnClick="btnReset_Click" />
-                                        <%-- Modified-by MUKESH BHAGAT on 28-09-2026 : Excel download of the vendor list for the
-                                             current filters (all rows). PostBackTrigger below - a file cannot be streamed
-                                             through an async partial postback. --%>
-                                        <asp:Button ID="btnExcel" ClientIDMode="Static" runat="server" Text="Download Excel" CssClass="btn btn-success btn-sm" OnClick="btnExcel_Click" OnClientClick="return validateDateRange();" ToolTip="Download the vendor list as Excel" />
                                     </div>
                                     <div id="dateError" class="date-error"></div>
                                     <asp:Label ID="valBrandName" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
@@ -268,7 +284,7 @@
                 </div>
 
                 <div class="card rm-list-fill">
-                    <div class="mst-panel-header">
+                    <div class="mst-panel-header" style="margin-bottom: 0;">
                         <div class="mst-panel-header-left">
                             <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
                             <div>
@@ -435,9 +451,6 @@
                     ControlID="btnReset"
                     EventName="Click" />
 
-                <%-- Modified-by MUKESH BHAGAT on 28-09-2026 : Excel download needs a full postback --%>
-                <asp:PostBackTrigger ControlID="btnExcel" />
-
                 <%--<asp:AsyncPostBackTrigger
                     ControlID="ddlPageNumber"
                     EventName="SelectedIndexChanged" />--%>
@@ -559,5 +572,161 @@
             }
         </script>
         <script type="text/javascript" src="Scripts/rm-status-confirm.js?v=<%= DateTime.Now.Ticks %>"></script>
+        <script type="text/javascript">
+            $(function () {
+                var pageIndex = 0;
+                var loading = false;
+                var noMoreData = false;
+                var loadSeq = 0;
+                var suppressScrollUntil = 0;
+                var filters = { vendor: '', fromDate: '', toDate: '' };
+                var gridSel = '#<%= gvFgVendorlist.ClientID %>';
+
+                function captureFilters() {
+                    filters.vendor = $('#txtVendorName').val() || '';
+                    filters.fromDate = $('#txtFromDate').val() || '';
+                    filters.toDate = $('#txtToDate').val() || '';
+                }
+
+                function dataRows() {
+                    return $(gridSel + ' tbody tr').not('.vpr-skel').not('.headerGrid').filter(function () {
+                        return $(this).children('td[colspan]').length === 0;
+                    });
+                }
+
+                function bindVendorScroll() {
+                    var $el = $(gridSel).closest('.rm-grid-scroll');
+                    $el.off('scroll.vprskel').on('scroll.vprskel', function () {
+                        if (Date.now() < suppressScrollUntil) return;
+                        if ($el.scrollTop() + $el.innerHeight() < $el[0].scrollHeight - 50) return;
+                        loadNext($el);
+                    });
+                }
+
+                function loadNext($el) {
+                    if (loading || noMoreData || dataRows().length === 0) return;
+
+                    loading = true;
+                    pageIndex++;
+                    var seq = ++loadSeq;
+                    showVendorSkeleton($el);
+
+                    PageMethods.GetMoreVendorPayments(pageIndex, filters.vendor, filters.fromDate, filters.toDate,
+                        function (result) {
+                            if (seq !== loadSeq) return;
+                            hideVendorSkeleton();
+                            if (!result || !result.rows || result.rows.length === 0) {
+                                noMoreData = true;
+                                loading = false;
+                                return;
+                            }
+                            var $tbody = $(gridSel + ' tbody');
+                            $.each(result.rows, function (i, r) {
+                                appendVendorRow($tbody, r);
+                            });
+                            if (dataRows().length >= result.total) noMoreData = true;
+                            loading = false;
+                            var $scroll = $(gridSel).closest('.rm-grid-scroll');
+                            if (!noMoreData && $scroll.length && $scroll[0].scrollHeight <= $scroll.innerHeight() + 1) {
+                                loadNext($scroll);
+                            }
+                        },
+                        function () {
+                            if (seq !== loadSeq) return;
+                            hideVendorSkeleton();
+                            pageIndex--;
+                            loading = false;
+                        }
+                    );
+                }
+
+                function showVendorSkeleton($scroll) {
+                    var $tbody = $(gridSel + ' tbody');
+                    if (!$tbody.length || $tbody.find('tr.vpr-skel').length) return;
+
+                    var nameWidths = ['72%', '60%', '80%'];
+                    var html = '';
+                    for (var r = 0; r < 3; r++) {
+                        html += '<tr class="tlrowlight vpr-skel">';
+                        html += '<td align="center" style="width:8%;"><span class="vpr-skel-bar" style="width:16px;"></span></td>';
+                        html += '<td align="left" style="width:40%;"><span class="vpr-skel-bar" style="width:' + nameWidths[r] + ';"></span></td>';
+                        html += '<td align="left" style="width:10%;"><span class="vpr-skel-bar" style="width:28px;"></span></td>';
+                        html += '<td align="left" style="width:10%;"><span class="vpr-skel-bar" style="width:24px;"></span></td>';
+                        html += '<td align="left" style="width:10%;"><span class="vpr-skel-bar" style="width:28px;"></span></td>';
+                        html += '<td align="left" style="width:10%;"><span class="vpr-skel-bar" style="width:22px;"></span></td>';
+                        html += '<td align="left" style="width:10%;"><span class="vpr-skel-bar" style="width:24px;"></span></td>';
+                        html += '</tr>';
+                    }
+                    $tbody.append(html);
+                    suppressScrollUntil = Date.now() + 200;
+                    if ($scroll && $scroll.length) $scroll.scrollTop($scroll[0].scrollHeight);
+                }
+
+                function hideVendorSkeleton() {
+                    var $rows = $(gridSel + ' tbody tr.vpr-skel');
+                    if (!$rows.length) return;
+                    suppressScrollUntil = Date.now() + 200;
+                    $rows.remove();
+                }
+
+                function appendVendorRow($tbody, r) {
+                    var slNo = dataRows().length + 1;
+                    $tbody.append(
+                        '<tr class="tlrowlight">' +
+                        '<td align="center" style="width:8%;">' + slNo + '</td>' +
+                        '<td align="left" style="width:40%;">' + esc(r.unit_name) + '</td>' +
+                        '<td align="left" style="width:10%;">' + metricLink('text-primary fw-bold', 'Dispatched', r.approved_challan_count, r) + '</td>' +
+                        '<td align="left" style="width:10%;">' + metricLink('text-primary fw-bold', 'Delivered', r.delivered_count, r) + '</td>' +
+                        '<td align="left" style="width:10%;">' + metricLink('text-danger fw-bold', 'GrnNotDone', r.grn_not_done, r) + '</td>' +
+                        '<td align="left" style="width:10%;">' + metricLink('text-warning fw-bold', 'ManualGrn', r.manual_grn, r) + '</td>' +
+                        '<td align="left" style="width:10%;">' + metricLink('text-success fw-bold', 'Paid', r.paid_status, r) + '</td>' +
+                        '</tr>'
+                    );
+                }
+
+                function metricLink(css, flag, text, r) {
+                    return '<a href="#" class="' + css + ' vpr-more-link" data-flag="' + escAttr(flag) + '" data-code="' + escAttr(r.unit_code) + '" data-vendor="' + escAttr(r.unit_name) + '">' + esc(text) + '</a>';
+                }
+
+                function esc(v) {
+                    return $('<div>').text(v == null ? '' : v).html();
+                }
+
+                function escAttr(v) {
+                    return esc(v).replace(/"/g, '&quot;');
+                }
+
+                $(document).on('click', gridSel + ' .vpr-more-link', function (e) {
+                    e.preventDefault();
+                    var $a = $(this);
+                    window.location.href = 'VendorReleaseReconciliation.aspx'
+                        + '?vendorName=' + encodeURIComponent($a.attr('data-vendor') || '')
+                        + '&vendorCode=' + encodeURIComponent($a.attr('data-code') || '')
+                        + '&fromDate=' + encodeURIComponent($('#txtFromDate').val() || '')
+                        + '&toDate=' + encodeURIComponent($('#txtToDate').val() || '')
+                        + '&flag=' + encodeURIComponent(($a.attr('data-flag') || '').toUpperCase());
+                });
+
+                function resetVendorScroll() {
+                    loadSeq++;
+                    pageIndex = 0;
+                    noMoreData = false;
+                    loading = false;
+                    captureFilters();
+                    bindVendorScroll();
+                    var $scroll = $(gridSel).closest('.rm-grid-scroll');
+                    if ($scroll.length && $scroll[0].scrollHeight <= $scroll.innerHeight() + 1) loadNext($scroll);
+                }
+
+                captureFilters();
+                bindVendorScroll();
+                var $initial = $(gridSel).closest('.rm-grid-scroll');
+                if ($initial.length && $initial[0].scrollHeight <= $initial.innerHeight() + 1) loadNext($initial);
+
+                if (typeof Sys !== 'undefined' && Sys.WebForms) {
+                    Sys.WebForms.PageRequestManager.getInstance().add_endRequest(resetVendorScroll);
+                }
+            });
+        </script>
 </asp:Content>
 

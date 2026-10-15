@@ -35,13 +35,15 @@ Partial Class Login
 
         userInfo = userDetailsObject.LoginUserDetails(txtUserId.Text.Trim(), txtPassword.Text.Trim())
         If Not (userInfo Is Nothing) Then
-            Session(Constant.SessionKeys.UserInfo) = userInfo
             'roles = userInfo.Role
             If userInfo.userStatusEntity = Constant.Common.InActiveStatus Then
                 lblErrorMessage.Text = Constant.ErrorMessages.UserNotActiveMessage
                 lblErrorMessage.ForeColor = Drawing.Color.Red
                 lblErrorMessage.Visible = True
             Else
+                ' Drop the previous user's session, including saved list filters, before storing this login.
+                Session.Clear()
+                Session(Constant.SessionKeys.UserInfo) = userInfo
                 'Create a new ticket used for authentication
                 'Dim roleSet As System.Data.DataSet = userDetailsObject.GetRolePrivileges(userInfo.PartyID)
                 'If Not (roleSet Is Nothing) Then
@@ -52,6 +54,8 @@ Partial Class Login
                 'Encrypt the cookie using the machine key for secure transport
                 Dim hash As String = FormsAuthentication.Encrypt(ticket)
                 Dim cookie As New HttpCookie(FormsAuthentication.FormsCookieName, hash)
+                cookie.Path = FormsAuthentication.FormsCookiePath
+                cookie.HttpOnly = True
 
                 'Set the cookie's expiration time to the tickets expiration time
                 If (ticket.IsPersistent) Then

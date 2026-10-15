@@ -5,7 +5,7 @@
 <%--<asp:Content ID="Content1" ContentPlaceHolderID="Head1" runat="Server">
 </asp:Content>--%>
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
-    
+
 
     <script type="text/javascript" src="Scripts/ValidationIndentList_HO.js"></script>
     <script type="text/javascript">
@@ -17,12 +17,12 @@
             else if (event.keyCode == 119) {
                 __doPostBack(document.getElementById('<%= imgbtnSearch.ClientID %>').name, '');
             }
-        }
+    }
 
-        function disableBackButton() {
-            window.history.forward(1);
-        }
-        window.onload = disableBackButton;
+    function disableBackButton() {
+        window.history.forward(1);
+    }
+    window.onload = disableBackButton;
     </script>
 
     <div class="breadcrumbs">
@@ -98,6 +98,15 @@
     </div>
 
     <div class="card">
+        <div class="mst-panel-header">
+            <div class="mst-panel-header-left">
+                <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
+                <div>
+                    <h5 class="mst-panel-title">Depot Indents List (HO)</h5>
+                    <p class="mst-panel-subtitle">Browse and manage user profiles</p>
+                </div>
+            </div>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <asp:UpdatePanel ID="UpdatePanel1" runat="server">

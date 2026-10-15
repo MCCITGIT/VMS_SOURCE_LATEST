@@ -125,13 +125,13 @@
                              The browser greys out anything outside min..max in the picker; typed values are
                              checked by validateChallanSearch() and, authoritatively, again on the server
                              (TryGetSearchDates). Search now runs SP [Unit_Dspatch_Get_Challan_Detail_vr5]. --%>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label class="form-control-label">From Date:<span class="mandatory">*</span></label>
                                 <asp:TextBox ID="txtFromDate" runat="server" ClientIDMode="Static" TextMode="Date" CssClass="form-control" TabIndex="3"></asp:TextBox>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label class="form-control-label">To Date:<span class="mandatory">*</span></label>
                                 <asp:TextBox ID="txtToDate" runat="server" ClientIDMode="Static" TextMode="Date" CssClass="form-control" TabIndex="3"></asp:TextBox>
@@ -155,7 +155,7 @@
                                 </asp:DropDownList>
                             </div>
                         </div>
-                        <div class="col-md-3 form-btn-mt">
+                        <div class="col-md-4 form-btn-mt">
                             <div class="form-group">
                                 <%--<asp:ImageButton CssClass="btn btn-primary btn-sm" ID="ImgbtnSearch" runat="server" ImageUrl="images/ic_search.gif" />
                                 <asp:ImageButton CssClass="btn btn-success btn-sm" ID="ImgbtnAdd" runat="server" ImageUrl="images/ic_add.gif" PostBackUrl="~/UnitDespatchPlanAddUpdateVr1.aspx" Visible="false" />--%>

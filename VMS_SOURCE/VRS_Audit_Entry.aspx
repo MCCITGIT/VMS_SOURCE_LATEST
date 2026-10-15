@@ -118,17 +118,6 @@
     </style>
     <%--<asp:ScriptManager ID="ScriptManager1" runat="server"></asp:ScriptManager>--%>
 
-    <asp:UpdateProgress ID="updProgress" runat="server" DisplayAfter="0">
-        <ProgressTemplate>
-            <div class="pageLoader">
-                <div class="innerLoader">
-                    <img class="loaderImg" alt="progress" src="images/ajax-loader.gif" />
-                    <p class="loaderTx">Processing... Please Wait.</p>
-                </div>
-            </div>
-        </ProgressTemplate>
-    </asp:UpdateProgress>
-
     <div class="breadcrumbs">
         <div class="leftFung">
             <a href="Home.aspx" title="Home"><i class="fas fa-home"></i></a>
@@ -144,7 +133,7 @@
     <div class="card">
         <div class="card-body">
             <div class="row">
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-control-label">Fin Year:</label>
                         <asp:UpdatePanel runat="server" ID="UpdatePanel5">
@@ -154,7 +143,7 @@
                         </asp:UpdatePanel>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-control-label">Quarter:</label>
                         <asp:UpdatePanel runat="server" ID="UpdatePanel2">
@@ -164,7 +153,7 @@
                         </asp:UpdatePanel>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-control-label">Vendor:</label>
                         <asp:UpdatePanel runat="server" ID="UpdatePanel4">
@@ -185,11 +174,11 @@
                                 </asp:UpdatePanel>
                             </div>
                         </div>--%>
-                <div class="col-md-2 form-btn-mt">
+                <div class="col-md-3 form-btn-mt">
                     <asp:UpdatePanel runat="server" ID="UpdatePanel3">
                         <ContentTemplate>
                             <asp:Button ID="btnSearch" runat="server" ToolTip="Click to Search" Text="Search" CssClass="btn btn-primary btn-sm" />&nbsp;
-                                    <asp:Button ID="btnReset" runat="server" ToolTip="Click to Reset" Text="Reset" CssClass="btn btn-warning btn-sm" />
+                           <asp:Button ID="btnReset" runat="server" ToolTip="Click to Reset" Text="Reset" CssClass="btn btn-warning btn-sm" />
                         </ContentTemplate>
                     </asp:UpdatePanel>
                 </div>

@@ -315,7 +315,6 @@
                                     </ItemTemplate>
                                     <EditItemTemplate>
                                         <asp:Label ID="lbleditVendor" runat="server" Text='<%# Bind("vendor_name") %>'></asp:Label>
-
                                     </EditItemTemplate>
                                     <FooterTemplate>
                                         <asp:Label ID="lblftrVendor" runat="server" Visible="true"></asp:Label>

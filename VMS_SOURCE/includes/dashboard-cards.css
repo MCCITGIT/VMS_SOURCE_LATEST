@@ -163,7 +163,7 @@
     font-weight: 650;
     letter-spacing: 0.4px;
     text-transform: uppercase;
-    margin-bottom: 6px;
+    margin-bottom: 2px;
 }
 
 .vms-dashboard .dash-field .form-control,
@@ -194,7 +194,7 @@
 .vms-dashboard .dash-search-btn {
     height: 32px;
     min-height: 32px;
-    width: 100%;
+    /*width: 100%;*/
     display: inline-flex;
     align-items: center;
     justify-content: center;

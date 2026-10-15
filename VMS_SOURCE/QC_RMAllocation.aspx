@@ -45,18 +45,6 @@
         }
     </script>
 
-
-    <asp:UpdateProgress ID="updProgress" runat="server" DisplayAfter="0">
-        <ProgressTemplate>
-            <div class="pageLoader">
-                <div class="innerLoader">
-                    <img class="loaderImg" alt="progress" src="images/ajax-loader.gif" />
-                    <p class="loaderTx">Processing... Please Wait.</p>
-                </div>
-            </div>
-        </ProgressTemplate>
-    </asp:UpdateProgress>
-
     <div class="breadcrumbs">
         <div class="leftFung">
             <a href="Home.aspx" title="Home"><i class="fas fa-home"></i></a>

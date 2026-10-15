@@ -51,12 +51,23 @@
 
     <div class="card">
         <div class="card-body">
-            <div class="form-group row ddlPageSize">
-                <label for="ddlPageSize" class="col-auto form-control-label">
-                    <asp:Label ID="Label1" runat="server" Text="Results Per Page:"></asp:Label>
-                </label>
-                <div class="col-md-1">
-                    <asp:DropDownList ID="ddlPageSize" CssClass="form-control select2" runat="server" AutoPostBack="true"></asp:DropDownList>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div class="mst-panel-header" style="padding-top: 0;">
+                    <div class="mst-panel-header-left">
+                        <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
+                        <div>
+                            <h5 class="mst-panel-title">Document Upload List</h5>
+                            <p class="mst-panel-subtitle">Document Upload</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group ddlPageSize" style="display: flex; align-items: center; padding: 0px;">
+                    <label for="ddlPageSize" class="col-auto form-control-label mr-2">
+                        <asp:Label ID="Label1" runat="server" Text="Results Per Page:"></asp:Label>
+                    </label>
+                    <div>
+                        <asp:DropDownList ID="ddlPageSize" CssClass="form-control select2" runat="server" AutoPostBack="true"></asp:DropDownList>
+                    </div>
                 </div>
             </div>
             <div class="table-responsive">
@@ -212,8 +223,8 @@
                                     <div class="form-group">
                                         <label class="form-control-label">Doc Date:<span class="mandatory">*</span></label>
                                         <asp:TextBox ID="txtdocdt" runat="server" CssClass="form-control" MaxLength="100"></asp:TextBox>
-                                        <a class="formCalndIcon" href="javascript:cal1.select(document.forms[0].txtdocdt,'Due_Date','dd/MM/yyyy');">
-                                            <img src="images/date_icon.gif" id="Due_Date" alt="Calender" style="border: 0" />
+                                        <a class="formCalndIcon" href="javascript:cal1.select(document.forms[0].txtdocdt,'Due_Date','dd/MM/yyyy');" style="top: 25px; right: 10px;">
+                                            <img src="images/p-calendar.png" id="Due_Date" alt="Calender" style="border: 0" />
                                         </a>
                                     </div>
                                 </div>

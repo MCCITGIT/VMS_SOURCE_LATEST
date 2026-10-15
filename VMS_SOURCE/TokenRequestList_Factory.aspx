@@ -61,8 +61,11 @@
                 </div>
                 <div class="col-md-3 form-btn-mt">
                     <div class="form-group">
-                        <asp:ImageButton ImageUrl="images/ic_search.gif" ID="imgbtnSearch" runat="server" />
-                        <asp:ImageButton ImageUrl="~/images/ic_add.gif" ID="imgbtnAdd" runat="server" />
+                        <asp:LinkButton ID="imgbtnSearch" runat="server" CssClass="btn btn-primary btn-sm">Search</asp:LinkButton>
+                        <asp:LinkButton ID="imgbtnAdd" runat="server" CssClass="btn btn-warning btn-sm">Add</asp:LinkButton>
+
+                        <%--<asp:ImageButton ImageUrl="images/p-search.png" ID="imgbtnSearch" runat="server" class="btn btn-primary btn-sm py-2" />
+                        <asp:ImageButton ImageUrl="~/images/p-plus.png" ID="imgbtnAdd" runat="server" class="btn btn-warning btn-sm py-2" />--%>
                     </div>
                 </div>
             </div>
@@ -71,6 +74,15 @@
     </div>
 
     <div class="card">
+        <div class="mst-panel-header" style="padding-top: 0;">
+            <div class="mst-panel-header-left">
+                <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
+                <div>
+                    <h5 class="mst-panel-title">FACTORY TOKEN REQUISITION LIST</h5>
+                    <p class="mst-panel-subtitle">Browse and manage user profiles</p>
+                </div>
+            </div>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <asp:UpdatePanel ID="UpdatePanel1" runat="server">

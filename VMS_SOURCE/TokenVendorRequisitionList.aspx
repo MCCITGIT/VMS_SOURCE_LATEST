@@ -74,8 +74,8 @@
                     <div class="form-group">
                         <label class="form-control-label">From Date:</label>
                         <asp:TextBox ID="txtFromDate" CssClass="form-control" runat="server" ReadOnly="true" MaxLength="10"></asp:TextBox>
-                        <a class="formCalndIcon" href="javascript:cal1.select(document.forms[0].txtFromDate,'RequisitionFromDate','dd/MM/yyyy');">
-                            <img src="images/date_icon.gif" id="RequisitionFromDate" alt="Calender" style="border: 0; margin-top: -4px; position: absolute; margin-left: 5px" />
+                        <a class="formCalndIcon" href="javascript:cal1.select(document.forms[0].txtFromDate,'RequisitionFromDate','dd/MM/yyyy');" style="top: 31px;">
+                            <img src="images/p-calendar.png" id="RequisitionFromDate" alt="Calender" style="border: 0; margin-top: -4px; position: absolute; margin-left: 5px" />
                         </a>
                     </div>
                 </div>
@@ -83,14 +83,14 @@
                     <div class="form-group">
                         <label class="form-control-label">To Date:</label>
                         <asp:TextBox ID="txtTodate" CssClass="form-control" runat="server" ReadOnly="true" MaxLength="10"></asp:TextBox>
-                        <a class="formCalndIcon" href="javascript:cal1.select(document.forms[0].txtTodate,'RequisitionToDate','dd/MM/yyyy');">
-                            <img src="images/date_icon.gif" id="RequisitionToDate" alt="Calender" style="border: 0; margin-top: -4px; position: absolute; margin-left: 5px" />
+                        <a class="formCalndIcon" href="javascript:cal1.select(document.forms[0].txtTodate,'RequisitionToDate','dd/MM/yyyy');" style="top: 31px;">
+                            <img src="images/p-calendar.png" id="RequisitionToDate" alt="Calender" style="border: 0; margin-top: -4px; position: absolute; margin-left: 5px" />
                         </a>
                     </div>
                 </div>
                 <div class="col-md-2 form-btn-mt">
                     <div class="form-group">
-                         <asp:LinkButton ID="imgbtnSearch" runat="server" OnClick="imgbtnSearch_Click" CssClass="btn btn-primary btn-sm">Search</asp:LinkButton>
+                        <asp:LinkButton ID="imgbtnSearch" runat="server" OnClick="imgbtnSearch_Click" CssClass="btn btn-primary btn-sm">Search</asp:LinkButton>
                     </div>
                 </div>
             </div>
@@ -99,6 +99,15 @@
     </div>
 
     <div class="card">
+        <div class="mst-panel-header" style="padding-top: 0;">
+            <div class="mst-panel-header-left">
+                <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
+                <div>
+                    <h5 class="mst-panel-title">Token Requisition List</h5>
+                    <p class="mst-panel-subtitle">Browse and manage user profiles</p>
+                </div>
+            </div>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <asp:UpdatePanel ID="UpdatePanel1" runat="server">

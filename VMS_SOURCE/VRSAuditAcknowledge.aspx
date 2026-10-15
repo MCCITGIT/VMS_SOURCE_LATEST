@@ -117,7 +117,7 @@
         }
     </style>
     <%-- <asp:ScriptManager ID="ScriptManager1" runat="server"></asp:ScriptManager>--%>
-   <%-- <asp:UpdateProgress ID="updProgress" runat="server" DisplayAfter="0">
+    <%-- <asp:UpdateProgress ID="updProgress" runat="server" DisplayAfter="0">
         <ProgressTemplate>
             <div class="pageLoader">
                 <div class="innerLoader">
@@ -143,8 +143,8 @@
     <div class="card">
         <div class="card-body">
             <div class="row">
-                <div class="col-md-6" style="display: flex; column-gap: 20px;">
-                    <div class="form-group" style="width: 100%;">
+                <div class="col-md-2">
+                    <div class="form-group">
                         <label class="form-control-label">Fin Year:</label>
                         <asp:UpdatePanel runat="server" ID="UpdatePanel5">
                             <ContentTemplate>
@@ -152,7 +152,9 @@
                             </ContentTemplate>
                         </asp:UpdatePanel>
                     </div>
-                    <div class="form-group" style="width: 100%;">
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
                         <label class="form-control-label">Quarter:</label>
                         <asp:UpdatePanel runat="server" ID="UpdatePanel2">
                             <ContentTemplate>
@@ -171,11 +173,11 @@
                         </asp:UpdatePanel>
                     </div>
                 </div>
-                <div class="col-md-3 form-btn-mt">
+                <div class="col-md-4 form-btn-mt">
                     <asp:UpdatePanel runat="server" ID="UpdatePanel3">
                         <ContentTemplate>
-                            <asp:Button ID="btnSearch" runat="server" ToolTip="Click to Search" Text="Search" CssClass="btn btn-primary btn-sm" />&nbsp;
-                                    <asp:Button ID="btnReset" runat="server" ToolTip="Click to Reset" Text="Reset" CssClass="btn btn-warning btn-sm" />
+                            <asp:Button ID="btnSearch" runat="server" ToolTip="Click to Search" Text="Search" CssClass="btn btn-primary btn-sm" />
+                            <asp:Button ID="btnReset" runat="server" ToolTip="Click to Reset" Text="Reset" CssClass="btn btn-warning btn-sm" />
                             <asp:Button ID="btnExport" runat="server" ToolTip="Click to Reset" Text="Export" OnClick="btnExport_Click" CssClass="btn btn-success btn-sm" />
                         </ContentTemplate>
                         <Triggers>

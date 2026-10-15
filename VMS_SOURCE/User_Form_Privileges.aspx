@@ -133,11 +133,11 @@
 
                         <asp:TemplateField HeaderText="Edit" HeaderStyle-HorizontalAlign="Center">
                             <ItemTemplate>
-                                <asp:ImageButton ID="btnEdit" CommandName="edit" runat="server" ImageUrl="~/Images/edit.jpg" />
+                                <asp:ImageButton ID="btnEdit" CommandName="edit" CssClass="btn btn-info btn-sm" runat="server" ImageUrl="~/Images/p-edit.png" />
                             </ItemTemplate>
                             <EditItemTemplate>
-                                <asp:ImageButton ID="btnUpdate" CommandName="update" runat="server" ImageUrl="~/Images/b_save.gif" />
-                                <asp:ImageButton ID="btnCancel" CommandName="cancel" runat="server" ImageUrl="~/Images/b_cancel.gif" />
+                                <asp:ImageButton ID="btnUpdate" CommandName="update" runat="server" title="Save" ImageUrl="~/Images/p-save.png" />
+                                <asp:ImageButton ID="btnCancel" CommandName="cancel" runat="server" title="Cancel" ImageUrl="~/Images/p-cancel.png" />
                             </EditItemTemplate>
                         </asp:TemplateField>
                     </Columns>

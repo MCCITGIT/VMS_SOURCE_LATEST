@@ -412,14 +412,14 @@
                                 <asp:TemplateField HeaderText="Action" HeaderStyle-HorizontalAlign="Center">
                                     <ItemTemplate>
                                         <asp:ImageButton ID="btnEdit" Visible="false" CommandName="edit" runat="server" ImageUrl="~/Images/edit.jpg" />
-                                        <asp:ImageButton ID="btnChange" CommandName="change" runat="server" ImageUrl="~/Images/b_save.gif" />
+                                        <asp:ImageButton ID="btnChange" CommandName="change" runat="server" title="Save" ImageUrl="~/Images/p-save.png" />
                                     </ItemTemplate>
                                     <EditItemTemplate>
-                                        <asp:ImageButton ID="btnUpdate" CommandName="update" runat="server" ImageUrl="~/Images/b_save.gif" />
-                                        <asp:ImageButton ID="btnCancel" CommandName="cancel" runat="server" ImageUrl="~/Images/b_cancel.gif" />
+                                        <asp:ImageButton ID="btnUpdate" CommandName="update" runat="server" title="Save" ImageUrl="~/Images/p-save.png" />
+                                        <asp:ImageButton ID="btnCancel" CommandName="cancel" runat="server" title="Cancel" ImageUrl="~/Images/p-cancel.png" />
                                     </EditItemTemplate>
                                     <FooterTemplate>
-                                        <asp:ImageButton ID="btnInsert" CommandName="insert" runat="server" ImageUrl="~/Images/b_save.gif" />
+                                        <asp:ImageButton ID="btnInsert" CommandName="insert" runat="server" title="Cancel" ImageUrl="~/Images/p-cancel.png" />
                                     </FooterTemplate>
                                     <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
                                     <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />

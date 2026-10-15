@@ -27,25 +27,25 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label class="form-control-label">Old Password:<span class="mandatory" id="spanOldPwd">*</span></label>
                                 <asp:TextBox ID="txtOldPwd" CssClass="form-control" TextMode="Password" MaxLength="20" runat="server"></asp:TextBox>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label class="form-control-label">New Password:<span class="mandatory" id="span1">*</span></label>
                                 <asp:TextBox ID="txtNewPwd" CssClass="form-control" TextMode="Password" MaxLength="20" runat="server"></asp:TextBox>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label class="form-control-label">Confirm Password:<span class="mandatory" id="span2">*</span></label>
                                 <asp:TextBox ID="txtConPwd" CssClass="form-control" TextMode="Password" MaxLength="20" runat="server"></asp:TextBox>
                             </div>
                         </div>
-                        <div class="col-md-3 form-btn-mt">
+                        <div class="col-md-12 form-btn-mt text-center">
                             <div class="form-group">
                                 <asp:Button ID="btnSubmit" CssClass="btn btn-success btn-sm" runat="server" Text="Submit" />
                                 <asp:Button ID="btnCancel" CssClass="btn btn-secondary btn-sm" runat="server" Text="Cancel" />

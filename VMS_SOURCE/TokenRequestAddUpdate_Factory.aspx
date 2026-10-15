@@ -199,16 +199,16 @@
     <div class="card">
         <div class="card-body">
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 0 0">
-            <div class="mst-panel-header" style="padding-top: 0;">
-                <div class="mst-panel-header-left">
-                    <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
-                    <div>
-                        <h5 class="mst-panel-title">Requisition Details</h5>
-                        <p class="mst-panel-subtitle">Browse and manage user profiles</p>
+                <div class="mst-panel-header" style="padding-top: 0;">
+                    <div class="mst-panel-header-left">
+                        <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
+                        <div>
+                            <h5 class="mst-panel-title">Requisition Details</h5>
+                            <p class="mst-panel-subtitle">Browse and manage user profiles</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
             <asp:UpdatePanel ID="UpdatePanel9" runat="server">
                 <ContentTemplate>
                     <div class="table-responsive">

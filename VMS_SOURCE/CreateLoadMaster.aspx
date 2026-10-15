@@ -45,7 +45,7 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label class="form-control-label">Process Year:</label>
                                 <asp:HiddenField ID="hdnFileName" runat="server" />
@@ -53,7 +53,7 @@
                                 <asp:Label ID="lblYear" runat="server" CssClass="labelDataPoint"></asp:Label>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label class="form-control-label">Process Month:</label>
                                 <asp:Label ID="lblMonth" runat="server" CssClass="labelDataPoint"></asp:Label>
@@ -65,7 +65,7 @@
                                 <asp:Label ID="lblStockAsOn" runat="server" CssClass="labelDataPoint"></asp:Label>
                             </div>
                         </div>
-                        <div class="col-md-3 form-btn-mt">
+                        <div class="col-md-5 form-btn-mt">
                             <div class="form-group">
                                 <%--<asp:ImageButton ID="ImageButton2" runat="server" CssClass="btn btn-info btn-sm" AlternateText="Home"
                                     ImageUrl="~/images/printButton.png" />--%>

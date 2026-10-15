@@ -145,6 +145,15 @@
     </div>
 
     <div class="card">
+        <div class="mst-panel-header">
+            <div class="mst-panel-header-left">
+                <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
+                <div>
+                    <h5 class="mst-panel-title">Depot Indents PO Download List</h5>
+                    <p class="mst-panel-subtitle">Browse and manage user profiles</p>
+                </div>
+            </div>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <asp:UpdatePanel ID="UpdatePanel1" runat="server">
@@ -205,7 +214,7 @@
 
                                 <asp:TemplateField HeaderText="Remarks">
                                     <ItemTemplate>
-                                        <asp:TextBox ID="txtRemarks" runat="server" TextMode="MultiLine" Text='<%# Bind("remarks") %>' Enabled="false" style="border-radius:8px; height: 33px"></asp:TextBox>
+                                        <asp:TextBox ID="txtRemarks" runat="server" TextMode="MultiLine" Text='<%# Bind("remarks") %>' Enabled="false" Style="border-radius: 8px; height: 33px"></asp:TextBox>
                                         <asp:HiddenField ID="hdnindentId" runat="server" Value='<%# Bind("indent_no") %>' />
                                         <asp:HiddenField ID="hdnfinyr" runat="server" Value='<%# Bind("fin_year") %>' />
                                         <asp:HiddenField ID="hdnfinmonth" runat="server" Value='<%# Bind("fin_month") %>' />

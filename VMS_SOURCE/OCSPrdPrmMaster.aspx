@@ -46,6 +46,15 @@
     </asp:UpdatePanel>
 
     <div class="card">
+        <div class="mst-panel-header">
+            <div class="mst-panel-header-left">
+                <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
+                <div>
+                    <h5 class="mst-panel-title">OC Specifivation Params List</h5>
+                    <p class="mst-panel-subtitle">Browse and manage user profiles</p>
+                </div>
+            </div>
+        </div>
         <div class="card-body">
             <span class="errormsg">*Note : Please enter drop down parameters with coma saparetor..!!</span>
             <div class="table-responsive">
@@ -232,8 +241,8 @@
 
                                         <%--<asp:ImageButton ID="btnUpdate" CommandName="Update" runat="server" ImageUrl="~/Images/b_save.gif" />
                                         <asp:ImageButton ID="btnCancel" CommandName="Cancel" runat="server" ImageUrl="~/Images/b_cancel.gif" />--%>
-                                        <asp:LinkButton ID="btnUpdate" CommandName="Update" runat="server"><i class="fa fa-check-circle" style="color:#00ff21"></i></asp:LinkButton>
-                                        <asp:LinkButton ID="btnCancel" CommandName="Cancel" runat="server"><i class="fa fa-times-circle" style="color:#ff6a00;"></i></asp:LinkButton>
+                                        <asp:LinkButton ID="btnUpdate" CommandName="Update" runat="server" title="Save"><i class="fa fa-check-circle" style="color:#00ff21"></i></asp:LinkButton>
+                                        <asp:LinkButton ID="btnCancel" CommandName="Cancel" runat="server" title="Cancel"><i class="fa fa-times-circle" style="color:#ff6a00;"></i></asp:LinkButton>
                                     </EditItemTemplate>
                                     <FooterTemplate>
                                         <%-- <asp:Button ID="btnSubmit" CommandName="Submit" Width="90%" CssClass="but1" runat="server" Text="Submit" />--%>

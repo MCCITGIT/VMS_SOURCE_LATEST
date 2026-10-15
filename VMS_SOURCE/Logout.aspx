@@ -1,3 +1,4 @@
+<%@ Page Language="VB" AutoEventWireup="false" CodeFile="Logout.aspx.vb" Inherits="Logout" %>
 <%--****************************************************************************************
 Copyright	    : TransGuard, MCC, KOLKATA
 Source	        : Logout.aspx
@@ -9,9 +10,6 @@ Description	    : Code behind file for user logout
 Modified By       Modified On       Version         Reason
 
 ****************************************************************************************--%>
-
-
-<%@ Page Language="VB" AutoEventWireup="false" CodeFile="Logout_New.aspx.vb" Inherits="Logout_New" %>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 

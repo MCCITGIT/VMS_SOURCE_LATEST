@@ -1,4 +1,4 @@
-﻿Imports Microsoft.VisualBasic
+Imports Microsoft.VisualBasic
 
 Public Class DistpacthDetailsEntity
 
@@ -31,6 +31,7 @@ Public Class DistpacthDetailsEntity
 
     ' ---------------- Output parameters from usp_SubmitDispatch ----------------
     Private m_NewHdrID As Integer
+    Private m_NewReceiptID As Integer
     Private m_Status As Integer
     Private m_ErrorMsg As String
 
@@ -65,6 +66,7 @@ Public Class DistpacthDetailsEntity
         m_QtyToDispatch = Decimal.MinValue
 
         m_NewHdrID = Integer.MinValue
+        m_NewReceiptID = Integer.MinValue
         m_Status = Integer.MinValue
         m_ErrorMsg = String.Empty
 
@@ -247,6 +249,15 @@ Public Class DistpacthDetailsEntity
         End Get
         Set(ByVal value As Integer)
             m_NewHdrID = value
+        End Set
+    End Property
+
+    Public Property ReceiptID() As Integer
+        Get
+            Return m_NewReceiptID
+        End Get
+        Set(ByVal value As Integer)
+            m_NewReceiptID = value
         End Set
     End Property
 

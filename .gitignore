@@ -420,3 +420,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+/VMS_SOURCE/Scripts/SQL
+/VMS_SOURCE/Excel_Reports
+/VMS_SOURCE/Reports

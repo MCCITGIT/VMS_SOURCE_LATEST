@@ -74,7 +74,7 @@
 
 .fd-page .fd-panel-body,
 .fd-page .card.fd-panel > .card-body.fd-panel-body {
-    padding: 8px 10px;
+    /*padding: 8px 10px;*/
 }
 
 .fd-page .fd-panel-body .errormsg {

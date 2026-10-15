@@ -48,7 +48,7 @@
                                             <asp:DropDownList ID="ddlBrand" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server"></asp:DropDownList>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-3" id="colVendorFilter" runat="server">
                                         <div class="form-group">
                                             <label class="form-control-label">Vendor:<span id="Span2" class="mandatory">*</span></label>
                                             <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="2" runat="server"></asp:DropDownList>
@@ -59,6 +59,16 @@
                                         <div class="form-group">
                                             <label class="form-control-label">Raw Material:</label>
                                             <asp:DropDownList ID="ddlRawMat" ClientIDMode="Static" CssClass="form-control select2" TabIndex="3" runat="server"></asp:DropDownList>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label class="form-control-label">Show:</label>
+                                            <asp:DropDownList ID="ddlView" ClientIDMode="Static" CssClass="form-control" TabIndex="3" runat="server">
+                                                <asp:ListItem Value="ACTIVE" Text="Active releases (in force)" Selected="True"></asp:ListItem>
+                                                <asp:ListItem Value="NEGOTIATION" Text="Under negotiation (pending / rejected)"></asp:ListItem>
+                                                <asp:ListItem Value="ALL" Text="Everything (full history)"></asp:ListItem>
+                                            </asp:DropDownList>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
@@ -187,6 +197,34 @@
                                                 <ControlStyle Height="90%" Width="90%"></ControlStyle>
                                                 <HeaderStyle HorizontalAlign="Center" />
                                                 <ItemStyle HorizontalAlign="Left" Width="6%" />
+                                            </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="Release / Revision">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="lblVersion" Text='<%# Eval("version_text") %>' runat="server" />
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center" />
+                                                <ItemStyle HorizontalAlign="Center" Width="4%" />
+                                            </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="SKU Price (&#8377;)">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="lblSkuPrice" Text='<%# String.Format("{0:0.00}", Eval("sf_sku_price")) %>' runat="server" />
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center" />
+                                                <ItemStyle HorizontalAlign="Right" Width="6%" />
+                                            </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="Status">
+                                                <ItemTemplate>
+                                                    <span style='font-weight:600;color:<%# If(Eval("sf_status").ToString() = "APPROVED", "#28a745", If(Eval("sf_status").ToString() = "REJECTED", "#dc3545", If(Eval("sf_status").ToString() = "PENDING_VENDOR", "#17a2b8", If(Eval("sf_status").ToString() = "PENDING", "#e0a800", "#6c757d")))) %>'><%# Eval("sf_status") %></span>
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center" />
+                                                <ItemStyle HorizontalAlign="Center" Width="7%" />
+                                            </asp:TemplateField>
+                                            <asp:TemplateField HeaderText="Packs">
+                                                <ItemTemplate>
+                                                    <asp:Label ID="lblPacks" Text='<%# Eval("pack_count") %>' runat="server" />
+                                                </ItemTemplate>
+                                                <HeaderStyle HorizontalAlign="Center" />
+                                                <ItemStyle HorizontalAlign="Center" Width="4%" />
                                             </asp:TemplateField>
                                             <asp:TemplateField HeaderText="Action">
                                                 <ItemTemplate>

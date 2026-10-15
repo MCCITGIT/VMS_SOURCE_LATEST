@@ -11,6 +11,26 @@ Imports System.Globalization
 
 Partial Class UnitDespatchPlanAddUpdateVr1
     Inherits System.Web.UI.Page
+
+    'Modified-by MUKESH BHAGAT on 12-10-2026 : OCR flags for the page script come from the Support
+    'Overrides table (SupportOverrides.aspx); the second argument is the default when no row exists.
+    Protected ReadOnly Property OcrFailOpenJs() As String
+        Get
+            Return If(SupportOverrideClass.GetBool(SupportOverrideClass.OCR_FAIL_OPEN, True), "true", "false")
+        End Get
+    End Property
+
+    Protected ReadOnly Property OcrValidationEnabledJs() As String
+        Get
+            Return If(SupportOverrideClass.GetBool(SupportOverrideClass.OCR_VALIDATION_ENABLED, True), "true", "false")
+        End Get
+    End Property
+
+    Protected ReadOnly Property OcrApiTimeoutMsJs() As String
+        Get
+            Return SupportOverrideClass.GetInt(SupportOverrideClass.OCR_API_TIMEOUT_MS, 30000).ToString()
+        End Get
+    End Property
     Dim Updatemode As Boolean = False
     Dim Aproved_yn As Boolean = False
     Dim userInfo As VMSUserEntity = New VMSUserEntity()
@@ -244,6 +264,17 @@ Partial Class UnitDespatchPlanAddUpdateVr1
                 End If
             Next
 
+            'Modified-by MUKESH BHAGAT on 02-10-2026 : no SKU ticked used to fall through to the
+            'Final Invoice Value check below with a Total Rate of 0.00, so the vendor got "Final
+            'Invoice Value ... is higher than the Total Rate of 0.00" instead of being told to pick
+            'a SKU (the "select atleast one SKU" message further down was never reached). Same
+            'message, same behaviour, just raised before the rate check.
+            If ChkCount = 0 Then
+                ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('Please select atleast one SKU');", True)
+                ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
+                Exit Sub
+            End If
+
             'Modified-by MUKESH BHAGAT on 17-09-2026 : freight. The bill total is SKU taxable + freight
             '+ GST (GST is charged on the freight too - verified on Soujanya bill DS2627102720: line items
             '1,033,524 + freight 15,708 = taxable 1,049,232, IGST 18% on that = 188,861.76, total
@@ -298,7 +329,28 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             'GRN. Business asked to let such challans through for now. An invoice HIGHER than the
             'PO-rate total (Result <= lowerBound, vendor billing above PO rate) is still blocked.
             'The upperBound message / GridSummation() re-run below are unchanged for that case.
-            If Result <= lowerBound Then
+            '
+            'Modified-by MUKESH BHAGAT on 30-09-2026 : the TEMPORARY, one-day exception for unit V02
+            '(month-end SKU rate correction) that sat here was removed after 30-09-2026 - deployed to
+            'production and used that day only, then reverted.
+            '
+            'Modified-by MUKESH BHAGAT on 01-10-2026 : re-added. V02 did not get the despatch challan
+            'entered on 30-09-2026 (same month-end SKU rate correction, still unresolved), so the
+            'challan still cannot save. Business asked for the same exception again, this time through
+            '02-10-2026. Scoped to unit V02 and to 01-10-2026 through 02-10-2026 ONLY (date range, not
+            'time-of-day) - it goes inert on its own from 03-10-2026 even if this block is not removed;
+            'no other unit is exempted, and V02 itself is exempted only in this window, only on this
+            'one check.
+            'REMOVE this block once no longer needed - do not leave it in past 02-10-2026.
+            '
+            'Modified-by MUKESH BHAGAT on 12-10-2026 : the hard-coded unit + date window is replaced by
+            'the Support Overrides page (SupportOverrides.aspx, table support_override_mstr, key
+            'DESPATCH_INVOICE_LIMIT_BYPASS scoped to the unit with a Valid From / To). Support switches
+            'it on and off without a deployment; the rule here is unchanged.
+            Dim isTemporaryV02Exception As Boolean =
+                SupportOverrideClass.IsActive(SupportOverrideClass.DESPATCH_INVOICE_LIMIT_BYPASS, userInfo.userBranchEntity)
+
+            If Result <= lowerBound AndAlso Not isTemporaryV02Exception Then
                 'Modified-by MUKESH BHAGAT on 17-09-2026 : say when freight was included, so the user
                 'can see why the grid footer total and this figure differ.
                 Dim freightNote As String = If(freightIncGst > 0, " (incl. freight " & ocrFreight.ToString("N2") & " + GST " & maxGst.ToString("N2") & "% = " & freightIncGst.ToString("N2") & ")", "")
@@ -346,6 +398,8 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             'Modified-by MUKESH BHAGAT on 09-09-2026 : "S" is also accepted - the browser sets it when the
             'bill could not be validated (OCR service down / unreadable PDF) and the user explicitly
             'chose to save anyway after the warning. Only an unchecked submit ("N") is refused.
+            'Modified-by MUKESH BHAGAT on 06-10-2026 : "S" is also set when COLOURANT_INV_AI fails
+            'or does not answer within OCR_API_TIMEOUT_MS. Those saves are not blocked.
             If sch_fld1.HasFile Then
                 Dim ocrFlag As String = Convert.ToString(hdnOcrVerified.Value).Trim().ToUpperInvariant()
                 If ocrFlag <> "Y" AndAlso ocrFlag <> "S" Then

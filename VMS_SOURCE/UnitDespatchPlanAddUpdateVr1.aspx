@@ -104,7 +104,7 @@
         .loader-wrapper {
             position: fixed;
             z-index: 999999999;
-            background: rgba(41, 43, 55, 0.85);
+            background: rgba(41, 43, 55, 0.5);
             width: 100%;
             height: 100vh;
             top: 0;
@@ -1684,7 +1684,15 @@
         // failed bill blocks the save and shows the panel with what the bill contains.
         // If the OCR service itself is unreachable the save proceeds (fail-open) so a
         // service outage can never stop despatches - flip OCR_FAIL_OPEN to change that.
-        var OCR_FAIL_OPEN = true;
+        // Modified-by MUKESH BHAGAT on 12-10-2026 : these three flags now come from the Support
+        // Overrides page (table support_override_mstr, keys OCR_FAIL_OPEN / OCR_VALIDATION_ENABLED /
+        // OCR_API_TIMEOUT_MS). The values below are the defaults used when no override row exists.
+        var OCR_FAIL_OPEN = <%= OcrFailOpenJs %>;
+        // Modified-by MUKESH BHAGAT on 06-10-2026 : COLOURANT_INV_AI is live again, so Submit
+        // checks the uploaded bill. If the call fails or does not answer within
+        // OCR_API_TIMEOUT_MS, the bill check is skipped and the save continues.
+        var OCR_VALIDATION_ENABLED = <%= OcrValidationEnabledJs %>;
+        var OCR_API_TIMEOUT_MS = <%= OcrApiTimeoutMsJs %>;
         var ocrPassThrough = false;
 
         function bindInvoiceUploadExtract() {
@@ -1706,6 +1714,13 @@
                         e.preventDefault();
                         ocrMsg('Please upload a PDF invoice file.', 'danger');
                         fileUpload.value = '';
+                        return;
+                    }
+
+                    // Used only if OCR_VALIDATION_ENABLED is turned off. 'S' is accepted by the
+                    // server as "uploaded, not validated", so the challan can still be saved.
+                    if (!OCR_VALIDATION_ENABLED) {
+                        ocrSetVerified('S');
                         return;
                     }
 
@@ -1735,46 +1750,79 @@
             if (loader) { loader.style.display = lock ? 'flex' : 'none'; }
         }
 
+        // Modified-by MUKESH BHAGAT on 06-10-2026 : the API is down or did not answer in time.
+        // Do not ask the vendor to confirm - continue the save. 'S' tells the server the bill
+        // was uploaded but not checked.
+        function ocrBypassBecauseApiUnavailable(btn, reason) {
+            ocrLockActions(false);
+            ocrSetVerified('S');
+            ocrMsg(reason, 'info');
+            ocrContinueSubmit(btn);
+        }
+
         function triggerInvoiceOcrUpload(fileUpload, btn) {
             var file = fileUpload.files[0];
             var formData = new FormData();
             formData.append('file', file, file.name);
 
             var xhr = new XMLHttpRequest();
+            var settled = false;
             xhr.open('POST', 'InvoiceOcrExtract.ashx', true);
+            xhr.timeout = OCR_API_TIMEOUT_MS;
 
             ocrLockActions(true);
             ocrSetVerified(false);
             ocrMsg('Validating the uploaded invoice, please wait...', 'info');
 
+            function finishOnce(fn) {
+                if (settled) { return; }
+                settled = true;
+                fn();
+            }
+
             xhr.onload = function () {
-                ocrLockActions(false);
+                finishOnce(function () {
+                    ocrLockActions(false);
 
-                var result;
-                try { result = JSON.parse(xhr.responseText); }
-                catch (e) { result = null; }
+                    var result;
+                    try { result = JSON.parse(xhr.responseText); }
+                    catch (e) { result = null; }
 
-                if (xhr.status === 200 && result && result.success) {
-                    applyInvoiceOcrResult(result, fileUpload, btn);
-                } else if (result && result.message) {
-                    // Modified-by MUKESH BHAGAT on 09-09-2026 : the service answered but could not
-                    // read the document -> no longer a hard block; the user decides (with warning).
-                    ocrConfirmUnverifiedSave(['The uploaded PDF could not be read: ' + result.message], btn);
-                } else if (OCR_FAIL_OPEN) {
-                    // the service itself failed -> do not hold up the despatch, but say so
-                    ocrConfirmUnverifiedSave(['The invoice validation service is not available right now.'], btn);
-                } else {
-                    ocrMsg('Invoice validation service is unavailable. Please try again.', 'danger');
-                }
+                    if (xhr.status === 200 && result && result.success) {
+                        applyInvoiceOcrResult(result, fileUpload, btn);
+                    } else if (xhr.status === 422 && result && result.message) {
+                        // The service answered, but the PDF could not be read. The vendor decides.
+                        ocrConfirmUnverifiedSave(['The uploaded PDF could not be read: ' + result.message], btn);
+                    } else if (OCR_FAIL_OPEN) {
+                        // 500 / 502 / gateway / empty body: the API is down or failed. Do not block the challan.
+                        ocrBypassBecauseApiUnavailable(btn, 'Invoice validation is unavailable, so it was skipped. The despatch will be saved.');
+                    } else {
+                        ocrMsg('Invoice validation service is unavailable. Please try again.', 'danger');
+                    }
+                });
             };
 
             xhr.onerror = function () {
-                ocrLockActions(false);
-                if (OCR_FAIL_OPEN) {
-                    ocrConfirmUnverifiedSave(['The invoice validation service could not be reached.'], btn);
-                } else {
-                    ocrMsg('Invoice validation service is unavailable. Please try again.', 'danger');
-                }
+                finishOnce(function () {
+                    if (OCR_FAIL_OPEN) {
+                        ocrBypassBecauseApiUnavailable(btn, 'Invoice validation could not be reached, so it was skipped. The despatch will be saved.');
+                    } else {
+                        ocrLockActions(false);
+                        ocrMsg('Invoice validation service is unavailable. Please try again.', 'danger');
+                    }
+                });
+            };
+
+            xhr.ontimeout = function () {
+                finishOnce(function () {
+                    try { xhr.abort(); } catch (e) { }
+                    if (OCR_FAIL_OPEN) {
+                        ocrBypassBecauseApiUnavailable(btn, 'Invoice validation did not respond in time, so it was skipped. The despatch will be saved.');
+                    } else {
+                        ocrLockActions(false);
+                        ocrMsg('Invoice validation took too long. Please try again.', 'danger');
+                    }
+                });
             };
 
             xhr.send(formData);
