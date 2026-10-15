@@ -1806,9 +1806,17 @@ Public Class OPC_VendorClass
         VendorListSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[FG_VendorUnit_List]", Data.CommandType.StoredProcedure)
         Return VendorListSet
     End Function
-    Public Function RFQ_Vendor_List() As DataSet
+    Public Function RFQ_Vendor_List(ByVal searchcode As String) As DataSet
         Dim VendorListSet As New DataSet
-        VendorListSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[GetVendorList]", Data.CommandType.StoredProcedure)
+        Dim sqlParams(0) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@searchcode"
+        sqlParams(0).DbType = DbType.String
+        sqlParams(0).Direction = System.Data.ParameterDirection.Input
+        sqlParams(0).Value = searchcode
+
+        VendorListSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[fg_getVendorList]", Data.CommandType.StoredProcedure, sqlParams)
         Return VendorListSet
     End Function
     Public Function Get_FG_Vendor_dtlsList(ByVal vendorcode As Integer) As DataSet
@@ -1905,6 +1913,19 @@ Public Class OPC_VendorClass
         End Try
 
         Return status
+    End Function
+    Public Function SiteDetailsList(ByVal searchcode As String) As DataSet
+        Dim VendorListSet As New DataSet
+        Dim sqlParams(0) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@vendorcode"
+        sqlParams(0).DbType = DbType.String
+        sqlParams(0).Direction = System.Data.ParameterDirection.Input
+        sqlParams(0).Value = searchcode
+
+        VendorListSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[GetSiteDtls]", Data.CommandType.StoredProcedure, sqlParams)
+        Return VendorListSet
     End Function
 #End Region
 End Class
