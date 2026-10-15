@@ -1123,6 +1123,68 @@ Public Class POLinkingRequestClass
 
 #End Region
 
+#Region "Brand Product Linking"
+    Public Function GetBrandProductLinkBrands() As DataSet
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_brand_product_linking_brand_list]", CommandType.StoredProcedure)
+    End Function
+
+    Public Function GetBrandProductLinkProducts() As DataSet
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_brand_product_linking_product_list]", CommandType.StoredProcedure)
+    End Function
+
+    Public Function InsertBrandProductLinks(ByVal userId As String, ByVal tbl As DataTable) As DataSet
+        Dim sqlConn As SqlConnection = Nothing
+        Dim sqlTrans As SqlTransaction = Nothing
+        Dim ds As New DataSet()
+
+        sqlConn = DBFactory.GetHelper.OpenConnection()
+        sqlTrans = sqlConn.BeginTransaction()
+
+        Dim sqlParams(1) As SqlParameter
+
+        Try
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@user_id"
+            sqlParams(0).SqlDbType = SqlDbType.VarChar
+            sqlParams(0).Size = 20
+            sqlParams(0).Direction = Data.ParameterDirection.Input
+            sqlParams(0).Value = If(String.IsNullOrWhiteSpace(userId), CObj(DBNull.Value), userId.Trim())
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@tbl"
+            sqlParams(1).SqlDbType = SqlDbType.Structured
+            sqlParams(1).TypeName = "dbo.tbl_opc_brand_product_linking"
+            sqlParams(1).Direction = Data.ParameterDirection.Input
+            sqlParams(1).Value = tbl
+
+            Dim sqlCmd As New SqlCommand()
+            sqlCmd.Connection = sqlConn
+            sqlCmd.Transaction = sqlTrans
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.CommandText = "[dbo].[opc_brand_product_linking_insert]"
+            sqlCmd.Parameters.AddRange(sqlParams)
+
+            Dim adapter As New SqlDataAdapter(sqlCmd)
+            adapter.Fill(ds)
+
+            sqlTrans.Commit()
+
+        Catch ex As SqlException
+            If sqlTrans IsNot Nothing Then
+                sqlTrans.Rollback()
+            End If
+            Throw
+
+        Finally
+            If sqlConn IsNot Nothing Then
+                sqlConn.Close()
+            End If
+        End Try
+
+        Return ds
+    End Function
+#End Region
+
 #Region "Cancelled by Vendor (Vendor Payment Dashboard)"
     'Modified-by MUKESH BHAGAT on 11-09-2026 : "Cancelled by Vendor" on the Dispatch List.
     'The flag lives on despatch_hdr (desph_vendor_cancel_yn); the attached credit-note /
