@@ -35,6 +35,7 @@ Partial Class Product_Formulation
         ' raw material search shows the manual items of this vendor unit only (HO: the vendor selected on the page; the browser keeps it in sync when the dropdown changes)
         aceRawMaterialSearch.ContextKey = If(userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT, Convert.ToString(userInfo.userBranchEntity).Trim(), ddlvendor.SelectedValue)
         aceProductSearch.ContextKey = CurrentVendor()      ' product search = the products declared for this vendor on Vendor Scope
+        If IsPostBack AndAlso userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT Then HideVendorColumn()
     End Sub
 
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
@@ -420,7 +421,7 @@ Partial Class Product_Formulation
             Dim own As String = Convert.ToString(userInfo.userBranchEntity).Trim()
             If ddlvendor.Items.FindByValue(own) IsNot Nothing Then
                 ddlvendor.SelectedValue = own
-                pfSectionEntry.Attributes("class") = "pf-section pf-hide-vendor"      ' the Vendor column is for HO and SYSADMIN only
+                HideVendorColumn()
             End If
         End If
     End Sub
@@ -1143,6 +1144,15 @@ Partial Class Product_Formulation
         For Each r As DataRow In scopeItems.Rows
             ddl.Items.Add(New ListItem(Convert.ToString(r("item_name")), Convert.ToString(r("item_name"))))
         Next
+    End Sub
+
+    ''' <summary>A vendor (UNIT) login never sees the Vendor column: the grid column and the entry cell are removed server-side
+    ''' (hiding them with CSS leaves a gap in the fixed-layout table). Called on every load so it survives postbacks.</summary>
+    Private Sub HideVendorColumn()
+        For Each col As DataControlField In gvVendorRawMat.Columns
+            If col.HeaderText.StartsWith("Vendor") Then col.Visible = False
+        Next
+        tdVendorEntry.Visible = False
     End Sub
 
     ''' <summary>The vendor the formulation is for: a vendor (UNIT) login = its own unit, HO / SYSADMIN = the vendor picked on the page.</summary>

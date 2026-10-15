@@ -1088,7 +1088,7 @@
                             <tbody>
                                 <tr class="pf-entry-row">
                                     <td class="pf-c-sn pf-center"><i class="fas fa-plus"></i></td>
-                                    <td class="pf-c-vendor">
+                                    <td class="pf-c-vendor" id="tdVendorEntry" runat="server">
                                         <asp:Panel ID="pnlVendorDdl" runat="server">
                                         <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlvendor_SelectedIndexChanged"
                                             onchange="if(typeof clearVendorValidation==='function')clearVendorValidation();">
@@ -1264,7 +1264,7 @@
                                                         <tr class="pf-entry-row pf-line-entry">
                                                             <td class="pf-col-sn"><i class="fas fa-plus"></i></td>
                                                             <td>
-                                                                <asp:DropDownList ID="txtNewCostName" runat="server" CssClass="pf-new-name" Style="width: 100%;" onchange="this.classList.remove('field-invalid');"></asp:DropDownList>
+                                                                <asp:DropDownList ID="txtNewCostName" runat="server" CssClass="pf-new-name select2" Style="width: 100%;" data-placeholder="Search cost name (cap, bottle, carton ...)" onchange="this.classList.remove('field-invalid');"></asp:DropDownList>
                                                             </td>
                                                             <td class="pf-col-amt">
                                                                 <asp:TextBox ID="txtNewAmount" runat="server" CssClass="pf-num pf-new-amt" Placeholder="0.00" AutoComplete="Off"
