@@ -86,10 +86,7 @@
                                     <ItemStyle HorizontalAlign="Center" Width="15%" />
                                 </asp:BoundField>
 
-                                <asp:BoundField HeaderText="Oracle ID" HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center" DataField="oracle_id">
-                                    <HeaderStyle HorizontalAlign="Center" />
-                                    <ItemStyle HorizontalAlign="Center" Width="15%" />
-                                </asp:BoundField>
+                               
 
                                 <asp:BoundField HeaderText="Status" HeaderStyle-HorizontalAlign="Center" DataField="active">
                                     <HeaderStyle HorizontalAlign="Center" />
@@ -105,6 +102,10 @@
                                     <HeaderStyle HorizontalAlign="Center" />
                                     <ItemStyle HorizontalAlign="Center" Width="15%" />
                                 </asp:BoundField>
+                                 <asp:BoundField HeaderText="Oracle ID" HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center" DataField="oracle_id">
+     <HeaderStyle HorizontalAlign="Center" />
+     <ItemStyle HorizontalAlign="Center" Width="15%" />
+ </asp:BoundField>
                             </Columns>
                         </asp:GridView>
                     </ContentTemplate>
