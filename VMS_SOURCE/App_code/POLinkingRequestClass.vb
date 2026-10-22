@@ -945,7 +945,7 @@ Public Class POLinkingRequestClass
         End Try
     End Function
 
-    Public Function InsertRawMaterialPo(ByVal vendor_code As String, ByVal supplier_code As String, ByVal user_id As String, ByVal tbl As DataTable, ByVal gstValue As Decimal, ByVal freightCost As Decimal, Optional ByVal refPoNo As String = "") As String
+    Public Function InsertRawMaterialPo(ByVal vendor_code As String, ByVal supplier_code As String, ByVal user_id As String, ByVal tbl As DataTable, ByVal freightGst As Nullable(Of Decimal), ByVal freightCost As Decimal, Optional ByVal refPoNo As String = "") As String
         Dim sqlConn As SqlConnection = Nothing
         Dim sqlTrans As SqlTransaction = Nothing
         Dim poNo As String = String.Empty
@@ -974,7 +974,7 @@ Public Class POLinkingRequestClass
             sqlParams(2).Precision = 18
             sqlParams(2).Scale = 2
             sqlParams(2).Direction = Data.ParameterDirection.Input
-            sqlParams(2).Value = gstValue
+            sqlParams(2).Value = If(freightGst.HasValue, CObj(freightGst.Value), DBNull.Value)
 
             sqlParams(3) = New SqlParameter()
             sqlParams(3).ParameterName = "@freight"
@@ -1040,14 +1040,20 @@ Public Class POLinkingRequestClass
         Return poNo
     End Function
 
-    Public Function GetRawMaterialPoList(ByVal vendorCode As String) As DataSet
-        Dim sqlParams(0) As SqlParameter
+    Public Function GetRawMaterialPoList(ByVal userId As String, ByVal vendorCode As String) As DataSet
+        Dim sqlParams(1) As SqlParameter
 
         sqlParams(0) = New SqlParameter()
-        sqlParams(0).ParameterName = "@vendor_code"
+        sqlParams(0).ParameterName = "@user_id"
         sqlParams(0).DbType = DbType.String
         sqlParams(0).Direction = ParameterDirection.Input
-        sqlParams(0).Value = If(String.IsNullOrWhiteSpace(vendorCode), CObj(DBNull.Value), vendorCode.Trim())
+        sqlParams(0).Value = userId
+
+        sqlParams(1) = New SqlParameter()
+        sqlParams(1).ParameterName = "@vendor_code"
+        sqlParams(1).DbType = DbType.String
+        sqlParams(1).Direction = ParameterDirection.Input
+        sqlParams(1).Value = If(String.IsNullOrWhiteSpace(vendorCode), CObj(DBNull.Value), vendorCode.Trim())
 
         Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[raw_mtrl_po_list]", CommandType.StoredProcedure, sqlParams)
     End Function
