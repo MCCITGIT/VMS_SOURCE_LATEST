@@ -32,7 +32,9 @@ Public Class PdfGenerator
     Private Shared ReadOnly WhiteSmall As Font = FontFactory.GetFont(FontFactory.HELVETICA, 8, Font.NORMAL, White)
 
     ''' <summary>
-    ''' Writes a raw-material purchase order PDF. Line columns: ProductCode, ProductName, Qty, Rate, Amount.
+    ''' Writes a raw-material purchase order PDF.
+    ''' Line columns: ProductCode, ProductName, Qty, Rate, Gst, GstAmount, Amount.
+    ''' Amount is quantity x rate plus GST on that line. freightGstPercent is the optional freight GST percent.
     ''' The item table repeats its header on each page and the totals block stays together.
     ''' </summary>
     Public Function CreateRawMaterialPurchaseOrder(ByVal outputPath As String,
@@ -42,7 +44,7 @@ Public Class PdfGenerator
                                                    ByVal vendorName As String,
                                                    ByVal preparedBy As String,
                                                    ByVal lines As DataTable,
-                                                   ByVal gstPercent As Decimal,
+                                                   ByVal freightGstPercent As Nullable(Of Decimal),
                                                    ByVal freightCost As Decimal) As String
         If String.IsNullOrWhiteSpace(outputPath) Then
             Throw New ArgumentException("PDF output path is required.")
@@ -77,7 +79,7 @@ Public Class PdfGenerator
             AddVendorBlock(document, vendorCode, vendorName)
             AddSectionLabel(document, "Line items")
             document.Add(BuildLineTable(lines))
-            document.Add(BuildTotals(lines, gstPercent, freightCost))
+            document.Add(BuildTotals(lines, freightGstPercent, freightCost))
             document.Add(BuildClosingBlock(preparedBy))
             document.Close()
         Catch ex As Exception
@@ -136,9 +138,9 @@ Public Class PdfGenerator
     End Sub
 
     Private Function BuildLineTable(ByVal lines As DataTable) As PdfPTable
-        Dim table As New PdfPTable(6)
+        Dim table As New PdfPTable(8)
         table.WidthPercentage = 100
-        table.SetWidths(New Single() {8, 16, 36, 12, 14, 14})
+        table.SetWidths(New Single() {6, 14, 26, 9, 11, 8, 13, 13})
         table.HeaderRows = 1
         table.SplitLate = False
         table.SplitRows = True
@@ -149,32 +151,53 @@ Public Class PdfGenerator
         table.AddCell(HeadCell("Product", Element.ALIGN_LEFT))
         table.AddCell(HeadCell("Qty", Element.ALIGN_RIGHT))
         table.AddCell(HeadCell("Rate", Element.ALIGN_RIGHT))
+        table.AddCell(HeadCell("GST %", Element.ALIGN_RIGHT))
+        table.AddCell(HeadCell("GST Amt", Element.ALIGN_RIGHT))
         table.AddCell(HeadCell("Amount", Element.ALIGN_RIGHT))
 
         Dim serial As Integer = 0
         For Each row As DataRow In lines.Rows
             serial += 1
             Dim shade As BaseColor = If(serial Mod 2 = 0, AltRow, White)
+            Dim qty As Decimal = ReadDecimal(row, "Qty")
+            Dim rate As Decimal = ReadDecimal(row, "Rate")
+            Dim gstPercent As Decimal = ReadDecimal(row, "Gst")
+            Dim basicAmount As Decimal = ProductBasic(qty, rate)
+            Dim gstAmount As Decimal = If(HasAmount(row, "GstAmount"), ReadDecimal(row, "GstAmount"), LineGstAmount(basicAmount, gstPercent))
+            Dim lineAmount As Decimal = If(HasAmount(row, "Amount"), ReadDecimal(row, "Amount"), basicAmount + gstAmount)
             table.AddCell(BodyCell(serial.ToString(), Element.ALIGN_CENTER, shade, BodyFont))
             table.AddCell(BodyCell(ReadText(row, "ProductCode"), Element.ALIGN_LEFT, shade, BodyFont))
             table.AddCell(BodyCell(ReadText(row, "ProductName"), Element.ALIGN_LEFT, shade, BodyFont))
-            table.AddCell(BodyCell(ReadDecimal(row, "Qty").ToString("N2", CultureInfo.InvariantCulture), Element.ALIGN_RIGHT, shade, AmountFont))
-            table.AddCell(BodyCell(ReadDecimal(row, "Rate").ToString("N2", CultureInfo.InvariantCulture), Element.ALIGN_RIGHT, shade, AmountFont))
-            table.AddCell(BodyCell(ReadDecimal(row, "Amount").ToString("N2", CultureInfo.InvariantCulture), Element.ALIGN_RIGHT, shade, AmountFont))
+            table.AddCell(BodyCell(qty.ToString("N2", CultureInfo.InvariantCulture), Element.ALIGN_RIGHT, shade, AmountFont))
+            table.AddCell(BodyCell(rate.ToString("N2", CultureInfo.InvariantCulture), Element.ALIGN_RIGHT, shade, AmountFont))
+            table.AddCell(BodyCell(gstPercent.ToString("0.##", CultureInfo.InvariantCulture), Element.ALIGN_RIGHT, shade, AmountFont))
+            table.AddCell(BodyCell(gstAmount.ToString("N2", CultureInfo.InvariantCulture), Element.ALIGN_RIGHT, shade, AmountFont))
+            table.AddCell(BodyCell(lineAmount.ToString("N2", CultureInfo.InvariantCulture), Element.ALIGN_RIGHT, shade, AmountFont))
         Next
 
         Return table
     End Function
 
-    Private Function BuildTotals(ByVal lines As DataTable, ByVal gstPercent As Decimal, ByVal freightCost As Decimal) As PdfPTable
-        Dim lineAmount As Decimal = 0D
+    Private Function BuildTotals(ByVal lines As DataTable, ByVal freightGstPercent As Nullable(Of Decimal), ByVal freightCost As Decimal) As PdfPTable
+        Dim lineTotal As Decimal = 0D
         For Each row As DataRow In lines.Rows
-            lineAmount += ReadDecimal(row, "Amount")
+            Dim qty As Decimal = ReadDecimal(row, "Qty")
+            Dim rate As Decimal = ReadDecimal(row, "Rate")
+            Dim gstPercent As Decimal = ReadDecimal(row, "Gst")
+            Dim basic As Decimal = ProductBasic(qty, rate)
+            Dim gstAmount As Decimal = If(HasAmount(row, "GstAmount"), ReadDecimal(row, "GstAmount"), LineGstAmount(basic, gstPercent))
+            Dim lineAmount As Decimal = If(HasAmount(row, "Amount"), ReadDecimal(row, "Amount"), basic + gstAmount)
+            lineTotal += lineAmount
         Next
 
-        Dim taxableAmount As Decimal = lineAmount + freightCost
-        Dim gstAmount As Decimal = Math.Round(taxableAmount * gstPercent / 100D, 2, MidpointRounding.AwayFromZero)
-        Dim grandTotal As Decimal = taxableAmount + gstAmount
+        Dim freightGstAmount As Decimal = 0D
+        Dim freightGstText As String = "0%"
+        If freightGstPercent.HasValue Then
+            freightGstAmount = LineGstAmount(freightCost, freightGstPercent.Value)
+            freightGstText = freightGstPercent.Value.ToString("0.##", CultureInfo.InvariantCulture) & "%"
+        End If
+        Dim freightTotal As Decimal = freightCost + freightGstAmount
+        Dim grandTotal As Decimal = lineTotal + freightTotal
 
         Dim wrap As New PdfPTable(1)
         wrap.WidthPercentage = 100
@@ -183,15 +206,13 @@ Public Class PdfGenerator
         wrap.SpacingAfter = 12
 
         Dim totals As New PdfPTable(2)
-        totals.WidthPercentage = 46
+        totals.WidthPercentage = 52
         totals.HorizontalAlignment = Element.ALIGN_RIGHT
-        totals.SetWidths(New Single() {52, 48})
+        totals.SetWidths(New Single() {68, 32})
         totals.AddCell(TotalLabel("Total amount"))
-        totals.AddCell(TotalValue(lineAmount.ToString("N2", CultureInfo.InvariantCulture)))
-        totals.AddCell(TotalLabel("Freight cost"))
-        totals.AddCell(TotalValue(freightCost.ToString("N2", CultureInfo.InvariantCulture)))
-        totals.AddCell(TotalLabel("GST (" & gstPercent.ToString("0.##", CultureInfo.InvariantCulture) & "%)"))
-        totals.AddCell(TotalValue(gstAmount.ToString("N2", CultureInfo.InvariantCulture)))
+        totals.AddCell(TotalValue(lineTotal.ToString("N2", CultureInfo.InvariantCulture)))
+        totals.AddCell(TotalLabel("Freight (Including GST: " & freightGstText & ")"))
+        totals.AddCell(TotalValue(freightTotal.ToString("N2", CultureInfo.InvariantCulture)))
         totals.AddCell(TotalLabel("Grand total"))
         totals.AddCell(TotalValue(grandTotal.ToString("N2", CultureInfo.InvariantCulture)))
 
@@ -212,7 +233,7 @@ Public Class PdfGenerator
         block.AddCell(SignCell("Prepared by", preparedBy))
         block.AddCell(SignCell("Authorised signatory", ""))
 
-        Dim note As New PdfPCell(New Phrase("This purchase order was generated from VMS. Quantities and rates are as entered at the time of submission.", SmallFont))
+        Dim note As New PdfPCell(New Phrase("This purchase order was generated from VMS. Line amount is quantity x rate plus GST on that line. Freight GST is included only when a rate is selected.", SmallFont))
         note.Colspan = 2
         note.Border = Rectangle.NO_BORDER
         note.PaddingTop = 14
@@ -344,6 +365,18 @@ Public Class PdfGenerator
         cell.PaddingRight = 16
         cell.PaddingTop = 6
         Return cell
+    End Function
+
+    Private Shared Function ProductBasic(ByVal qty As Decimal, ByVal rate As Decimal) As Decimal
+        Return Math.Round(qty * rate, 2, MidpointRounding.AwayFromZero)
+    End Function
+
+    Private Shared Function LineGstAmount(ByVal basicAmount As Decimal, ByVal gstPercent As Decimal) As Decimal
+        Return Math.Round(basicAmount * gstPercent / 100D, 2, MidpointRounding.AwayFromZero)
+    End Function
+
+    Private Shared Function HasAmount(ByVal row As DataRow, ByVal columnName As String) As Boolean
+        Return row IsNot Nothing AndAlso row.Table.Columns.Contains(columnName) AndAlso Not IsDBNull(row(columnName))
     End Function
 
     Private Function ReadText(ByVal row As DataRow, ByVal columnName As String) As String

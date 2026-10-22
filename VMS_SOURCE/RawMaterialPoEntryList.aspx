@@ -25,7 +25,7 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label class="form-control-label">Vendor:<span id="spanVendor" class="mandatory p-vendor-select">*</span></label>
+                                    <label class="form-control-label">Supplier:<span id="spanVendor" class="mandatory p-vendor-select">*</span></label>
                                     <asp:DropDownList ID="ddlVendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="2" runat="server"></asp:DropDownList>
                                     <asp:HiddenField ID="hdnRmVendor" runat="server" ClientIDMode="Static" />
                                 </div>
@@ -54,7 +54,7 @@
                 <div class="mst-panel-header-left">
                     <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
                     <div>
-                        <h5 class="mst-panel-title">Vendor List</h5>
+                        <h5 class="mst-panel-title">Supplier List</h5>
                     </div>
                 </div>
             </div>
@@ -85,7 +85,7 @@
                                         <HeaderStyle HorizontalAlign="Center" />
                                         <ItemStyle HorizontalAlign="Center" Width="8%" />
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Vendor">
+                                    <asp:TemplateField HeaderText="Supplier">
                                         <ItemTemplate>
                                             <asp:Label ID="lblVendor" runat="server" Text='<%# Eval("vendor_name") %>' />
                                             <asp:HiddenField ID="hdnVendorCode" runat="server" Value='<%# Eval("vendor_code") %>' />
@@ -93,7 +93,7 @@
                                         <HeaderStyle HorizontalAlign="Center" />
                                         <ItemStyle HorizontalAlign="Left" Width="14%" />
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Vendor Code">
+                                    <asp:TemplateField HeaderText="Supplier Code">
                                         <ItemTemplate>
                                             <asp:Label ID="lblVendorCode" runat="server" Text='<%# Eval("vendor_code") %>' />
                                         </ItemTemplate>
@@ -119,21 +119,21 @@
                                             <asp:Label ID="lblQty" runat="server" Text='<%# Eval("qty", "{0:N2}") %>' />
                                         </ItemTemplate>
                                         <HeaderStyle HorizontalAlign="Center" />
-                                        <ItemStyle HorizontalAlign="Right" Width="8%" />
+                                        <ItemStyle HorizontalAlign="Center" Width="8%" />
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Rate">
+                                    <%--<asp:TemplateField HeaderText="Rate">
                                         <ItemTemplate>
                                             <asp:Label ID="lblRate" runat="server" Text='<%# Eval("rate", "{0:N2}") %>' />
                                         </ItemTemplate>
                                         <HeaderStyle HorizontalAlign="Center" />
                                         <ItemStyle HorizontalAlign="Right" Width="8%" />
-                                    </asp:TemplateField>
+                                    </asp:TemplateField>--%>
                                     <asp:TemplateField HeaderText="Amount">
                                         <ItemTemplate>
                                             <asp:Label ID="lblAmount" runat="server" Text='<%# Eval("amount", "{0:N2}") %>' />
                                         </ItemTemplate>
                                         <HeaderStyle HorizontalAlign="Center" />
-                                        <ItemStyle HorizontalAlign="Right" Width="8%" />
+                                        <ItemStyle HorizontalAlign="Center" Width="8%" />
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Action">
                                         <ItemTemplate>
