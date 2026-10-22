@@ -24,11 +24,12 @@ Partial Class RawMaterialPoEntry
     Private Const TemplateFileName As String = "RawMaterialPO_Template.xls"
     Private Const TemplateRowPoNo As Integer = 2
     Private Const TemplateRowSupplier As Integer = 3
-    Private Const TemplateRowGst As Integer = 4
-    Private Const TemplateRowFreight As Integer = 5
+    Private Const TemplateRowFreight As Integer = 4
+    Private Const TemplateRowFreightGst As Integer = 5
     Private Const TemplateRowLineHeader As Integer = 7
     Private Const TemplateLineRows As Integer = 200
     Private Const TemplateProductHeader As String = "Product *"
+    Private Const TemplateGstHeader As String = "GST % *"
     Private Const TemplateMaxErrorsShown As Integer = 10
 
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
@@ -101,13 +102,35 @@ Partial Class RawMaterialPoEntry
             dt.Columns.Add("ProductName", GetType(String))
             dt.Columns.Add("Qty", GetType(Decimal))
             dt.Columns.Add("Rate", GetType(Decimal))
+            dt.Columns.Add("Gst", GetType(Decimal))
+            dt.Columns.Add("GstAmount", GetType(Decimal))
             dt.Columns.Add("Amount", GetType(Decimal))
 
             ViewState("PoItems") = dt
+        Else
+            EnsurePoItemColumn(dt, "Gst")
+            EnsurePoItemColumn(dt, "GstAmount")
         End If
 
         Return dt
     End Function
+
+    Private Shared Sub EnsurePoItemColumn(ByVal dt As DataTable, ByVal columnName As String)
+        If Not dt.Columns.Contains(columnName) Then
+            dt.Columns.Add(columnName, GetType(Decimal))
+        End If
+    End Sub
+
+    ' Line amount is quantity x rate plus GST on that line. Gst is the selected percent.
+    Private Shared Sub FillProductAmounts(ByVal row As DataRow, ByVal qty As Decimal, ByVal rate As Decimal, ByVal gstPercent As Decimal)
+        Dim basicAmount As Decimal = Math.Round(qty * rate, 2, MidpointRounding.AwayFromZero)
+        Dim gstAmount As Decimal = Math.Round(basicAmount * gstPercent / 100D, 2, MidpointRounding.AwayFromZero)
+        row("Qty") = qty
+        row("Rate") = rate
+        row("Gst") = gstPercent
+        row("GstAmount") = gstAmount
+        row("Amount") = basicAmount + gstAmount
+    End Sub
 
     Private Sub BindPoItems()
         gvPoItems.DataSource = GetPoItems()
@@ -119,6 +142,7 @@ Partial Class RawMaterialPoEntry
         txtProductSearch.CssClass = "form-control"
         txtQty.CssClass = "form-control"
         txtRate.CssClass = "form-control"
+        ddlPrdGst.CssClass = "form-control select2"
         ddlGst.CssClass = "form-control select2"
         txtFreight.CssClass = "form-control"
         pnlPoGrid.CssClass = "table-responsive rm-grid-scroll"
@@ -126,6 +150,7 @@ Partial Class RawMaterialPoEntry
         valProduct.Text = String.Empty
         valQty.Text = String.Empty
         valRate.Text = String.Empty
+        lblPrdGst.Text = String.Empty
         lblGst.Text = String.Empty
         lblFreight.Text = String.Empty
         valGrid.Text = String.Empty
@@ -179,6 +204,15 @@ Partial Class RawMaterialPoEntry
             Return
         End If
 
+        Dim gstPercent As Decimal
+        If Not Decimal.TryParse(ddlPrdGst.SelectedValue.Trim(),
+                                NumberStyles.Number,
+                                CultureInfo.InvariantCulture,
+                                gstPercent) OrElse gstPercent < 0D Then
+            SetFieldError(ddlPrdGst, lblPrdGst, "Please select GST.")
+            Return
+        End If
+
         Dim productName As String = productText
         Dim productSuffix As String = " (" & productCode & ")"
 
@@ -195,9 +229,7 @@ Partial Class RawMaterialPoEntry
 
         newRow("ProductCode") = productCode
         newRow("ProductName") = productName
-        newRow("Qty") = qty
-        newRow("Rate") = rate
-        newRow("Amount") = qty * rate
+        FillProductAmounts(newRow, qty, rate, gstPercent)
 
         dt.Rows.Add(newRow)
         ViewState("PoItems") = dt
@@ -209,6 +241,8 @@ Partial Class RawMaterialPoEntry
         hdnProductCode.Value = String.Empty
         txtQty.Text = String.Empty
         txtRate.Text = String.Empty
+        ddlPrdGst.ClearSelection()
+        ddlPrdGst.SelectedIndex = 0
     End Sub
 
     Protected Sub gvPoItems_RowCommand(ByVal sender As Object, ByVal e As GridViewCommandEventArgs)
@@ -237,13 +271,17 @@ Partial Class RawMaterialPoEntry
             Return
         End If
 
-        Dim gstValue As Decimal
-        If Not Decimal.TryParse(ddlGst.SelectedValue.Trim(),
-                                NumberStyles.Number,
-                                CultureInfo.CurrentCulture,
-                                gstValue) OrElse gstValue < 0D Then
-            SetFieldError(ddlGst, lblGst, "Please select GST.")
-            Return
+        Dim freightGst As Nullable(Of Decimal) = Nothing
+        If ddlGst.SelectedValue.Trim() <> "" Then
+            Dim freightGstValue As Decimal
+            If Not Decimal.TryParse(ddlGst.SelectedValue.Trim(),
+                                    NumberStyles.Number,
+                                    CultureInfo.InvariantCulture,
+                                    freightGstValue) OrElse freightGstValue < 0D Then
+                SetFieldError(ddlGst, lblGst, "Please select a valid GST.")
+                Return
+            End If
+            freightGst = freightGstValue
         End If
 
         Dim freightCost As Decimal
@@ -272,12 +310,19 @@ Partial Class RawMaterialPoEntry
         dt1.Columns.Add("qty", GetType(Decimal))
         dt1.Columns.Add("rate", GetType(Decimal))
         dt1.Columns.Add("amount", GetType(Decimal))
+        dt1.Columns.Add("gst", GetType(Decimal))
 
         For Each row As DataRow In items.Rows
+            If IsDBNull(row("Gst")) Then
+                SetGridError("Please select GST for every product.")
+                Return
+            End If
+
             Dim dr1 As DataRow = dt1.NewRow()
             dr1("product_code") = Convert.ToString(row("ProductCode")).Trim()
             dr1("qty") = Convert.ToDecimal(row("Qty"))
             dr1("rate") = Convert.ToDecimal(row("Rate"))
+            dr1("gst") = Convert.ToDecimal(row("Gst"))
             dr1("amount") = Convert.ToDecimal(row("Amount"))
             dt1.Rows.Add(dr1)
         Next
@@ -285,7 +330,7 @@ Partial Class RawMaterialPoEntry
 
         Try
             Dim obj As New POLinkingRequestClass()
-            Dim poNo As String = obj.InsertRawMaterialPo(userInfo.userIDEntity, vendorCode, userInfo.userIDEntity, dt1, gstValue, freightCost, refPoNo)
+            Dim poNo As String = obj.InsertRawMaterialPo(userInfo.userIDEntity, vendorCode, userInfo.userIDEntity, dt1, freightGst, freightCost, refPoNo)
 
             If poNo <> "" Then
                 ' PDF and popup show the user's PO No when given; DB lookups stay on the system PO No.
@@ -305,8 +350,7 @@ Partial Class RawMaterialPoEntry
                 Dim fileName As String = Guid.NewGuid().ToString() & "_" & safePoNo & ".pdf"
                 Dim pdfPath As String = Path.Combine(folder, fileName)
                 Dim pdf As New PdfGenerator()
-                'pdf.CreateRawMaterialPurchaseOrder(pdfPath, poNo, DateTime.Now, vendorCode, vendorName, preparedBy, items)
-                Dim output As String = pdf.CreateRawMaterialPurchaseOrder(pdfPath, displayPoNo, DateTime.Now, vendorCode, vendorName, preparedBy, items, gstValue, freightCost)
+                Dim output As String = pdf.CreateRawMaterialPurchaseOrder(pdfPath, displayPoNo, DateTime.Now, vendorCode, vendorName, preparedBy, items, freightGst, freightCost)
 
                 Dim docFileName = Path.GetFileName(output)
                 Dim docFolder = Path.GetDirectoryName(output)
@@ -324,6 +368,11 @@ Partial Class RawMaterialPoEntry
                 hdnProductCode.Value = String.Empty
                 txtQty.Text = String.Empty
                 txtRate.Text = String.Empty
+                txtFreight.Text = String.Empty
+                ddlPrdGst.ClearSelection()
+                ddlPrdGst.SelectedIndex = 0
+                ddlGst.ClearSelection()
+                ddlGst.SelectedIndex = 0
                 hdnRefPoNo.Value = String.Empty
                 lblRefPoNo.Text = String.Empty
                 lblPoSavedMessage.Text = "PO saved successfully."
@@ -380,8 +429,10 @@ Partial Class RawMaterialPoEntry
             sheet = Nothing
         End Try
 
-        If sheet Is Nothing OrElse Not String.Equals(GetCellText(sheet, TemplateRowLineHeader, 0), TemplateProductHeader, StringComparison.OrdinalIgnoreCase) Then
-            ShowUploadMessage("This file is not the Raw Material PO template. Please download the template, fill it and upload it again.", True)
+        If sheet Is Nothing OrElse
+           Not String.Equals(GetCellText(sheet, TemplateRowLineHeader, 0), TemplateProductHeader, StringComparison.OrdinalIgnoreCase) OrElse
+           Not String.Equals(GetCellText(sheet, TemplateRowLineHeader, 4), TemplateGstHeader, StringComparison.OrdinalIgnoreCase) Then
+            ShowUploadMessage("This file is not the current Raw Material PO template. Please download the template, fill it and upload it again.", True)
             Return
         End If
 
@@ -403,24 +454,18 @@ Partial Class RawMaterialPoEntry
             End If
         End If
 
-        Dim gstText As String = GetCellText(sheet, TemplateRowGst, 1).Replace("%", "").Trim()
-        Dim gstValue As Decimal
-        Dim gstItem As ListItem = Nothing
-        If gstText = "" Then
-            errors.Add("GST is required.")
-        ElseIf TryParseAmount(gstText, gstValue) Then
-            gstItem = FindListItem(ddlGst, gstValue.ToString("0.##", CultureInfo.InvariantCulture))
-        End If
-        If gstText <> "" AndAlso gstItem Is Nothing Then
-            errors.Add("GST '" & gstText & "' is not valid. Please select it from the list.")
-        End If
-
         Dim freightText As String = GetCellText(sheet, TemplateRowFreight, 1)
         Dim freightCost As Decimal
         If freightText = "" Then
             errors.Add("Freight is required.")
         ElseIf Not TryParseAmount(freightText, freightCost) OrElse freightCost < 0D Then
             errors.Add("Freight must be a number of zero or more.")
+        End If
+
+        Dim freightGstText As String = GetCellText(sheet, TemplateRowFreightGst, 1)
+        Dim freightGstItem As ListItem = Nothing
+        If freightGstText <> "" AndAlso Not TryGetGstItem(freightGstText, ddlGst, freightGstItem) Then
+            errors.Add("Freight GST '" & freightGstText & "' is not valid. Please select it from the list or leave it blank.")
         End If
 
         Dim codeByName As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
@@ -445,8 +490,9 @@ Partial Class RawMaterialPoEntry
             Dim productCodeText As String = GetCellText(sheet, rowIndex, 1)
             Dim qtyText As String = GetCellText(sheet, rowIndex, 2)
             Dim rateText As String = GetCellText(sheet, rowIndex, 3)
+            Dim gstText As String = GetCellText(sheet, rowIndex, 4)
 
-            If productText = "" AndAlso qtyText = "" AndAlso rateText = "" Then
+            If productText = "" AndAlso qtyText = "" AndAlso rateText = "" AndAlso gstText = "" Then
                 Continue For
             End If
 
@@ -462,6 +508,7 @@ Partial Class RawMaterialPoEntry
 
             Dim qty As Decimal
             Dim rate As Decimal
+            Dim gstItem As ListItem = Nothing
             Dim rowValid As Boolean = True
 
             If productCode = "" Then
@@ -476,14 +523,19 @@ Partial Class RawMaterialPoEntry
                 errors.Add("Row " & excelRow & ": Rate must be a number of zero or more.")
                 rowValid = False
             End If
+            If gstText = "" Then
+                errors.Add("Row " & excelRow & ": GST is required.")
+                rowValid = False
+            ElseIf Not TryGetGstItem(gstText, ddlPrdGst, gstItem) Then
+                errors.Add("Row " & excelRow & ": GST '" & gstText & "' is not valid. Please select it from the list.")
+                rowValid = False
+            End If
 
             If rowValid Then
                 Dim newRow As DataRow = items.NewRow()
                 newRow("ProductCode") = productCode
                 newRow("ProductName") = nameByCode(productCode)
-                newRow("Qty") = qty
-                newRow("Rate") = rate
-                newRow("Amount") = qty * rate
+                FillProductAmounts(newRow, qty, rate, Decimal.Parse(gstItem.Value, CultureInfo.InvariantCulture))
                 items.Rows.Add(newRow)
             End If
         Next
@@ -507,20 +559,26 @@ Partial Class RawMaterialPoEntry
 
         ddlVendor.ClearSelection()
         supplierItem.Selected = True
-        ddlGst.ClearSelection()
-        gstItem.Selected = True
         txtFreight.Text = freightCost.ToString("0.##", CultureInfo.CurrentCulture)
+        ddlGst.ClearSelection()
+        If freightGstItem Is Nothing Then
+            ddlGst.SelectedIndex = 0
+        Else
+            freightGstItem.Selected = True
+        End If
 
         txtProductSearch.Text = String.Empty
         hdnProductCode.Value = String.Empty
         txtQty.Text = String.Empty
         txtRate.Text = String.Empty
+        ddlPrdGst.ClearSelection()
+        ddlPrdGst.SelectedIndex = 0
 
         ViewState("PoItems") = items
         BindPoItems()
 
         hdnRefPoNo.Value = refPoNo
-        lblRefPoNo.Text = If(refPoNo = "", String.Empty, "PO No: " & HttpUtility.HtmlEncode(refPoNo))
+        'lblRefPoNo.Text = If(refPoNo = "", String.Empty, "PO No: " & HttpUtility.HtmlEncode(refPoNo))
 
         ShowUploadMessage("Template loaded with " & items.Rows.Count & " product line(s). Please review the details and click Submit.", False)
     End Sub
@@ -586,10 +644,10 @@ Partial Class RawMaterialPoEntry
 
         GetOrCreateCell(sheet, 0, 0).SetCellValue("Raw Material PO Entry - Upload Template")
         GetOrCreateCell(sheet, 0, 0).CellStyle = titleStyle
-        GetOrCreateCell(sheet, 1, 0).SetCellValue("Fill the yellow cells, save the file and upload it on the Raw Material PO Entry page. Fields marked * are mandatory. Leave PO No blank to use the system generated PO No.")
+        GetOrCreateCell(sheet, 1, 0).SetCellValue("Fill the yellow cells, save the file and upload it on the Raw Material PO Entry page. Fields marked * are mandatory. Leave PO No blank to use the system generated PO No. GST % is required on every product line. Freight GST % is optional.")
 
-        Dim headerLabels As String() = {"PO No (Optional)", "Supplier *", "GST % *", "Freight *"}
-        Dim headerRows As Integer() = {TemplateRowPoNo, TemplateRowSupplier, TemplateRowGst, TemplateRowFreight}
+        Dim headerLabels As String() = {"PO No (Optional)", "Supplier *", "Freight *", "Freight GST % (Optional)"}
+        Dim headerRows As Integer() = {TemplateRowPoNo, TemplateRowSupplier, TemplateRowFreight, TemplateRowFreightGst}
         For i As Integer = 0 To headerRows.Length - 1
             Dim labelCell As ICell = GetOrCreateCell(sheet, headerRows(i), 0)
             labelCell.SetCellValue(headerLabels(i))
@@ -597,7 +655,7 @@ Partial Class RawMaterialPoEntry
             GetOrCreateCell(sheet, headerRows(i), 1).CellStyle = If(headerRows(i) = TemplateRowPoNo, textInputStyle, inputStyle)
         Next
 
-        Dim lineHeaders As String() = {TemplateProductHeader, "Product Code", "Quantity *", "Rate *"}
+        Dim lineHeaders As String() = {TemplateProductHeader, "Product Code", "Quantity *", "Rate *", TemplateGstHeader}
         For col As Integer = 0 To lineHeaders.Length - 1
             Dim headerCell As ICell = GetOrCreateCell(sheet, TemplateRowLineHeader, col)
             headerCell.SetCellValue(lineHeaders(col))
@@ -610,6 +668,7 @@ Partial Class RawMaterialPoEntry
             GetOrCreateCell(sheet, rowIndex, 0).CellStyle = inputStyle
             GetOrCreateCell(sheet, rowIndex, 2).CellStyle = inputStyle
             GetOrCreateCell(sheet, rowIndex, 3).CellStyle = inputStyle
+            GetOrCreateCell(sheet, rowIndex, 4).CellStyle = inputStyle
 
             Dim codeCell As ICell = GetOrCreateCell(sheet, rowIndex, 1)
             codeCell.CellStyle = autoStyle
@@ -637,7 +696,9 @@ Partial Class RawMaterialPoEntry
         If gstCount > 0 Then
             AddListName(workbook, "GstList", "F", gstCount)
             AddValidation(sheet, dvHelper, DVConstraint.CreateFormulaListConstraint("GstList"),
-                          TemplateRowGst, TemplateRowGst, 1, "Invalid GST", "Please select GST from the list.")
+                          TemplateRowFreightGst, TemplateRowFreightGst, 1, "Invalid Freight GST", "Please select freight GST from the list, or leave it blank.")
+            AddValidation(sheet, dvHelper, DVConstraint.CreateFormulaListConstraint("GstList"),
+                          firstLineRow, lastLineRow, 4, "Invalid GST", "Please select GST from the list.")
         End If
         AddValidation(sheet, dvHelper, DVConstraint.CreateNumericConstraint(ValidationType.TEXT_LENGTH, OperatorType.LESS_OR_EQUAL, RefPoNoMaxLength.ToString(), Nothing),
                       TemplateRowPoNo, TemplateRowPoNo, 1, "Invalid PO No", "PO No cannot be longer than " & RefPoNoMaxLength & " characters.")
@@ -652,6 +713,7 @@ Partial Class RawMaterialPoEntry
         sheet.SetColumnWidth(1, 22 * 256)
         sheet.SetColumnWidth(2, 14 * 256)
         sheet.SetColumnWidth(3, 14 * 256)
+        sheet.SetColumnWidth(4, 14 * 256)
         sheet.CreateFreezePane(0, firstLineRow)
 
         Return workbook
@@ -726,6 +788,17 @@ Partial Class RawMaterialPoEntry
     Private Shared Function TryParseAmount(ByVal text As String, ByRef value As Decimal) As Boolean
         Return Decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, value) OrElse
                Decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, value)
+    End Function
+
+    Private Shared Function TryGetGstItem(ByVal rawText As String, ByVal list As DropDownList, ByRef gstItem As ListItem) As Boolean
+        gstItem = Nothing
+        Dim gstText As String = rawText.Replace("%", "").Trim()
+        Dim gstValue As Decimal
+        If gstText = "" OrElse Not TryParseAmount(gstText, gstValue) Then
+            Return False
+        End If
+        gstItem = FindListItem(list, gstValue.ToString("0.##", CultureInfo.InvariantCulture))
+        Return gstItem IsNot Nothing
     End Function
 
     Private Shared Function FindListItem(ByVal list As DropDownList, ByVal text As String) As ListItem

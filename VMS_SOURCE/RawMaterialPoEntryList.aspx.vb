@@ -37,7 +37,7 @@ Partial Class RawMaterialPoEntryList
 
     Private Sub BindPoList()
         Dim obj As New POLinkingRequestClass()
-        Dim ds As DataSet = obj.GetRawMaterialPoList(ddlVendor.SelectedValue)
+        Dim ds As DataSet = obj.GetRawMaterialPoList(userInfo.userIDEntity, ddlVendor.SelectedValue)
         RmGridHelper.BindPaged(gvPoList, RmGridHelper.GetTable(ds))
     End Sub
 
