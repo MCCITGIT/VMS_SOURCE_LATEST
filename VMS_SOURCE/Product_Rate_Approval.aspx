@@ -88,8 +88,8 @@
                 <div class="mst-panel-header-left">
                     <span class="mst-panel-icon"><i class="fas fa-columns"></i></span>
                     <div>
-                        <h5 class="mst-panel-title">Rate comparison - every revision side by side (oldest to newest)</h5>
-                        <p class="mst-panel-subtitle">Each column is one submission. A cell shows ratio % @ price per raw material; colour = change against the previous column.</p>
+                        <h5 class="mst-panel-title">Rate comparison - every revision side by side (newest first)</h5>
+                        <p class="mst-panel-subtitle">Each column is one submission, latest on the left. A cell shows ratio % @ price per raw material; colour = change against the revision submitted before it (the column to its right).</p>
                     </div>
                 </div>
             </div>

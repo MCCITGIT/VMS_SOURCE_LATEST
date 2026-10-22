@@ -951,8 +951,10 @@ System.Web.Services.WebMethod()>
         Dim numRowsAffected As Integer = 0
         Dim DocUpld As New UnitDespatchClassVr1
 
-        Dim DocsFileName As String = sch_fld1.FileName
-        Dim DocsOrgFileName As String = sch_fld1.FileName
+        'Modified-by MUKESH BHAGAT on 16-10-2026 : cleaned, unique stored name (see UploadFileName); the raw browser name
+        '("1050, SURAT.pdf") broke the download header and could overwrite another vendor's file of the same name.
+        Dim DocsFileName As String = UploadFileName.SafeFileName(sch_fld1.FileName, True)
+        Dim DocsOrgFileName As String = DocsFileName
         Dim DocPath As String = Format(Date.Now, "dd_MM_yyyy")
 
         If Not sch_fld1.PostedFile Is Nothing And sch_fld1.PostedFile.ContentLength > 0 Then
