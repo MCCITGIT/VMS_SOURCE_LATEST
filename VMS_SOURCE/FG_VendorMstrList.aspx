@@ -45,6 +45,18 @@
             </div>
         </div>
         <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="form-group pb-0 mb-0">
+                        <label class="form-control-label">Vendor Name:</label>
+                        <asp:DropDownList ID="ddlVendor" ClientIDMode="Static" CssClass="form-control select2" runat="server">
+                        </asp:DropDownList>
+                    </div>
+                </div>
+                <div class="col-md-2" style="display: flex; align-items: flex-end;">
+                    <asp:LinkButton ID="imgbtnSearch" runat="server" CssClass="btn btn-primary btn-sm" ClientIDMode="Static" OnClick="imgbtnSearch_Click" ToolTip="Search"><i class="fas fa-search"></i></asp:LinkButton>
+                </div>
+            </div>
             <div class="table-responsive">
                 <asp:UpdatePanel ID="UpdatePanel1" runat="server">
                     <ContentTemplate>
@@ -100,6 +112,8 @@
                     <Triggers>
                         <asp:AsyncPostBackTrigger ControlID="ddlPageSize"
                             EventName="SelectedIndexChanged" />
+                        <asp:AsyncPostBackTrigger ControlID="imgbtnSearch"
+                            EventName="Click" />
                     </Triggers>
                 </asp:UpdatePanel>
             </div>

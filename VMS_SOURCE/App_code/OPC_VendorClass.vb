@@ -1803,9 +1803,17 @@ Public Class OPC_VendorClass
     End Function
 #End Region
 #Region "FG Vendor Master"
-    Public Function Vendor_List_Get() As DataSet
+    Public Function Vendor_List_Get(ByVal unitcode As String) As DataSet
         Dim VendorListSet As New DataSet
-        VendorListSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[FG_VendorUnit_List]", Data.CommandType.StoredProcedure)
+        Dim sqlParams(0) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@unit_code"
+        sqlParams(0).DbType = DbType.String
+        sqlParams(0).Direction = System.Data.ParameterDirection.Input
+        sqlParams(0).Value = If(Not String.IsNullOrWhiteSpace(unitcode), CObj(unitcode.Trim()), DBNull.Value)
+
+        VendorListSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[FG_VendorUnit_List]", Data.CommandType.StoredProcedure, sqlParams)
         Return VendorListSet
     End Function
     Public Function RFQ_Vendor_List(ByVal searchcode As String) As DataSet
@@ -1916,17 +1924,22 @@ Public Class OPC_VendorClass
 
         Return status
     End Function
-    Public Function SiteDetailsList(ByVal searchcode As String) As DataSet
+    Public Function SiteDetailsList(ByVal searchcode As Integer) As DataSet
         Dim VendorListSet As New DataSet
         Dim sqlParams(0) As SqlParameter
 
         sqlParams(0) = New SqlParameter()
         sqlParams(0).ParameterName = "@vendorcode"
-        sqlParams(0).DbType = DbType.String
+        sqlParams(0).DbType = DbType.Int32
         sqlParams(0).Direction = System.Data.ParameterDirection.Input
         sqlParams(0).Value = searchcode
 
         VendorListSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[GetSiteDtls]", Data.CommandType.StoredProcedure, sqlParams)
+        Return VendorListSet
+    End Function
+    Public Function VendorList() As DataSet
+        Dim VendorListSet As New DataSet
+        VendorListSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[FG_Vendor_List]", Data.CommandType.StoredProcedure)
         Return VendorListSet
     End Function
 #End Region
