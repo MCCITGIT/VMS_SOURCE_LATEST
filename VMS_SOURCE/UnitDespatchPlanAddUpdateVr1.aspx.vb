@@ -1403,7 +1403,9 @@ System.Web.Services.WebMethod()>
         'stored name because the download paths (list page, edit page, invoice_document_push)
         'build the file name from it.
         Dim originalName As String = System.IO.Path.GetFileName(sch_fld1.FileName)
-        Dim uniqueName As String = Guid.NewGuid().ToString("N") & System.IO.Path.GetExtension(originalName)
+        'Modified-by MUKESH BHAGAT on 16-10-2026 : stored name = cleaned original name + unique suffix (UploadFileName.SafeFileName),
+        'e.g. "1050, SURAT.pdf" -> "1050_SURAT_3f9a1c7e.pdf". Commas, spaces, quotes etc. broke the download header.
+        Dim uniqueName As String = UploadFileName.SafeFileName(originalName, True)
         Dim DocsFileName As String = uniqueName
         Dim DocsOrgFileName As String = uniqueName
         Dim DocPath As String = Format(Date.Now, "dd_MM_yyyy")
@@ -1497,7 +1499,7 @@ System.Web.Services.WebMethod()>
             End If
 
             Dim originalName As String = System.IO.Path.GetFileName(sch_fld_eway.PostedFile.FileName)
-            Dim storedName As String = "EWAY_" & ChallanNo.ToString() & "_" & originalName
+            Dim storedName As String = "EWAY_" & ChallanNo.ToString() & "_" & UploadFileName.SafeFileName(originalName)   ' Modified-by MUKESH BHAGAT on 16-10-2026 : cleaned name
             Dim saveLocation As String = projectPath & "\" & storedName
 
             sch_fld_eway.PostedFile.SaveAs(saveLocation)

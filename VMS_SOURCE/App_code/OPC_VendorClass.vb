@@ -1197,7 +1197,7 @@ Public Class OPC_VendorClass
     ''' <summary>[opc_sku_formulation_save] - new version of brand+vendor+product with raw materials and packaging in one transaction.</summary>
     Function SaveSkuFormulation(ByVal brandCode As String, ByVal vendorCode As String, ByVal productCode As String, ByVal remarks As String,
                                 ByVal dtl As DataTable, ByVal packs As DataTable, ByVal lines As DataTable, ByVal userId As String,
-                                Optional ByVal role As String = "VENDOR", Optional ByVal hoRemarks As String = "") As SkuFormulationSaveResult
+                                Optional ByVal role As String = "VENDOR", Optional ByVal hoRemarks As String = "", Optional ByVal lossPct As Decimal = 0D, Optional ByVal supplierCode As String = "") As SkuFormulationSaveResult
         Dim result As New SkuFormulationSaveResult()
         Dim sqlConn As SqlConnection = Nothing
         Try
@@ -1214,6 +1214,8 @@ Public Class OPC_VendorClass
             sqlCmd.Parameters.Add("@user_id", SqlDbType.VarChar, 50).Value = userId
             sqlCmd.Parameters.Add("@role", SqlDbType.VarChar, 10).Value = If(role = "HO", "HO", "VENDOR")
             sqlCmd.Parameters.Add("@ho_remarks", SqlDbType.VarChar, 1000).Value = If(String.IsNullOrWhiteSpace(hoRemarks), CObj(DBNull.Value), hoRemarks.Trim())
+            sqlCmd.Parameters.Add("@loss_pct", SqlDbType.Decimal).Value = lossPct      ' process loss %, added to the SKU price (19-Oct-2026)
+            sqlCmd.Parameters.Add("@supplier_code", SqlDbType.VarChar, 50).Value = If(String.IsNullOrWhiteSpace(supplierCode), CObj(DBNull.Value), supplierCode.Trim())      ' raw-material supplier (19-Oct-2026)
             Using dr As SqlDataReader = sqlCmd.ExecuteReader()
                 If dr.Read() Then
                     result.Status = If(IsDBNull(dr("Status")), 0, Convert.ToInt32(dr("Status")))

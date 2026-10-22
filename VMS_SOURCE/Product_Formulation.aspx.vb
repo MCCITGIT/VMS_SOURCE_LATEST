@@ -47,9 +47,11 @@ Partial Class Product_Formulation
         If Not IsPostBack Then
             BrandDetailsListLoad()
             VendorDetailsListLoad()
+            SupplierListLoad()
             InitializeGridTable()
             InitializePackTables()
             ViewState(SnapshotKey) = ""
+            hdnLossPct.Value = "0"
             Dim id As Integer = ParseInteger(Convert.ToString(Request.QueryString("id")))
             If id > 0 Then
                 Binddata(id)
@@ -137,6 +139,12 @@ Partial Class Product_Formulation
     End Function
 
 #Region "section 1 - raw material grid"
+    ''' <summary>Process loss % entered under the ratio total (Modified-by MUKESH BHAGAT 19-10-2026). SKU price = sum of prices x (1 + loss / 100).</summary>
+    Private Function LossPct() As Decimal
+        Dim v As Decimal = ParseDecimal(hdnLossPct.Value)
+        Return If(v < 0D, 0D, v)
+    End Function
+
     Private Sub InitializeGridTable()
         Dim dt As DataTable = New DataTable()
         dt.Columns.Add(New DataColumn("brand_code", GetType(String)))
@@ -147,6 +155,8 @@ Partial Class Product_Formulation
         dt.Columns.Add(New DataColumn("product_name", GetType(String)))
         dt.Columns.Add(New DataColumn("shade_code", GetType(String)))
         dt.Columns.Add(New DataColumn("shade_name", GetType(String)))
+        dt.Columns.Add(New DataColumn("supplier_code", GetType(String)))
+        dt.Columns.Add(New DataColumn("supplier_name", GetType(String)))
         dt.Columns.Add(New DataColumn("rawmat_code", GetType(String)))
         dt.Columns.Add(New DataColumn("rawmat_name", GetType(String)))
         dt.Columns.Add(New DataColumn("ratio", GetType(String)))
@@ -173,18 +183,18 @@ Partial Class Product_Formulation
         gvVendorRawMat.DataBind()
         btnSubmit.Visible = dt.Rows.Count > 0
         btnSubmit.Text = If(ParseInteger(hdnId.Value) > 0, "Submit for HO approval", "Submit for HO approval")
-        hdnSkuPrice.Value = CalculateSkuPrice(dt).ToString("0.00", CultureInfo.InvariantCulture)
+        hdnSkuPrice.Value = CalculateSkuPrice(dt, LossPct()).ToString("0.00", CultureInfo.InvariantCulture)
         lblSkuPriceInfo.Text = hdnSkuPrice.Value
         LockHeaderIfRowsExist(dt)
     End Sub
 
-    ''' <summary>SKU price = plain sum of the raw material prices (decided 15-Oct-2026); the ratio only has to total 100 %.</summary>
-    Private Shared Function CalculateSkuPrice(ByVal dt As DataTable) As Decimal
+    ''' <summary>SKU price = plain sum of the raw material prices (decided 15-Oct-2026) x (1 + loss % / 100) (loss added 19-Oct-2026).</summary>
+    Private Shared Function CalculateSkuPrice(ByVal dt As DataTable, ByVal lossPct As Decimal) As Decimal
         Dim total As Decimal = 0D
         For Each row As DataRow In dt.Rows
             total += ParseDecimal(Convert.ToString(row("rate")))
         Next
-        Return Math.Round(total, 2)
+        Return Math.Round(total * (1 + lossPct / 100D), 2)
     End Function
 
     Protected ReadOnly Property SkuPriceText() As String
@@ -199,6 +209,7 @@ Partial Class Product_Formulation
         ddlvendor.Enabled = Not locked
         txtProductSearch.Enabled = Not locked
         ddlShade.Enabled = Not locked OrElse (ShadeRequired() AndAlso ddlShade.SelectedValue = "")      ' an old version saved without a shade must still be able to pick one
+        ddlSupplier.Enabled = Not locked OrElse ddlSupplier.SelectedValue = ""      ' an old version saved without a supplier must still be able to pick one
         If locked Then
             txtProductSearch.Attributes("readonly") = "readonly"
         Else
@@ -220,7 +231,9 @@ Partial Class Product_Formulation
             If txtRowRate IsNot Nothing Then txtRowRate.Text = rate.ToString("0.00", CultureInfo.InvariantCulture)
         ElseIf e.Row.RowType = DataControlRowType.Footer Then
             e.Row.TableSection = TableRowSection.TableFooter
-            SetRatioFooterLabels(e.Row, gridRatioTotal, gridSkuPrice)
+            SetRatioFooterLabels(e.Row, gridRatioTotal, gridSkuPrice * (1 + LossPct() / 100D))
+            Dim txtLoss As TextBox = TryCast(e.Row.FindControl("txtLossPct"), TextBox)
+            If txtLoss IsNot Nothing Then txtLoss.Text = If(LossPct() = 0D, "", LossPct().ToString("0.##", CultureInfo.InvariantCulture))
         End If
     End Sub
 
@@ -244,7 +257,9 @@ Partial Class Product_Formulation
     Private Function ValidateSubmitInputs() As Boolean
         ClearInlineValidation()
         Dim isValid As Boolean = True
+        If ParseDecimal(hdnLossPct.Value) < 0D OrElse ParseDecimal(hdnLossPct.Value) > 100D Then AppendInlineValidation("Grid", "Loss % must be between 0 and 100.") : isValid = False
         If ShadeRequired() AndAlso ddlShade.SelectedValue = "" Then AppendInlineValidation("Shade", "Please select Shade.") : isValid = False
+        If ddlSupplier.SelectedValue = "" Then AppendInlineValidation("Supplier", "Please select Supplier.") : isValid = False
         If ddlBrand.SelectedIndex <= 0 Then AppendInlineValidation("Brand", "Please select Brand.") : isValid = False
         If ddlvendor.SelectedIndex <= 0 Then AppendInlineValidation("Vendor", "Please select Vendor.") : isValid = False
         If String.IsNullOrWhiteSpace(hdnProductCode.Value) Then AppendInlineValidation("Product", "Please enter Product.") : isValid = False
@@ -269,6 +284,7 @@ Partial Class Product_Formulation
         ClearInlineValidation()
         Dim isValid As Boolean = True
         If ShadeRequired() AndAlso ddlShade.SelectedValue = "" Then AppendInlineValidation("Shade", "Please select Shade.") : isValid = False
+        If ddlSupplier.SelectedValue = "" Then AppendInlineValidation("Supplier", "Please select Supplier.") : isValid = False
         If ddlBrand.SelectedIndex <= 0 Then AppendInlineValidation("Brand", "Please select Brand.") : isValid = False
         If ddlvendor.SelectedIndex <= 0 Then AppendInlineValidation("Vendor", "Please select Vendor.") : isValid = False
         If String.IsNullOrWhiteSpace(hdnProductCode.Value) Then AppendInlineValidation("Product", "Please enter Product.") : isValid = False
@@ -300,6 +316,8 @@ Partial Class Product_Formulation
         ddlvendor.CssClass = "form-control select2"
         ddlShade.CssClass = "form-control"
         valShade.Text = ""
+        ddlSupplier.CssClass = "form-control select2"
+        valSupplier.Text = ""
         txtProductSearch.CssClass = "form-control"
         txtSearchText.CssClass = "form-control"
         txtRatio.CssClass = "form-control pf-num"
@@ -310,6 +328,7 @@ Partial Class Product_Formulation
     Private Sub AppendInlineValidation(ByVal fieldKey As String, ByVal message As String)
         Select Case fieldKey
             Case "Shade" : ddlShade.CssClass = "form-control field-invalid" : valShade.Text = message
+            Case "Supplier" : ddlSupplier.CssClass = "form-control select2 field-invalid" : valSupplier.Text = message
             Case "Brand" : ddlBrand.CssClass = "form-control select2 field-invalid" : valBrand.Text = message
             Case "Vendor" : ddlvendor.CssClass = "form-control select2 field-invalid" : valVendor.Text = message
             Case "Product" : txtProductSearch.CssClass = "form-control field-invalid" : valProduct.Text = message
@@ -351,6 +370,8 @@ Partial Class Product_Formulation
         dr("product_name") = hdnProductName.Value
         dr("shade_code") = ddlShade.SelectedValue
         dr("shade_name") = If(ddlShade.SelectedValue = "", "", ddlShade.SelectedItem.Text)
+        dr("supplier_code") = ddlSupplier.SelectedValue
+        dr("supplier_name") = If(ddlSupplier.SelectedValue = "", "", ddlSupplier.SelectedItem.Text)
         dr("rawmat_code") = selectedRawMatCode
         dr("rawmat_name") = rawMatName
         dr("ratio") = ParseDecimal(txtRatio.Text).ToString("0.##", CultureInfo.InvariantCulture)
@@ -400,6 +421,19 @@ Partial Class Product_Formulation
             End If
             ddlBrand.Items.Insert(0, New ListItem(Constant.Common.Selec, String.Empty, True))
         End If
+    End Sub
+
+    ''' <summary>Raw-material suppliers (opc_rawmaterial_vendor_mstr, RM001...) - one per formulation, fixed after the first line (19-10-2026).</summary>
+    Private Sub SupplierListLoad()
+        Dim ds As DataSet = New OPC_VendorClass().GetRawMaterialVendorList()
+        ddlSupplier.Items.Clear()
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0).Rows.Count > 0 Then
+            ddlSupplier.DataSource = ds.Tables(0)
+            ddlSupplier.DataTextField = "vendor_name"
+            ddlSupplier.DataValueField = "vendor_code"
+            ddlSupplier.DataBind()
+        End If
+        ddlSupplier.Items.Insert(0, New ListItem(Constant.Common.Selec, String.Empty, True))
     End Sub
 
     Private Sub VendorDetailsListLoad()
@@ -477,7 +511,7 @@ Partial Class Product_Formulation
             Dim obj As New OPC_VendorClass()
             Dim result As OPC_VendorClass.SkuFormulationSaveResult =
                 obj.SaveSkuFormulation(ddlBrand.SelectedValue.Trim(), ddlvendor.SelectedValue.Trim(), hdnProductCode.Value.Trim(), txtRemarks.Text, dtl, packs, lines, userInfo.userIDEntity,
-                                       If(hoRevising, "HO", "VENDOR"), If(hoRevising, txtHoRemarks.Text, ""))
+                                       If(hoRevising, "HO", "VENDOR"), If(hoRevising, txtHoRemarks.Text, ""), LossPct(), ddlSupplier.SelectedValue)
 
             Select Case result.Status
                 Case 1
@@ -517,6 +551,7 @@ Partial Class Product_Formulation
         If ddlvendor.Items.FindByValue(vendorCode) IsNot Nothing Then ddlvendor.SelectedValue = vendorCode
         hdnProductCode.Value = Convert.ToString(h("sf_product_code")).Trim()
         hdnProductName.Value = Convert.ToString(h("product_name")).Trim()
+        hdnLossPct.Value = If(h.Table.Columns.Contains("sf_loss_pct"), ParseDecimal(Convert.ToString(h("sf_loss_pct"))).ToString("0.##", CultureInfo.InvariantCulture), "0")
         txtProductSearch.Text = hdnProductCode.Value & "-" & hdnProductName.Value
         BindScopeLookups()
         Dim storedShade As String = obj.GetFormulationShade(sfId)
@@ -524,6 +559,10 @@ Partial Class Product_Formulation
         ddlShade.SelectedValue = storedShade
         BindPackList()      ' packs of the product + the stored shade
         Dim storedShadeName As String = If(storedShade = "", "", ddlShade.SelectedItem.Text)
+        Dim storedSupplier As String = If(h.Table.Columns.Contains("sf_supplier_code"), Convert.ToString(h("sf_supplier_code")).Trim(), "")
+        If storedSupplier <> "" AndAlso ddlSupplier.Items.FindByValue(storedSupplier) Is Nothing Then ddlSupplier.Items.Add(New ListItem(If(h.Table.Columns.Contains("supplier_name"), Convert.ToString(h("supplier_name")), storedSupplier), storedSupplier))
+        If ddlSupplier.Items.FindByValue(storedSupplier) IsNot Nothing Then ddlSupplier.SelectedValue = storedSupplier
+        Dim storedSupplierName As String = If(storedSupplier = "", "", ddlSupplier.SelectedItem.Text)
         Dim status As String = If(h.Table.Columns.Contains("sf_status"), Convert.ToString(h("sf_status")).Trim().ToUpperInvariant(), "APPROVED")
         Dim hoRemarks As String = If(h.Table.Columns.Contains("sf_ho_remarks"), Convert.ToString(h("sf_ho_remarks")).Trim(), "")
         Dim approvedBy As String = If(h.Table.Columns.Contains("sf_approved_by"), Convert.ToString(h("sf_approved_by")).Trim(), "")
@@ -550,6 +589,7 @@ Partial Class Product_Formulation
                 dr("vendor_code") = vendorCode : dr("vendor_name") = Convert.ToString(h("vendor_name"))
                 dr("product_code") = hdnProductCode.Value : dr("product_name") = hdnProductName.Value
                 dr("shade_code") = storedShade : dr("shade_name") = storedShadeName
+                dr("supplier_code") = storedSupplier : dr("supplier_name") = storedSupplierName
                 dr("rawmat_code") = Convert.ToString(src("sfd_rawmat_code")).Trim()
                 dr("rawmat_name") = Convert.ToString(src("rawmat_name"))
                 dr("ratio") = ParseDecimal(Convert.ToString(src("sfd_ratio"))).ToString("0.##", CultureInfo.InvariantCulture)
@@ -601,7 +641,7 @@ Partial Class Product_Formulation
             sb.Append(Convert.ToString(r("rawmat_code")).Trim()).Append("|").Append(ParseDecimal(Convert.ToString(r("ratio"))).ToString("0.00", CultureInfo.InvariantCulture)).Append("|") _
               .Append(ParseDecimal(Convert.ToString(r("rate"))).ToString("0.00", CultureInfo.InvariantCulture)).Append(";")
         Next
-        sb.Append("#")
+        sb.Append("L").Append(LossPct().ToString("0.00", CultureInfo.InvariantCulture)).Append("S").Append(ddlSupplier.SelectedValue).Append("#")
         For Each h As DataRow In PackHdr().Select("", "pack_key")
             sb.Append(Convert.ToString(h("pack_size")).Trim()).Append("|").Append(ParseDecimal(Convert.ToString(h("processing_fee"))).ToString("0.00", CultureInfo.InvariantCulture)).Append("|") _
               .Append(ParseDecimal(Convert.ToString(h("labour_charge"))).ToString("0.00", CultureInfo.InvariantCulture)).Append("|").Append(ParseDecimal(Convert.ToString(h("margin_pct"))).ToString("0.00", CultureInfo.InvariantCulture)).Append("{")
@@ -711,6 +751,10 @@ Partial Class Product_Formulation
         btnAddPack.Visible = editable
         txtPackSize.Visible = editable
         txtSearchText.Enabled = editable : txtRatio.Enabled = editable : txtRate.Enabled = editable
+        If gvVendorRawMat.FooterRow IsNot Nothing Then
+            Dim txtLoss As TextBox = TryCast(gvVendorRawMat.FooterRow.FindControl("txtLossPct"), TextBox)
+            If txtLoss IsNot Nothing Then txtLoss.ReadOnly = Not editable
+        End If
         btnNewRawMat.Visible = editable
         txtRemarks.Enabled = editable
         ' row delete buttons and pack inputs
@@ -727,7 +771,7 @@ Partial Class Product_Formulation
                 Dim c As Control = item.FindControl(id)
                 If c IsNot Nothing Then c.Visible = editable
             Next
-            For Each id As String In New String() {"txtProcessing", "txtLabour", "txtMarginPct"}
+            For Each id As String In New String() {"txtProcessing", "txtMarginPct"}
                 Dim t As TextBox = TryCast(item.FindControl(id), TextBox)
                 If t IsNot Nothing Then t.ReadOnly = Not editable
             Next
@@ -828,6 +872,7 @@ Partial Class Product_Formulation
             sb.Append("<table style='border-collapse:collapse;font-family:Segoe UI,Arial;font-size:13px;'>")
             sb.Append("<tr><td " & td & "><b>Brand</b></td><td " & td & ">" & Server.HtmlEncode(ddlBrand.SelectedItem.Text) & "</td></tr>")
             sb.Append("<tr><td " & td & "><b>Vendor</b></td><td " & td & ">" & Server.HtmlEncode(ddlvendor.SelectedItem.Text) & "</td></tr>")
+            If ddlSupplier.SelectedValue <> "" Then sb.Append("<tr><td " & td & "><b>Supplier</b></td><td " & td & ">" & Server.HtmlEncode(ddlSupplier.SelectedItem.Text) & "</td></tr>")
             sb.Append("<tr><td " & td & "><b>SKU</b></td><td " & td & ">" & Server.HtmlEncode(hdnProductCode.Value & " - " & hdnProductName.Value) & "</td></tr>")
             sb.Append("<tr><td " & td & "><b>Negotiation</b></td><td " & td & ">Cycle " & cycle & " / Revision " & revision & If(revision > 1, " (resubmission)", " (new)") & "</td></tr>")
             sb.Append("<tr><td " & td & "><b>Submitted by</b></td><td " & td & ">" & Server.HtmlEncode(userInfo.userIDEntity) & " on " & DateTime.Now.ToString("dd/MM/yyyy HH:mm") & "</td></tr>")
@@ -842,10 +887,12 @@ Partial Class Product_Formulation
                 Dim amt As Decimal = Math.Round(price, 2) : skuPrice += amt
                 sb.Append("<tr><td " & td & ">" & Server.HtmlEncode(Convert.ToString(r("rawmat_name"))) & " (" & Server.HtmlEncode(Convert.ToString(r("rawmat_code"))) & ")</td><td " & td & " align='right'>" & ratio.ToString("0.00") & "</td><td " & td & " align='right'>" & price.ToString("0.00") & "</td><td " & td & " align='right'>" & amt.ToString("0.00") & "</td></tr>")
             Next
+            If LossPct() > 0D Then sb.Append("<tr><td " & td & " colspan='3' align='right'>Process loss " & LossPct().ToString("0.##") & " %</td><td " & td & " align='right'>" & Math.Round(skuPrice * LossPct() / 100D, 2).ToString("0.00") & "</td></tr>")
+            skuPrice = Math.Round(skuPrice * (1 + LossPct() / 100D), 2)
             sb.Append("<tr><td " & td & " colspan='3' align='right'><b>SKU price</b></td><td " & td & " align='right'><b>" & skuPrice.ToString("0.00") & "</b></td></tr></table><br/>")
 
             sb.Append("<b>Packaging cost</b><table style='border-collapse:collapse;font-family:Segoe UI,Arial;font-size:13px;'>")
-            sb.Append("<tr style='background:#375973;color:#fff;'><th " & td & ">Pack size</th><th " & td & ">Material lines</th><th " & td & ">Processing</th><th " & td & ">Labour</th><th " & td & ">Margin %</th><th " & td & ">Total</th></tr>")
+            sb.Append("<tr style='background:#375973;color:#fff;'><th " & td & ">Pack size</th><th " & td & ">Material lines</th><th " & td & ">Processing (incl. labour)</th><th " & td & ">Margin %</th><th " & td & ">Total</th></tr>")
             For Each h As DataRow In PackHdr().Select("", "pack_key")
                 Dim key As Integer = Convert.ToInt32(h("pack_key"))
                 Dim material As Decimal = 0D
@@ -860,7 +907,7 @@ Partial Class Product_Formulation
                 Dim proc As Decimal = ParseDecimal(Convert.ToString(h("processing_fee"))), lab As Decimal = ParseDecimal(Convert.ToString(h("labour_charge"))), pct As Decimal = ParseDecimal(Convert.ToString(h("margin_pct")))
                 Dim baseAmt As Decimal = skuPrice + material + proc + lab
                 Dim total As Decimal = Math.Round(baseAmt + baseAmt * pct / 100D, 2)
-                sb.Append("<tr><td " & td & ">" & Server.HtmlEncode(Convert.ToString(h("pack_size"))) & "</td><td " & td & ">" & String.Join(", ", lines.ToArray()) & " (= " & material.ToString("0.00") & ")</td><td " & td & " align='right'>" & proc.ToString("0.00") & "</td><td " & td & " align='right'>" & lab.ToString("0.00") & "</td><td " & td & " align='right'>" & pct.ToString("0.00") & "</td><td " & td & " align='right'><b>" & total.ToString("0.00") & "</b></td></tr>")
+                sb.Append("<tr><td " & td & ">" & Server.HtmlEncode(Convert.ToString(h("pack_size"))) & "</td><td " & td & ">" & String.Join(", ", lines.ToArray()) & " (= " & material.ToString("0.00") & ")</td><td " & td & " align='right'>" & proc.ToString("0.00") & "</td><td " & td & " align='right'>" & pct.ToString("0.00") & "</td><td " & td & " align='right'><b>" & total.ToString("0.00") & "</b></td></tr>")
             Next
             sb.Append("</table><br/>")
             sb.Append("<p><a href='" & link & "'>" & If(toVendor, "Open the formulation to accept or counter the revised rate", "Open the formulation to approve, reject or revise") & "</a></p>")
@@ -950,6 +997,10 @@ Partial Class Product_Formulation
     ''' <summary>Copies the inline-edited ratio / price of every grid row, and every textbox of the packaging repeaters,
     ''' back into the ViewState tables before a command is handled.</summary>
     Private Sub CapturePackInputs()
+        If gvVendorRawMat.FooterRow IsNot Nothing Then
+            Dim txtLoss As TextBox = TryCast(gvVendorRawMat.FooterRow.FindControl("txtLossPct"), TextBox)
+            If txtLoss IsNot Nothing Then hdnLossPct.Value = ParseDecimal(txtLoss.Text).ToString("0.##", CultureInfo.InvariantCulture)
+        End If
         Dim grid As DataTable = GetGridTable()
         For i As Integer = 0 To gvVendorRawMat.Rows.Count - 1
             If i >= grid.Rows.Count Then Exit For
@@ -967,7 +1018,7 @@ Partial Class Product_Formulation
             Dim h() As DataRow = hdr.Select("pack_key = " & packKey)
             If h.Length > 0 Then
                 h(0)("processing_fee") = CType(item.FindControl("txtProcessing"), TextBox).Text.Trim()
-                h(0)("labour_charge") = CType(item.FindControl("txtLabour"), TextBox).Text.Trim()
+                h(0)("labour_charge") = "0"      ' labour is part of the processing fee since 19-Oct-2026 (no separate input)
                 h(0)("margin_pct") = CType(item.FindControl("txtMarginPct"), TextBox).Text.Trim()
             End If
             Dim rptLines As Repeater = CType(item.FindControl("rptLines"), Repeater)
@@ -1000,6 +1051,7 @@ Partial Class Product_Formulation
         ViewState(PackHdrKey) = hdr
         hdnOpenPack.Value = key.ToString()
         txtPackSize.ClearSelection()
+        BindPackList()      ' the size just added leaves the dropdown
         BindPacks()
     End Sub
 
@@ -1040,6 +1092,7 @@ Partial Class Product_Formulation
                 ViewState(PackHdrKey) = hdr
                 ViewState(PackDtlKey) = dtl
                 hdnOpenPack.Value = ""
+                BindPackList()      ' the removed size is offered again
         End Select
         BindPacks()
     End Sub
@@ -1121,6 +1174,11 @@ Partial Class Product_Formulation
                 txtPackSize.Items.Add(New ListItem(desc, desc))
             Next
         End If
+        ' a pack size can be added once: sizes already in the packaging list are not offered again (19-10-2026)
+        For Each h As DataRow In PackHdr().Rows
+            Dim added As ListItem = txtPackSize.Items.FindByValue(Convert.ToString(h("pack_size")).Trim())
+            If added IsNot Nothing Then txtPackSize.Items.Remove(added)
+        Next
         If txtPackSize.Items.FindByValue(keepPack) IsNot Nothing Then txtPackSize.SelectedValue = keepPack
     End Sub
 

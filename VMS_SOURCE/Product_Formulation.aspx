@@ -367,11 +367,15 @@
             }
 
             .pf-sku-table .pf-c-sku {
-                width: 15%;
+                width: 14%;
             }
 
             .pf-sku-table .pf-c-shade {
-                width: 12%;
+                width: 10%;
+            }
+
+            .pf-sku-table .pf-c-supplier {
+                width: 13%;
             }
 
             .pf-sku-table .pf-c-rm {
@@ -727,6 +731,9 @@
                 var shadeEl = document.getElementById('ddlShade');
                 if (typeof clearFieldValidation === 'function') { clearFieldValidation('ddlShade', 'valShade'); }
                 if (shadeEl && shadeEl.options.length > 1 && shadeEl.value === '') { setFieldError('ddlShade', 'valShade', 'Please select Shade.', true); return false; }   // only products that have shades need one
+                var supEl = document.getElementById('ddlSupplier');
+                if (typeof clearFieldValidation === 'function') { clearFieldValidation('ddlSupplier', 'valSupplier'); }
+                if (supEl && supEl.value === '') { setFieldError('ddlSupplier', 'valSupplier', 'Please select Supplier.', true); return false; }
                 var txtRate = document.getElementById('txtRate');
                 var rate = parseFloat((txtRate.value || '').trim());
                 if (typeof clearFieldValidation === 'function') { clearFieldValidation('txtRate', 'valRate'); }
@@ -826,6 +833,7 @@
             function pfGridRecalc() {
                 var total = 0, sku = 0;
                 pfGridRows().forEach(function (x) { total += x.ratio; sku += x.rate; });
+                sku = sku * (1 + pfLoss() / 100);                 // process loss % is added to the SKU price
                 total = Math.round(total * 100) / 100; sku = Math.round(sku * 100) / 100;
                 var lt = document.getElementById('lblRatioTotal'), ls = document.getElementById('lblRatioStatus'), lp = document.getElementById('lblSkuPrice');
                 if (lt) { lt.innerText = total.toFixed(2) + '%'; }
@@ -833,6 +841,12 @@
                 if (lp) { lp.innerText = sku.toFixed(2); }
                 document.getElementById('hdnSkuPrice').value = sku.toFixed(2);
                 document.querySelectorAll('.pf-pack').forEach(function (p) { var i = p.querySelector('input.pf-proc'); if (i) { pfRecalc(i); } });
+            }
+            function pfLoss() { var l = document.getElementById('txtLossPct'); return l ? pfNum(l) : 0; }
+            function pfLossChanged(el) {
+                el.classList.remove('field-invalid');
+                var h = document.getElementById('hdnLossPct'); if (h) { h.value = (el.value || '').trim(); }
+                pfGridRecalc();
             }
             function updateVendorRawMatRatioTotal() { pfGridRecalc(); }
             function validateFormulationSubmit() {
@@ -846,6 +860,11 @@
                 var shadeSel = document.getElementById('ddlShade');
                 clearFieldValidation('ddlShade', 'valShade');
                 if (shadeSel && shadeSel.options.length > 1 && shadeSel.value === '') { setFieldError('ddlShade', 'valShade', 'Please select Shade.', false); hasError = true; }
+                var supSel = document.getElementById('ddlSupplier');
+                clearFieldValidation('ddlSupplier', 'valSupplier');
+                if (!supSel || supSel.value === '') { setFieldError('ddlSupplier', 'valSupplier', 'Please select Supplier.', false); hasError = true; }
+                var lossEl = document.getElementById('txtLossPct');
+                if (lossEl && (pfLoss() < 0 || pfLoss() > 100)) { lossEl.classList.add('field-invalid'); rmFailValidation('Loss % must be between 0 and 100.'); hasError = true; }
                 rows.forEach(function (x) { x.ratioEl.classList.remove('field-invalid'); x.rateEl.classList.remove('field-invalid'); });
                 var bad = false;
                 rows.forEach(function (x) { if (x.ratio <= 0) { x.ratioEl.classList.add('field-invalid'); bad = true; } if (x.rate <= 0) { x.rateEl.classList.add('field-invalid'); bad = true; } });
@@ -864,9 +883,10 @@
                     var code = tr.querySelector("input[id$='hdnRawMatCode']"), ratio = tr.querySelector('input.pf-row-ratio'), rate = tr.querySelector('input.pf-row-rate');
                     if (code) { s += code.value.trim() + '|' + f2(ratio ? ratio.value : '') + '|' + f2(rate ? rate.value : '') + ';'; }
                 });
-                s += '#';
+                var supSnap = document.getElementById('ddlSupplier');
+                s += 'L' + f2(pfLoss()) + 'S' + (supSnap ? (supSnap.value || '') : '') + '#';
                 document.querySelectorAll('.pf-pack').forEach(function (pack) {
-                    s += (pack.getAttribute('data-name') || '').trim() + '|' + f2(pack.querySelector('input.pf-proc').value) + '|' + f2(pack.querySelector('input.pf-lab').value) + '|' + f2(pack.querySelector('input.pf-mar').value) + '{';
+                    s += (pack.getAttribute('data-name') || '').trim() + '|' + f2(pack.querySelector('input.pf-proc').value) + '|' + f2('0') + '|' + f2(pack.querySelector('input.pf-mar').value) + '{';
                     pack.querySelectorAll('tr.pf-line').forEach(function (tr) {
                         var n = (tr.querySelector('input.pf-name').value || '').trim(), a = (tr.querySelector('input.pf-amt').value || '').trim();
                         if (n === '' && a === '') { return; }
@@ -989,12 +1009,13 @@
                 <asp:HiddenField ID="hdnSkucode" runat="server" ClientIDMode="Static" />
                 <asp:HiddenField ID="txtrawmatid" ClientIDMode="Static" runat="server" />
                 <asp:HiddenField ID="hdnSkuPrice" ClientIDMode="Static" runat="server" Value="0" />
+                <asp:HiddenField ID="hdnLossPct" ClientIDMode="Static" runat="server" Value="0" />
                 <asp:HiddenField ID="hdnOpenPack" ClientIDMode="Static" runat="server" />
 
                 <!-- ================= 1. SKU formulation entry ================= -->
                 <div class="pf-section" id="pfSectionEntry" runat="server">
                     <h4 class="pf-section-title">SKU formulation entry</h4>
-                    <p class="pf-section-sub">Add every raw material of the SKU in one line: Brand, Vendor, SKU and Shade are fixed after the first line. Total consumption ratio must be exactly 100 %.</p>
+                    <p class="pf-section-sub">Add every raw material of the SKU in one line: Brand, Vendor, SKU, Shade and Supplier are fixed after the first line. Total consumption ratio must be exactly 100 %.</p>
 
                     <div class="pf-table-wrap">
                         <asp:GridView ID="gvVendorRawMat" ClientIDMode="Static" runat="server" AutoGenerateColumns="False" CssClass="pf-table pf-sku-table"
@@ -1041,6 +1062,14 @@
                                     <HeaderStyle CssClass="pf-c-shade" />
                                     <ItemStyle CssClass="pf-c-shade" />
                                 </asp:TemplateField>
+                                <asp:TemplateField HeaderText="Supplier *">
+                                    <ItemTemplate>
+                                        <asp:Label ID="lblSupplierName" runat="server" Text='<%# Eval("supplier_name") %>'></asp:Label>
+                                        <asp:HiddenField ID="hdnSupplierCode" runat="server" Value='<%# Eval("supplier_code") %>' />
+                                    </ItemTemplate>
+                                    <HeaderStyle CssClass="pf-c-supplier" />
+                                    <ItemStyle CssClass="pf-c-supplier" />
+                                </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Raw Material *">
                                     <ItemTemplate>
                                         <asp:Label ID="lblRawMatName" runat="server" Text='<%# Bind("rawmat_name") %>'></asp:Label>
@@ -1060,6 +1089,12 @@
                                         <asp:Label ID="lblRatioTotal" runat="server" ClientIDMode="Static"></asp:Label>
                                         <br />
                                         <asp:Label ID="lblRatioStatus" runat="server" ClientIDMode="Static" Text="Within 100%" Style="font-size: 11px;"></asp:Label>
+                                        <%-- Modified-by MUKESH BHAGAT on 19-10-2026 : process loss %, added to the SKU price (sum of prices x (1 + loss/100)) --%>
+                                        <div class="pf-loss" style="margin-top: 5px; white-space: nowrap;">
+                                            <span style="font-size: 11px; color: #555;">Loss %</span>
+                                            <asp:TextBox ID="txtLossPct" runat="server" ClientIDMode="Static" CssClass="pf-num" Style="width: 62px; display: inline-block; margin-left: 4px;" Placeholder="0.00" AutoComplete="Off" MaxLength="6"
+                                                onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfLossChanged(this);" onblur="formatRateTwoDecimal(this); pfLossChanged(this);"></asp:TextBox>
+                                        </div>
                                     </FooterTemplate>
                                     <HeaderStyle CssClass="pf-c-ratio pf-center" />
                                     <ItemStyle CssClass="pf-c-ratio pf-center" />
@@ -1124,6 +1159,11 @@
                                     <td class="pf-c-shade">
                                         <asp:DropDownList ID="ddlShade" runat="server" ClientIDMode="Static" CssClass="form-control" TabIndex="4" AutoPostBack="true" OnSelectedIndexChanged="ddlShade_SelectedIndexChanged"></asp:DropDownList>
                                         <asp:Label ID="valShade" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                                    </td>
+                                    <td class="pf-c-supplier">
+                                        <asp:DropDownList ID="ddlSupplier" runat="server" ClientIDMode="Static" CssClass="form-control select2" TabIndex="5"
+                                            onchange="if(typeof clearFieldValidation==='function')clearFieldValidation('ddlSupplier','valSupplier');"></asp:DropDownList>
+                                        <asp:Label ID="valSupplier" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                                     </td>
                                     <td class="pf-c-rm">
                                         <div class="pf-input-group">
@@ -1209,10 +1249,10 @@
                 <div class="pf-section">
                     <h4 class="pf-section-title">Packaging cost</h4>
                     <p class="pf-section-sub">
-                        Per pack size: packaging material lines + Processing fee + Labour charge. Margin % is applied on
+                        Per pack size: packaging material lines + Processing fee (labour included). Margin % is applied on
                         (SKU price &#8377;
                         <asp:Label ID="lblSkuPriceInfo" runat="server" Text="0.00"></asp:Label>
-                        + material + processing + labour) and added to that pack's total.
+                        + material + processing) and added to that pack's total.
                         The SKU formulation and all packs are saved together with the Submit button above.
                     </p>
 
@@ -1282,28 +1322,20 @@
                                                                     OnClientClick="return validateNewLine(this);"></asp:LinkButton>
                                                             </td>
                                                         </tr>
-                                                        <%-- fixed lines of every pack: processing fee, labour charge, margin % --%>
+                                                        <%-- fixed lines of every pack: processing fee (incl. labour), margin % --%>
                                                         <tr class="pf-fixed-line">
                                                             <td class="pf-col-sn"><i class="fas fa-cog" style="color: #888;"></i></td>
-                                                            <td>Processing fee</td>
+                                                            <td>Processing fee <span class="pf-muted">(incl. labour)</span></td>
                                                             <td class="pf-col-amt">
                                                                 <asp:TextBox ID="txtProcessing" runat="server" CssClass="pf-num pf-proc" Text='<%# Eval("processing_fee") %>' Placeholder="0.00" AutoComplete="Off"
                                                                     onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
                                                             </td>
                                                             <td class="pf-col-act"></td>
                                                         </tr>
-                                                        <tr class="pf-fixed-line">
-                                                            <td class="pf-col-sn"><i class="fas fa-user-cog" style="color: #888;"></i></td>
-                                                            <td>Labour charge</td>
-                                                            <td class="pf-col-amt">
-                                                                <asp:TextBox ID="txtLabour" runat="server" CssClass="pf-num pf-lab" Text='<%# Eval("labour_charge") %>' Placeholder="0.00" AutoComplete="Off"
-                                                                    onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
-                                                            </td>
-                                                            <td class="pf-col-act"></td>
-                                                        </tr>
+                                                        <%-- Modified-by MUKESH BHAGAT on 19-10-2026 : the separate "Labour charge" line was removed - labour is part of the Processing fee (pch_labour_charge is saved as 0). --%>
                                                         <tr class="pf-fixed-line">
                                                             <td class="pf-col-sn"><i class="fas fa-percent" style="color: #888;"></i></td>
-                                                            <td>Margin (%) <span class="pf-muted">on SKU price &#8377; <%# SkuPriceText %> + material + processing + labour</span></td>
+                                                            <td>Margin (%) <span class="pf-muted">on SKU price &#8377; <%# SkuPriceText %> + material + processing</span></td>
                                                             <td class="pf-col-amt">
                                                                 <asp:TextBox ID="txtMarginPct" runat="server" CssClass="pf-num pf-mar" Text='<%# Eval("margin_pct") %>' Placeholder="0.00 %" AutoComplete="Off"
                                                                     onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>

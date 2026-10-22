@@ -14,9 +14,9 @@
         .dispatch-field-error { display: block; color: #dc3545; font-size: 12px; font-weight: 500; margin-top: 4px; line-height: 1.35; }
         .dispatch-field-error:empty { display: none; }
 
-        /* shade / pack multi-select (select2 tags) */
-        .rm-module .select2-container--default .select2-selection--multiple { min-height: 38px; border-color: #ced4da; }
-        .rm-module .select2-container--default .select2-selection--multiple .select2-selection__choice { background: #e8f1fb; border-color: #c9ddf3; color: #1f4e79; font-size: 12px; margin-top: 6px; }
+        /* pack multi-select (select2 tags) */
+        .rm-module .select2-container--default .select2-selection--multiple { min-height: 34px; border-color: #ced4da; }
+        .rm-module .select2-container--default .select2-selection--multiple .select2-selection__choice { background: #e8f1fb; border-color: #c9ddf3; color: #1f4e79; font-size: 12px; margin-top: 4px; }
         .rm-module .select2-container--default .select2-selection--multiple .select2-selection__choice__remove { color: #1f4e79; }
 
         .scope-hint { display: block; font-size: 11px; color: #6c757d; margin-top: 4px; }
@@ -24,6 +24,18 @@
         .scope-pill.is-all { background: #e9f7ef; color: #1e7e34; }
         .scope-pill.is-some { background: #e8f1fb; color: #1f4e79; }
         .scope-list-sub { font-size: 11px; color: #6c757d; }
+
+        /* shade-wise pack table */
+        .scope-shades { max-height: 420px; overflow-y: auto; border: 1px solid #e3e8ee; border-radius: 6px; }
+        .scope-shades table { margin: 0; }
+        .scope-shades th { position: sticky; top: 0; z-index: 1; }
+        .scope-shades td { vertical-align: middle; padding: 6px 8px; }
+        .scope-shades .scope-shade-name { white-space: nowrap; font-weight: 600; }
+        .scope-shades .scope-shade-name small { display: block; font-weight: 400; color: #6c757d; }
+        .scope-shades tr.is-off td { opacity: .55; }
+        .scope-shades tr.is-off .select2-container { pointer-events: none; }
+        .scope-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; }
+        .scope-toolbar a { margin-left: 10px; }
     </style>
     <div class="rm-module rm-vendor-scope">
         <script type="text/javascript">
@@ -57,7 +69,7 @@
                 document.getElementById('txtProductSearch').value = e.get_text();
                 sender.get_element().value = e.get_text();
                 vsClearError('txtProductSearch', 'valProduct');
-                __doPostBack('<%= btnProductPicked.UniqueID %>', '');     // loads the shades and packs of this product
+                __doPostBack('<%= btnProductPicked.UniqueID %>', '');     // loads the shade-wise pack table of this product
             }
             function clearProductSelection() {
                 document.getElementById('hdnProductCode').value = '';
@@ -77,6 +89,27 @@
                 return true;
             }
 
+            /* ---------- shade-wise pack table ---------- */
+            function vsShadeToggled(cb) {
+                var tr = cb.closest('tr');
+                if (tr) { tr.classList.toggle('is-off', !cb.checked); }
+                vsCountShades();
+            }
+            function vsAllShades(on) {
+                document.querySelectorAll('.scope-shades input.scope-shade-chk').forEach(function (cb) { cb.checked = on; vsShadeToggled(cb); });
+                return false;
+            }
+            function vsCountShades() {
+                var all = document.querySelectorAll('.scope-shades input.scope-shade-chk'), on = 0;
+                all.forEach(function (cb) { if (cb.checked) { on++; } });
+                var l = document.getElementById('lblShadeCount');
+                if (l) { l.innerText = all.length === 0 ? '' : (on === 0 ? 'No shade ticked = every shade (and every pack) is allowed.' : on + ' of ' + all.length + ' shade(s) allowed.'); }
+            }
+            function vsInitShades() {
+                document.querySelectorAll('.scope-shades input.scope-shade-chk').forEach(function (cb) { var tr = cb.closest('tr'); if (tr) { tr.classList.toggle('is-off', !cb.checked); } });
+                vsCountShades();
+            }
+
             function validateScopeSave() {
                 var ok = true;
                 vsClearError('ddlVendor', 'valVendor'); vsClearError('ddlVertical', 'valVertical'); vsClearError('txtProductSearch', 'valProduct');
@@ -87,8 +120,9 @@
                 return ok;
             }
 
-            document.addEventListener('DOMContentLoaded', vsSetProductContext);
-            if (window.Sys && Sys.Application) { Sys.Application.add_load(vsSetProductContext); }
+            function vsPageInit() { vsSetProductContext(); vsInitShades(); }
+            document.addEventListener('DOMContentLoaded', vsPageInit);
+            if (window.Sys && Sys.Application) { Sys.Application.add_load(vsPageInit); }
         </script>
 
         <div class="breadcrumbs">
@@ -116,7 +150,7 @@
                             <span class="mst-panel-icon"><i class="fas fa-sitemap"></i></span>
                             <div>
                                 <h5 class="mst-panel-title"><asp:Literal ID="litFormTitle" runat="server" Text="Declare scope"></asp:Literal></h5>
-                                <p class="mst-panel-subtitle">Vendor &rarr; Vertical &rarr; Product &rarr; Shades &rarr; Packs. Leave shades or packs empty to allow all.</p>
+                                <p class="mst-panel-subtitle">Vendor &rarr; Vertical &rarr; Product &rarr; shades, each with its own packs. Untick a shade to exclude it; leave a shade's packs empty to allow all of them.</p>
                             </div>
                         </div>
                     </div>
@@ -127,8 +161,7 @@
                                     <div class="col-md-3">
                                         <div class="form-group">
                                             <label class="form-control-label">Vendor:<span class="mandatory">*</span></label>
-                                            <asp:DropDownList ID="ddlVendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server"
-                                                onchange="vsClearError('ddlVendor','valVendor');"></asp:DropDownList>
+                                            <asp:DropDownList ID="ddlVendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" onchange="vsClearError('ddlVendor','valVendor');"></asp:DropDownList>
                                             <asp:Label ID="valVendor" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                                         </div>
                                     </div>
@@ -157,19 +190,46 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <%-- shade-wise packs: one row per shade of the product (a single "(no shade)" row for products without shades) --%>
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-12">
                                         <div class="form-group">
-                                            <label class="form-control-label">Shades:</label>
-                                            <asp:ListBox ID="lstShade" ClientIDMode="Static" runat="server" SelectionMode="Multiple" CssClass="form-control select2" data-placeholder="All shades" TabIndex="4"></asp:ListBox>
-                                            <span class="scope-hint"><asp:Literal ID="litShadeHint" runat="server" Text="Pick a product first. Leave empty to allow every shade."></asp:Literal></span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label class="form-control-label">Packs:</label>
-                                            <asp:ListBox ID="lstPack" ClientIDMode="Static" runat="server" SelectionMode="Multiple" CssClass="form-control select2" data-placeholder="All packs" TabIndex="5"></asp:ListBox>
-                                            <span class="scope-hint"><asp:Literal ID="litPackHint" runat="server" Text="Pick a product first. Leave empty to allow every pack."></asp:Literal></span>
+                                            <label class="form-control-label">Shades &amp; packs:</label>
+                                            <asp:Panel ID="pnlShades" runat="server" Visible="false">
+                                                <div class="scope-toolbar">
+                                                    <span id="lblShadeCount" class="scope-hint" style="margin: 0;"></span>
+                                                    <span><a href="#" onclick="return vsAllShades(true);">Tick all</a><a href="#" onclick="return vsAllShades(false);">Untick all</a></span>
+                                                </div>
+                                                <div class="scope-shades table-responsive">
+                                                    <table class="table table-sm table-hover upgradDataGrid">
+                                                        <thead>
+                                                            <tr class="headerGrid">
+                                                                <th style="width: 48px;">Allow</th>
+                                                                <th style="width: 28%;">Shade</th>
+                                                                <th>Packs <span class="scope-list-sub">(empty = all packs of this shade)</span></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <asp:Repeater ID="rptShades" runat="server">
+                                                                <ItemTemplate>
+                                                                    <tr>
+                                                                        <td class="text-center">
+                                                                            <asp:HiddenField ID="hdnShd" runat="server" Value='<%# Eval("shd_code") %>' />
+                                                                            <asp:CheckBox ID="chkShade" runat="server" CssClass="scope-shade-chk-wrap" />
+                                                                        </td>
+                                                                        <td class="scope-shade-name"><%# Eval("shd_name") %><small><%# Eval("pack_hint") %></small></td>
+                                                                        <td>
+                                                                            <asp:ListBox ID="lstPacks" runat="server" SelectionMode="Multiple" CssClass="form-control select2" data-placeholder="All packs" Style="width: 100%;"></asp:ListBox>
+                                                                        </td>
+                                                                    </tr>
+                                                                </ItemTemplate>
+                                                            </asp:Repeater>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </asp:Panel>
+                                            <span class="scope-hint"><asp:Literal ID="litShadeHint" runat="server" Text="Pick a product first."></asp:Literal></span>
                                         </div>
                                     </div>
                                 </div>
@@ -219,11 +279,11 @@
                                             <span class="scope-list-sub" style="display: block;"><%# Eval("prd_name") %></span>
                                         </ItemTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Shades" ItemStyle-HorizontalAlign="Left" ItemStyle-Width="22%">
+                                    <asp:TemplateField HeaderText="Shades" ItemStyle-HorizontalAlign="Left" ItemStyle-Width="20%">
                                         <ItemTemplate><span class='<%# IIf(Convert.ToInt32(Eval("shade_count")) = 0, "scope-pill is-all", "scope-pill is-some") %>'><%# IIf(Convert.ToInt32(Eval("shade_count")) = 0, "All", Eval("shade_count")) %></span>
                                             <span class="scope-list-sub" style="display: block; text-align: left;"><%# Eval("shade_names") %></span></ItemTemplate>
                                     </asp:TemplateField>
-                                    <asp:TemplateField HeaderText="Packs" ItemStyle-HorizontalAlign="Left" ItemStyle-Width="14%">
+                                    <asp:TemplateField HeaderText="Packs (per shade)" ItemStyle-HorizontalAlign="Left" ItemStyle-Width="22%">
                                         <ItemTemplate><span class='<%# IIf(Convert.ToInt32(Eval("pack_count")) = 0, "scope-pill is-all", "scope-pill is-some") %>'><%# IIf(Convert.ToInt32(Eval("pack_count")) = 0, "All", Eval("pack_count")) %></span>
                                             <span class="scope-list-sub" style="display: block; text-align: left;"><%# Eval("pack_names") %></span></ItemTemplate>
                                     </asp:TemplateField>
