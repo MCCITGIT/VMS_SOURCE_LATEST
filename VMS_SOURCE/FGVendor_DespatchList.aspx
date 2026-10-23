@@ -230,58 +230,60 @@
                 </div>
             </div>
         </div>
+
         <asp:UpdatePanel ID="UpdatePanel" runat="server">
             <ContentTemplate>
                 <div class="card">
                     <div class="card-body">
-                        <div class="rm-filter-stats-row">
-                            <div class="rm-filter-fields">
-                                <div class="rm-filter-inline">
-                                    <div class="form-group pb-0">
-                                        <label class="form-control-label">Supplier:</label>
-                                        <asp:DropDownList ID="ddlRawMatvendor" ClientIDMode="Static" CssClass="form-control select2" runat="server"></asp:DropDownList>
-                                    </div>
-                                    <div class="form-group pb-0">
-                                        <label class="form-control-label">Status:</label>
-                                        <asp:DropDownList ID="ddlStatus" ClientIDMode="Static" CssClass="form-control select2" runat="server"></asp:DropDownList>
-                                    </div>
-                                    <div class="rm-filter-actions">
-                                        <asp:LinkButton CssClass="btn btn-primary btn-sm rm-btn-icon" ID="imgbtnSearch" runat="server" ClientIDMode="Static" ToolTip="Search"><i class="fas fa-search"></i></asp:LinkButton>
-                                    </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-control-label">Supplier:</label>
+                                    <asp:DropDownList ID="ddlRawMatvendor" ClientIDMode="Static" CssClass="form-control select2" runat="server"></asp:DropDownList>
                                 </div>
                             </div>
-                            <div class="rm-stat-row">
-                                <div class="rm-stat-card">
-                                    <div class="rm-stat-icon is-blue"><i class="fas fa-layer-group"></i></div>
-                                    <div>
-                                        <p class="rm-stat-label">Total</p>
-                                        <p class="rm-stat-value">
-                                            <asp:Label ID="lblTotalRequests" runat="server" Text="0"></asp:Label>
-                                        </p>
-                                    </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-control-label">Status:</label>
+                                    <asp:DropDownList ID="ddlStatus" ClientIDMode="Static" CssClass="form-control select2" runat="server"></asp:DropDownList>
                                 </div>
-                                <div class="rm-stat-card">
-                                    <div class="rm-stat-icon is-orange"><i class="fas fa-clock"></i></div>
-                                    <div>
-                                        <p class="rm-stat-label">Pending</p>
-                                        <p class="rm-stat-value is-orange">
-                                            <asp:Label ID="lblPendingRequests" runat="server" Text="0"></asp:Label>
-                                        </p>
-                                    </div>
+                            </div>
+                            <div class="col-md-4 form-btn-mt">
+                                <asp:LinkButton CssClass="btn btn-primary btn-sm" ID="imgbtnSearch" runat="server" ClientIDMode="Static" ToolTip="Search">Search</asp:LinkButton>
+                            </div>
+                        </div>
+
+                        <div class="rm-stat-row mt-2">
+                            <div class="rm-stat-card">
+                                <div class="rm-stat-icon is-blue"><i class="fas fa-layer-group"></i></div>
+                                <div>
+                                    <p class="rm-stat-label">Total</p>
+                                    <p class="rm-stat-value">
+                                        <asp:Label ID="lblTotalRequests" runat="server" Text="0"></asp:Label>
+                                    </p>
                                 </div>
-                                <div class="rm-stat-card">
-                                    <div class="rm-stat-icon is-green"><i class="fas fa-check-circle"></i></div>
-                                    <div>
-                                        <p class="rm-stat-label">Approved</p>
-                                        <p class="rm-stat-value is-green">
-                                            <asp:Label ID="lblCompletedRequests" runat="server" Text="0"></asp:Label>
-                                        </p>
-                                    </div>
+                            </div>
+                            <div class="rm-stat-card">
+                                <div class="rm-stat-icon is-orange"><i class="fas fa-clock"></i></div>
+                                <div>
+                                    <p class="rm-stat-label">Pending</p>
+                                    <p class="rm-stat-value is-orange">
+                                        <asp:Label ID="lblPendingRequests" runat="server" Text="0"></asp:Label>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="rm-stat-card">
+                                <div class="rm-stat-icon is-green"><i class="fas fa-check-circle"></i></div>
+                                <div>
+                                    <p class="rm-stat-label">Approved</p>
+                                    <p class="rm-stat-value is-green">
+                                        <asp:Label ID="lblCompletedRequests" runat="server" Text="0"></asp:Label>
+                                    </p>
                                 </div>
                             </div>
                         </div>
-                        <asp:Label ID="lblErrorMessage" CssClass="errormsg" Visible="true" runat="server"></asp:Label>
                     </div>
+                    <asp:Label ID="lblErrorMessage" CssClass="errormsg" Visible="true" runat="server"></asp:Label>
                 </div>
 
                 <div class="card">
