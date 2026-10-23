@@ -157,9 +157,9 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row" runat="server" id="divgvrequestdetails">
+                        <div class="row mt-3" runat="server" id="divgvrequestdetails">
                             <div class="col-md-12">
-                                <div class="mst-panel-header mt-3">
+                                <div class="mst-panel-header">
                                     <div class="mst-panel-header-left">
                                         <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
                                         <div>
@@ -253,9 +253,16 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row" runat="server" id="divgvrequest" visible="false">
+                        <div class="row mt-3" runat="server" id="divgvrequest" visible="false">
                             <div class="col-md-12">
-                                <h5 class="mb-2">Item Details</h5>
+                                <div class="mst-panel-header">
+                                    <div class="mst-panel-header-left">
+                                        <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
+                                        <div>
+                                            <h5 class="mst-panel-title">Item Details</h5>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="table-responsive">
                                     <asp:GridView ID="gvReceivedItems" runat="server" AutoGenerateColumns="False" CssClass="table table-hover upgradDataGrid"
                                         EmptyDataText="No record(s) found." GridLines="both" Width="100%">
@@ -312,7 +319,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
+                        <div class="row mt-2">
                             <div class="col-md-12 text-center">
                                 <asp:Button ID="btnSubmit" runat="server" Text="Submit" CssClass="btn btn-primary btn-sm" ClientIDMode="Static" Visible="false" />
                                 <asp:Button ID="btnCancel" runat="server" Text="Back" CssClass="btn btn-secondary btn-sm" OnClick="btnCancel_Click" />
