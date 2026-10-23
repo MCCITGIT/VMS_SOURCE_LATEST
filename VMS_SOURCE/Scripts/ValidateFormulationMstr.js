@@ -205,7 +205,7 @@ function validateAddRawMaterial() {
         hasError = true;
     }
 
-    if (!ddlvendor || ddlvendor.value === "" || ddlvendor.selectedIndex <= 0) {
+    if (vendorUnitMissing(ddlvendor)) {
         setFieldError("ddlvendor", "valVendor", "Please select Vendor.", false);
         hasError = true;
     }
@@ -273,7 +273,7 @@ function validateFormulationSubmit() {
         hasError = true;
     }
 
-    if (!ddlvendor || ddlvendor.value === "" || ddlvendor.selectedIndex <= 0) {
+    if (vendorUnitMissing(ddlvendor)) {
         setFieldError("ddlvendor", "valVendor", "Please select Vendor.", false);
         hasError = true;
     }
@@ -339,6 +339,12 @@ function clearRatioValidation() {
 
 function clearBrandValidation() {
     clearFieldValidation("ddlBrand", "valBrand");
+}
+
+/* true when no vendor is chosen. A vendor (UNIT) login has no Vendor dropdown on the page; its own unit comes from the hidden field (currentVendorUnit on the page). */
+function vendorUnitMissing(ddlvendor) {
+    if (ddlvendor) { return ddlvendor.value === "" || ddlvendor.selectedIndex <= 0; }
+    return typeof currentVendorUnit !== "function" || currentVendorUnit() === "";
 }
 
 function clearVendorValidation() {

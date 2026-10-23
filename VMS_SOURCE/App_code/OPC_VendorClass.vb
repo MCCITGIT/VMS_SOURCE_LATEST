@@ -172,6 +172,73 @@ Public Class OPC_VendorClass
         DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[GetRawmaterialDataList]", Data.CommandType.StoredProcedure)
         Return DS
     End Function
+    Public Function GetRawmaterialBergerCodeLinking(ByVal rmName As String, ByVal bergerCode As String) As DataSet
+        Dim ds As DataSet
+        Dim sqlParams(1) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@rm_name"
+        sqlParams(0).DbType = DbType.String
+        sqlParams(0).Direction = ParameterDirection.Input
+        sqlParams(0).Value = If(Not String.IsNullOrWhiteSpace(rmName), CObj(rmName.Trim()), DBNull.Value)
+
+        sqlParams(1) = New SqlParameter()
+        sqlParams(1).ParameterName = "@berger_code"
+        sqlParams(1).DbType = DbType.String
+        sqlParams(1).Direction = ParameterDirection.Input
+        sqlParams(1).Value = If(Not String.IsNullOrWhiteSpace(bergerCode), CObj(bergerCode.Trim()), DBNull.Value)
+
+        ds = DBFactory.GetHelper().ExecuteDataSet("[dbo].[GetRawmaterialBergerCodeLinking]", CommandType.StoredProcedure, sqlParams)
+        Return ds
+    End Function
+    Function InsertUpdateRawmaterialBergerCodeLinking(ByVal userId As String, ByVal tbl As DataTable) As Integer
+        Dim sqlConn As SqlConnection = Nothing
+        Dim sqlTrans As SqlTransaction = Nothing
+        Dim numRowsAffected As Integer
+
+        sqlConn = DBFactory.GetHelper.OpenConnection()
+        sqlTrans = sqlConn.BeginTransaction()
+
+        Dim sqlParams(1) As SqlParameter
+        Try
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@tbl"
+            sqlParams(0).Direction = Data.ParameterDirection.Input
+            sqlParams(0).Value = tbl
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@user_id"
+            sqlParams(1).SqlDbType = SqlDbType.VarChar
+            sqlParams(1).Direction = Data.ParameterDirection.Input
+            sqlParams(1).Value = userId
+
+            Dim sqlCmd As New SqlCommand()
+            sqlCmd.Connection = sqlConn
+            sqlCmd.Transaction = sqlTrans
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.CommandText = "[dbo].[InsertUpdateRawmaterialBergerCodeLinking]"
+
+            sqlCmd.Parameters.AddRange(sqlParams)
+            numRowsAffected = sqlCmd.ExecuteNonQuery()
+            sqlTrans.Commit()
+        Catch ex As SqlException
+            If (sqlTrans IsNot Nothing) Then
+                sqlTrans.Rollback()
+            End If
+            Throw
+        Catch ex As Exception
+            If (sqlTrans IsNot Nothing) Then
+                sqlTrans.Rollback()
+            End If
+            Throw
+        Finally
+            If (sqlConn IsNot Nothing) Then
+                sqlConn.Close()
+            End If
+        End Try
+
+        Return numRowsAffected
+    End Function
 
 #End Region
 
@@ -1197,7 +1264,7 @@ Public Class OPC_VendorClass
     ''' <summary>[opc_sku_formulation_save] - new version of brand+vendor+product with raw materials and packaging in one transaction.</summary>
     Function SaveSkuFormulation(ByVal brandCode As String, ByVal vendorCode As String, ByVal productCode As String, ByVal remarks As String,
                                 ByVal dtl As DataTable, ByVal packs As DataTable, ByVal lines As DataTable, ByVal userId As String,
-                                Optional ByVal role As String = "VENDOR", Optional ByVal hoRemarks As String = "") As SkuFormulationSaveResult
+                                Optional ByVal role As String = "VENDOR", Optional ByVal hoRemarks As String = "", Optional ByVal lossPct As Decimal = 0D, Optional ByVal supplierCode As String = "") As SkuFormulationSaveResult
         Dim result As New SkuFormulationSaveResult()
         Dim sqlConn As SqlConnection = Nothing
         Try
@@ -1214,6 +1281,8 @@ Public Class OPC_VendorClass
             sqlCmd.Parameters.Add("@user_id", SqlDbType.VarChar, 50).Value = userId
             sqlCmd.Parameters.Add("@role", SqlDbType.VarChar, 10).Value = If(role = "HO", "HO", "VENDOR")
             sqlCmd.Parameters.Add("@ho_remarks", SqlDbType.VarChar, 1000).Value = If(String.IsNullOrWhiteSpace(hoRemarks), CObj(DBNull.Value), hoRemarks.Trim())
+            sqlCmd.Parameters.Add("@loss_pct", SqlDbType.Decimal).Value = lossPct      ' process loss %, added to the SKU price (19-Oct-2026)
+            sqlCmd.Parameters.Add("@supplier_code", SqlDbType.VarChar, 50).Value = If(String.IsNullOrWhiteSpace(supplierCode), CObj(DBNull.Value), supplierCode.Trim())      ' raw-material supplier (19-Oct-2026)
             Using dr As SqlDataReader = sqlCmd.ExecuteReader()
                 If dr.Read() Then
                     result.Status = If(IsDBNull(dr("Status")), 0, Convert.ToInt32(dr("Status")))

@@ -96,8 +96,9 @@ Partial Class Product_Rate_Approval
         End Try
     End Sub
 
-    ''' <summary>Side-by-side matrix: columns = revisions/releases oldest to newest, rows = raw materials, SKU price, packs.
-    ''' A cell is coloured against the previous column: price up (red), down (green), added (yellow), removed (grey).</summary>
+    ''' <summary>Side-by-side matrix: columns = revisions/releases, shown NEWEST first (computed oldest to newest, written in reverse - see
+    ''' AppendNewestFirst); rows = raw materials, SKU price, packs. A cell is coloured against the revision submitted before it
+    ''' (the column to its right): price up (red), down (green), added (yellow), removed (grey).</summary>
     ''' <summary>Coloured change badge against the previous column: up arrow +amount (+%) in red, down arrow -amount (-%) in green.</summary>
     Private Shared Function DeltaBadge(ByVal prev As Decimal, ByVal cur As Decimal) As String
         Dim diff As Decimal = cur - prev
@@ -134,6 +135,7 @@ Partial Class Product_Rate_Approval
 
         Dim sb As New StringBuilder()
         sb.Append("<table class='pra-matrix'><thead><tr><th class='pra-rowhead'>Raw material</th>")
+        Dim hdrCells As New List(Of String)()
         For Each c As DataRow In cols
             Dim st As String = Convert.ToString(c("sf_status")).Trim().ToUpperInvariant()
             Dim who As String = Server.HtmlEncode(Convert.ToString(c("submitted_by")))
@@ -142,25 +144,29 @@ Partial Class Product_Rate_Approval
                                 If(IsDBNull(c("sf_approved_on")), "", vbLf & "Decided by " & Convert.ToString(c("sf_approved_by")) & " on " & Convert.ToDateTime(c("sf_approved_on")).ToString("dd/MM/yy HH:mm"))
             Dim cls As String = "pra-col-" & st.ToLowerInvariant()
             If st = "APPROVED" AndAlso Convert.ToString(c("sf_is_active")) = "Y" Then cls = "pra-col-active"
-            sb.Append("<th class='" & cls & "' title='" & Server.HtmlEncode(tip) & "'>")
-            sb.Append("<a href='Product_Formulation.aspx?id=" & Convert.ToInt32(c("sf_id")) & "' style='color:#fff;text-decoration:underline;'>" & Server.HtmlEncode(Convert.ToString(c("version_text"))) & "</a>")
-            sb.Append("<span class='pra-hdr-sub'>" & st.Replace("_", " ") & If(st = "APPROVED" AndAlso Convert.ToString(c("sf_is_active")) = "Y", " (in force)", "") & "</span>")
+            Dim th As New StringBuilder()
+            th.Append("<th class='" & cls & "' title='" & Server.HtmlEncode(tip) & "'>")
+            th.Append("<a href='Product_Formulation.aspx?id=" & Convert.ToInt32(c("sf_id")) & "' style='color:#fff;text-decoration:underline;'>" & Server.HtmlEncode(Convert.ToString(c("version_text"))) & "</a>")
+            th.Append("<span class='pra-hdr-sub'>" & st.Replace("_", " ") & If(st = "APPROVED" AndAlso Convert.ToString(c("sf_is_active")) = "Y", " (in force)", "") & "</span>")
             ' who made this move: pill with role (VENDOR / HO when the SP returns sf_submitted_role) and user id
             Dim role As String = If(hdr.Columns.Contains("sf_submitted_role"), Convert.ToString(c("sf_submitted_role")).Trim().ToUpperInvariant(), "")
             Dim pillCls As String = If(role = "HO", "pra-who-ho", If(role = "VENDOR", "pra-who-vendor", "pra-who-na"))
-            sb.Append("<span class='pra-who " & pillCls & "'>" & If(role <> "", "<small>" & role & "</small> ", "") & who & "</span>")
-            sb.Append("<span class='pra-hdr-sub'>" & whenTxt & "</span></th>")
+            th.Append("<span class='pra-who " & pillCls & "'>" & If(role <> "", "<small>" & role & "</small> ", "") & who & "</span>")
+            th.Append("<span class='pra-hdr-sub'>" & whenTxt & "</span></th>")
+            hdrCells.Add(th.ToString())
         Next
+        AppendNewestFirst(sb, hdrCells)
         sb.Append("</tr></thead><tbody>")
 
         ' --- raw material rows ---
         For Each code As String In rmOrder
             sb.Append("<tr><td class='pra-rowhead'>" & Server.HtmlEncode(rmName(code)) & "<br/><span class='pra-small'>" & Server.HtmlEncode(code) & "</span></td>")
             Dim prevPrice As Decimal? = Nothing, prevExists As Boolean = False, prevRatio As Decimal? = Nothing
+            Dim rmCells As New List(Of String)()
             For Each c As DataRow In cols
                 Dim d() As DataRow = dtl.Select("sfd_hdr_id = " & Convert.ToInt32(c("sf_id")) & " AND sfd_rawmat_code = '" & code.Replace("'", "''") & "'")
                 If d.Length = 0 Then
-                    sb.Append("<td class='pra-gone'>" & If(prevExists, "<span class='pra-delta pra-d-gone'>REMOVED</span>", "&mdash;") & "</td>")
+                    rmCells.Add("<td class='pra-gone'>" & If(prevExists, "<span class='pra-delta pra-d-gone'>REMOVED</span>", "&mdash;") & "</td>")
                     prevExists = False : prevPrice = Nothing : prevRatio = Nothing
                 Else
                     Dim ratio As Decimal = Convert.ToDecimal(d(0)("sfd_ratio")), price As Decimal = Convert.ToDecimal(d(0)("sfd_price")), amt As Decimal = Convert.ToDecimal(d(0)("sfd_amount"))
@@ -177,22 +183,25 @@ Partial Class Product_Rate_Approval
                         badge &= "<span class='pra-delta pra-d-ratio'>ratio " & prevRatio.Value.ToString("0.##") & "% &rarr; " & ratio.ToString("0.##") & "%</span>"
                         If cls = "pra-val" Then cls &= " pra-new"
                     End If
-                    sb.Append("<td class='" & cls & "'><div class='pra-fig'>" & price.ToString("0.00") & "</div><div class='pra-sub'>" & ratio.ToString("0.##") & "% share = " & amt.ToString("0.00") & "</div>" & badge & "</td>")
+                    rmCells.Add("<td class='" & cls & "'><div class='pra-fig'>" & price.ToString("0.00") & "</div><div class='pra-sub'>" & ratio.ToString("0.##") & "% share = " & amt.ToString("0.00") & "</div>" & badge & "</td>")
                     prevExists = True : prevPrice = price : prevRatio = ratio
                 End If
             Next
+            AppendNewestFirst(sb, rmCells)
             sb.Append("</tr>")
         Next
 
         ' --- SKU price row ---
         sb.Append("<tr class='pra-total'><td class='pra-rowhead'>SKU price (sum of ratio x price)</td>")
         Dim prevSku As Decimal? = Nothing
+        Dim skuCells As New List(Of String)()
         For Each c As DataRow In cols
             Dim sku As Decimal = Convert.ToDecimal(c("sf_sku_price"))
             Dim cls As String = "pra-val" & If(prevSku.HasValue AndAlso sku > prevSku.Value, " pra-up", If(prevSku.HasValue AndAlso sku < prevSku.Value, " pra-down", ""))
-            sb.Append("<td class='" & cls & "'><div class='pra-fig pra-fig-big'>" & sku.ToString("0.00") & "</div>" & If(prevSku.HasValue AndAlso sku <> prevSku.Value, DeltaBadge(prevSku.Value, sku), "") & "</td>")
+            skuCells.Add("<td class='" & cls & "'><div class='pra-fig pra-fig-big'>" & sku.ToString("0.00") & "</div>" & If(prevSku.HasValue AndAlso sku <> prevSku.Value, DeltaBadge(prevSku.Value, sku), "") & "</td>")
             prevSku = sku
         Next
+        AppendNewestFirst(sb, skuCells)
         sb.Append("</tr>")
 
         ' --- packaging rows ---
@@ -201,10 +210,11 @@ Partial Class Product_Rate_Approval
             For Each ps As String In packOrder
                 sb.Append("<tr><td class='pra-rowhead'>" & Server.HtmlEncode(ps) & " packaging</td>")
                 Dim prevTot As Decimal? = Nothing, prevExists As Boolean = False
+                Dim pkCells As New List(Of String)()
                 For Each c As DataRow In cols
                     Dim p() As DataRow = packs.Select("pch_sf_id = " & Convert.ToInt32(c("sf_id")) & " AND Trim(pch_pack_size) = '" & ps.Replace("'", "''") & "'")     ' DataTable compare is case-insensitive ("1LTR" = "1ltr"); UPPER() is not a DataTable function
                     If p.Length = 0 Then
-                        sb.Append("<td class='pra-gone'>" & If(prevExists, "<span class='pra-delta pra-d-gone'>REMOVED</span>", "&mdash;") & "</td>")
+                        pkCells.Add("<td class='pra-gone'>" & If(prevExists, "<span class='pra-delta pra-d-gone'>REMOVED</span>", "&mdash;") & "</td>")
                         prevExists = False : prevTot = Nothing
                     Else
                         Dim tot As Decimal = Convert.ToDecimal(p(0)("pch_total"))
@@ -219,27 +229,42 @@ Partial Class Product_Rate_Approval
                         ElseIf prevTot.HasValue AndAlso tot < prevTot.Value Then
                             cls &= " pra-down" : badge = DeltaBadge(prevTot.Value, tot)
                         End If
-                        sb.Append("<td class='" & cls & "' title='" & Server.HtmlEncode(tip) & "'><div class='pra-fig'>" & tot.ToString("0.00") & "</div>" & badge & "<div class='pra-sub'>" & Server.HtmlEncode(tip) & "</div></td>")
+                        pkCells.Add("<td class='" & cls & "' title='" & Server.HtmlEncode(tip) & "'><div class='pra-fig'>" & tot.ToString("0.00") & "</div>" & badge & "<div class='pra-sub'>" & Server.HtmlEncode(tip) & "</div></td>")
                         prevExists = True : prevTot = tot
                     End If
                 Next
+                AppendNewestFirst(sb, pkCells)
                 sb.Append("</tr>")
             Next
         End If
 
         ' --- remarks rows ---
         sb.Append("<tr><td class='pra-rowhead'>Vendor remarks</td>")
+        Dim vrCells As New List(Of String)()
         For Each c As DataRow In cols
-            sb.Append("<td style='white-space:normal;max-width:220px;' class='pra-small'>" & Server.HtmlEncode(Convert.ToString(c("vendor_remarks"))) & "</td>")
+            vrCells.Add("<td style='white-space:normal;max-width:220px;' class='pra-small'>" & Server.HtmlEncode(Convert.ToString(c("vendor_remarks"))) & "</td>")
         Next
+        AppendNewestFirst(sb, vrCells)
         sb.Append("</tr><tr><td class='pra-rowhead'>HO remarks / decision</td>")
+        Dim hoCells As New List(Of String)()
         For Each c As DataRow In cols
             Dim dec As String = If(IsDBNull(c("sf_approved_on")), "", Convert.ToString(c("sf_approved_by")) & " " & Convert.ToDateTime(c("sf_approved_on")).ToString("dd/MM/yy HH:mm"))
-            sb.Append("<td style='white-space:normal;max-width:220px;' class='pra-remarks'>" & Server.HtmlEncode(Convert.ToString(c("sf_ho_remarks"))) & If(dec <> "", "<br/><span class='pra-small'>" & Server.HtmlEncode(dec) & "</span>", "") & "</td>")
+            hoCells.Add("<td style='white-space:normal;max-width:220px;' class='pra-remarks'>" & Server.HtmlEncode(Convert.ToString(c("sf_ho_remarks"))) & If(dec <> "", "<br/><span class='pra-small'>" & Server.HtmlEncode(dec) & "</span>", "") & "</td>")
         Next
+        AppendNewestFirst(sb, hoCells)
         sb.Append("</tr></tbody></table>")
         Return sb.ToString()
     End Function
+
+    ''' <summary>Modified-by MUKESH BHAGAT 22-10-2026: the comparison is shown NEWEST revision first. Every row is computed oldest to
+    ''' newest (so each change badge compares a revision with the one submitted just before it) and its cells are then written in
+    ''' reverse, which puts the latest revision in the first column and the older ones to its right.</summary>
+    Private Shared Sub AppendNewestFirst(ByVal sb As StringBuilder, ByVal cells As List(Of String))
+        For i As Integer = cells.Count - 1 To 0 Step -1
+            sb.Append(cells(i))
+        Next
+    End Sub
+
 
     Protected Sub gvHistory_RowDataBound(sender As Object, e As GridViewRowEventArgs)
         If e.Row.RowType = DataControlRowType.DataRow Then
