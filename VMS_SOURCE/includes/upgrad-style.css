@@ -609,15 +609,15 @@ body {
         animation: gvDispatchSkelShimmer 1.2s ease-in-out infinite;
     }
 
-    @keyframes gvDispatchSkelShimmer {
-        0% {
-            background-position: 100% 0;
-        }
-
-        100% {
-            background-position: 0 0;
-        }
+@keyframes gvDispatchSkelShimmer {
+    0% {
+        background-position: 100% 0;
     }
+
+    100% {
+        background-position: 0 0;
+    }
+}
 
 /* End Grid */
 .CheckBoxList table tr td {
@@ -1070,11 +1070,11 @@ body {
     }
 
     .sideNavBarView ul li a {
-        padding: 0.6rem 0.25rem 0.6rem 0.65rem;
+        padding: 0.6rem 0.25rem 0.6rem 0.55rem;
         display: block;
         color: #FFF;
         font-family: Montserrat;
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         font-style: normal;
         font-weight: 500;
         line-height: 1.5rem;
@@ -1104,8 +1104,8 @@ body {
 
     .sideNavBarView ul li a::after {
         position: absolute;
-        top: 18px;
-        right: 8px;
+        top: 19px;
+        right: 6px;
         font-size: 1.025rem;
         content: "";
     }
@@ -1628,6 +1628,7 @@ body {
 .select2-container--default .select2-selection--single .select2-selection__rendered {
     line-height: 28px;
     height: 30px;
+    white-space: normal;
 }
 
 .SumoSelect {
@@ -3225,93 +3226,93 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.popup[style*="height:150px"],
-.popup[style*="height: 150px"],
-.popup[style*="height:170px"],
-.popup[style*="height: 170px"] {
-    height: auto !important;
-}
+    .popup[style*="height:150px"],
+    .popup[style*="height: 150px"],
+    .popup[style*="height:170px"],
+    .popup[style*="height: 170px"] {
+        height: auto !important;
+    }
 
-.popup[style*="width:20%"],
-.popup[style*="width: 20%"] {
-    width: 360px !important;
-}
+    .popup[style*="width:20%"],
+    .popup[style*="width: 20%"] {
+        width: 360px !important;
+    }
 
-.popup div[style*="background-color"] {
-    background: #253e50 !important;
-    color: #fff !important;
-    height: auto !important;
-    min-height: 0;
-    margin: 0;
-    padding: 0.5rem 0.75rem !important;
-    box-sizing: border-box;
-    line-height: 1.3;
-    text-align: left !important;
-    font-size: 0.95rem;
-    font-weight: 600;
-    letter-spacing: 0.25px;
-    border: 0 !important;
-}
+    .popup div[style*="background-color"] {
+        background: #253e50 !important;
+        color: #fff !important;
+        height: auto !important;
+        min-height: 0;
+        margin: 0;
+        padding: 0.5rem 0.75rem !important;
+        box-sizing: border-box;
+        line-height: 1.3;
+        text-align: left !important;
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 0.25px;
+        border: 0 !important;
+    }
 
-.popup div[style*="background-color"] span,
-.popup div[style*="background-color"] label {
-    color: #fff !important;
-    font-size: 0.95rem;
-    font-weight: 600;
-    letter-spacing: 0.25px;
-}
+        .popup div[style*="background-color"] span,
+        .popup div[style*="background-color"] label {
+            color: #fff !important;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.25px;
+        }
 
-.popup table {
-    width: 100% !important;
-    margin: 0;
-    border-spacing: 0 !important;
-    border-collapse: separate !important;
-}
+    .popup table {
+        width: 100% !important;
+        margin: 0;
+        border-spacing: 0 !important;
+        border-collapse: separate !important;
+    }
 
-.popup table td {
-    padding: 10px 16px;
-}
+        .popup table td {
+            padding: 10px 16px;
+        }
 
-.popup input[type="submit"],
-.popup input[type="button"],
-.popup button {
-    background-color: #007bff;
-    border: 1px solid #007bff;
-    color: #fff !important;
-    border-radius: 14px;
-    padding: 4px 20px;
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.4;
-    min-width: 75px;
-    width: auto !important;
-    height: auto !important;
-    cursor: pointer;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+    .popup input[type="submit"],
+    .popup input[type="button"],
+    .popup button {
+        background-color: #007bff;
+        border: 1px solid #007bff;
+        color: #fff !important;
+        border-radius: 14px;
+        padding: 4px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.4;
+        min-width: 75px;
+        width: auto !important;
+        height: auto !important;
+        cursor: pointer;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-.popup input[type="submit"]:hover,
-.popup input[type="button"]:hover,
-.popup button:hover {
-    background-color: #0069d9;
-    border-color: #0062cc;
-}
+        .popup input[type="submit"]:hover,
+        .popup input[type="button"]:hover,
+        .popup button:hover {
+            background-color: #0069d9;
+            border-color: #0062cc;
+        }
 
-.popup input[value="Cancel"],
-.popup input[value="cancel"],
-.popup input[value="Close"],
-.popup input[value="close"] {
-    background-color: #6c757d;
-    border-color: #6c757d;
-}
+    .popup input[value="Cancel"],
+    .popup input[value="cancel"],
+    .popup input[value="Close"],
+    .popup input[value="close"] {
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
 
-.popup input[value="Cancel"]:hover,
-.popup input[value="cancel"]:hover,
-.popup input[value="Close"]:hover,
-.popup input[value="close"]:hover {
-    background-color: #5a6268;
-    border-color: #545b62;
-}
+        .popup input[value="Cancel"]:hover,
+        .popup input[value="cancel"]:hover,
+        .popup input[value="Close"]:hover,
+        .popup input[value="close"]:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+        }
 
 /* Responsive */
 @media (max-width: 520px) {
@@ -4046,22 +4047,22 @@ div:has(> .ajax__calendar_container) {
         border-spacing: 0 !important;
     }
 
-    .ajax__calendar_container table,
-    .ajax__calendar_container table * {
-        box-sizing: content-box !important;
-    }
+        .ajax__calendar_container table,
+        .ajax__calendar_container table * {
+            box-sizing: content-box !important;
+        }
 
-    .ajax__calendar_container table td,
-    .ajax__calendar_container table th {
-        padding: 1px !important;
-        margin: 0 !important;
-        border: 0 !important;
-        width: auto !important;
-        height: auto !important;
-        box-sizing: content-box !important;
-        vertical-align: middle;
-        white-space: nowrap;
-    }
+            .ajax__calendar_container table td,
+            .ajax__calendar_container table th {
+                padding: 1px !important;
+                margin: 0 !important;
+                border: 0 !important;
+                width: auto !important;
+                height: auto !important;
+                box-sizing: content-box !important;
+                vertical-align: middle;
+                white-space: nowrap;
+            }
 
 .ajax__calendar_body {
     width: 170px !important;
@@ -4078,9 +4079,9 @@ div:has(> .ajax__calendar_container) {
     box-sizing: content-box !important;
 }
 
-.ajax__calendar_days table {
-    width: auto !important;
-}
+    .ajax__calendar_days table {
+        width: auto !important;
+    }
 
 .ajax__calendar_dayname,
 .ajax__calendar_day {
