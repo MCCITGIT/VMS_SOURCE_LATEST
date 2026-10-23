@@ -211,6 +211,7 @@ Partial Class RmpDashboard
             hdnRmChartData.Value = serializer.Serialize(chartData)
         Else
             hdnRmChartData.Value = "[]"
+            divCharts.Visible = False
         End If
     End Sub
 
@@ -227,7 +228,8 @@ Partial Class RmpDashboard
             RmGridHelper.BindPaged(gvRmPendingList, table)
 
         Else
-            divGvPenList.Visible = True
+            RmPendingList.Visible = False
+            divGvPenList.Visible = False
             gvRmPendingList.DataSource = Nothing
             gvRmPendingList.DataBind()
             gvRmPendingList.Visible = False
@@ -248,6 +250,7 @@ Partial Class RmpDashboard
             RmGridHelper.BindPaged(gvVerifiedVendorList, table)
 
         Else
+            divPurchaseRecord.Visible = False
             divGvVerList.Visible = True
             gvVerifiedVendorList.DataSource = Nothing
             gvVerifiedVendorList.DataBind()
