@@ -199,7 +199,7 @@
             .rm-compact .rm-list-fill .card-body {
                 flex: 1 1 auto;
                 overflow: auto;
-                padding-top: 8px;
+                /*padding-top: 8px;*/
                 display: flex;
                 flex-direction: column;
                 min-height: 0;
