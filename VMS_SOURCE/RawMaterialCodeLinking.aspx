@@ -159,7 +159,7 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-5">
-                                <div class="form-group pb-0 mb-0">
+                                <div class="form-group mb-0">
                                     <label class="form-control-label">Search Raw Material:</label>
                                     <div class="input-group product-search-group">
                                         <asp:TextBox ID="txtSearchText" ClientIDMode="Static" CssClass="form-control" runat="server" AutoComplete="Off" onkeyup="clearRawMaterialSelection();" Placeholder="Enter Here"></asp:TextBox>
@@ -184,7 +184,7 @@
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="form-group pb-0 mb-0">
+                                <div class="form-group mb-0">
                                     <label class="form-control-label">Search Berger Code:</label>
                                     <div class="input-group product-search-group">
                                         <asp:TextBox ID="txtBergerCodeSearch" ClientIDMode="Static" CssClass="form-control" runat="server" AutoComplete="Off" Placeholder="Enter Berger Code"></asp:TextBox>
@@ -195,7 +195,7 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="form-group pb-0 mb-0">
+                                <div class="form-group mb-0">
                                     <label class="form-control-label">&nbsp;</label>
                                     <div class="rm-code-link-search-actions">
                                         <asp:LinkButton CssClass="btn btn-primary btn-sm rm-btn-icon" ID="imgbtnSearch" runat="server" ClientIDMode="Static" OnClick="imgbtnSearch_Click" OnClientClick="return validateRawMaterialCodeLinkingSearch();" ToolTip="Search"><i class="fas fa-search"></i></asp:LinkButton>

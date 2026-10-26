@@ -55,10 +55,38 @@
                     overflow-wrap: normal !important;
                 }
 
-            .rm-module .rm-wrap-text {
-                text-align: left;
-            }
-        </style>--%>
+        .rm-module .rm-wrap-text {
+            text-align: left;
+        }
+    </style>--%>
+    <style type="text/css">
+        #gvRequisition .rm-req-skel-bar {
+            display: inline-block;
+            height: 12px;
+            max-width: 100%;
+            border-radius: 3px;
+            vertical-align: middle;
+            background: linear-gradient(90deg, #e3e8ee 25%, #f7f9fb 37%, #e3e8ee 63%);
+            background-size: 400% 100%;
+            animation: rmReqSkelShimmer 1.2s ease-in-out infinite;
+        }
+
+        #gvRequisition .rm-req-skel-box {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            vertical-align: middle;
+            background: linear-gradient(90deg, #e3e8ee 25%, #f7f9fb 37%, #e3e8ee 63%);
+            background-size: 400% 100%;
+            animation: rmReqSkelShimmer 1.2s ease-in-out infinite;
+        }
+
+        @keyframes rmReqSkelShimmer {
+            0% { background-position: 100% 0; }
+            100% { background-position: 0 0; }
+        }
+    </style>
     <style type="text/css">
         .rm-confirm-title {
             margin: 0 0 8px;
@@ -372,6 +400,7 @@
             <div class="card-body">
                 <asp:UpdatePanel ID="UpdatePanelGrid" runat="server">
                     <ContentTemplate>
+                        <asp:HiddenField ID="hdnExtraRequisitions" runat="server" ClientIDMode="Static" />
                         <div class="table-responsive rm-grid-scroll rm-fit-grid">
                             <asp:GridView BorderWidth="0" CssClass="table table-hover upgradDataGrid rm-fit-grid" CellSpacing="0" CellPadding="0"
                                 ID="gvRequisition" runat="server" ClientIDMode="Static" AutoGenerateColumns="false" Visible="true"
@@ -468,4 +497,169 @@
         </div>
     </div>
     <script type="text/javascript" src="Scripts/rm-status-confirm.js?v=<%= DateTime.Now.Ticks %>"></script>
+    <script type="text/javascript">
+        $(function () {
+            var pageIndex = 0;
+            var loading = false;
+            var noMoreData = false;
+            var loadSeq = 0;
+            var suppressScrollUntil = 0;
+            var filters = { vendor: '', rmVendor: '', status: '' };
+            var gridSel = '#gvRequisition';
+
+            function captureFilters() {
+                filters.vendor = $('#ddlvendor').val() || '';
+                filters.rmVendor = $('#ddlRawMatvendor').val() || '';
+                filters.status = $('#ddlApprovalstatus').val() || '';
+            }
+
+            function dataRows() {
+                return $(gridSel + ' tbody tr').not('.rm-req-skel').not('.headerGrid').filter(function () {
+                    return $(this).children('td[colspan]').length === 0;
+                });
+            }
+
+            function bindRequisitionScroll() {
+                var $el = $(gridSel).closest('.rm-grid-scroll');
+                $el.off('scroll.rmreq').on('scroll.rmreq', function () {
+                    if (Date.now() < suppressScrollUntil) return;
+                    if ($el.scrollTop() + $el.innerHeight() < $el[0].scrollHeight - 50) return;
+                    loadNext($el);
+                });
+            }
+
+            function loadNext($el) {
+                if (loading || noMoreData || dataRows().length === 0) return;
+
+                loading = true;
+                pageIndex++;
+                var seq = ++loadSeq;
+                showRequisitionSkeleton($el);
+
+                PageMethods.GetMoreRequisitions(pageIndex, filters.vendor, filters.rmVendor, filters.status,
+                    function (result) {
+                        if (seq !== loadSeq) return;
+                        hideRequisitionSkeleton();
+                        if (!result || !result.rows || result.rows.length === 0) {
+                            noMoreData = true;
+                            loading = false;
+                            return;
+                        }
+                        var $tbody = $(gridSel + ' tbody');
+                        $.each(result.rows, function (i, r) {
+                            appendRequisitionRow($tbody, r);
+                        });
+                        if (dataRows().length >= result.total) noMoreData = true;
+                        loading = false;
+                        var $scroll = $(gridSel).closest('.rm-grid-scroll');
+                        if (!noMoreData && $scroll.length && $scroll[0].scrollHeight <= $scroll.innerHeight() + 1) {
+                            loadNext($scroll);
+                        }
+                    },
+                    function () {
+                        if (seq !== loadSeq) return;
+                        hideRequisitionSkeleton();
+                        pageIndex--;
+                        loading = false;
+                    }
+                );
+            }
+
+            function showRequisitionSkeleton($scroll) {
+                var $tbody = $(gridSel + ' tbody');
+                if (!$tbody.length || $tbody.find('tr.rm-req-skel').length) return;
+
+                var nameWidths = ['70%', '58%', '78%'];
+                var html = '';
+                for (var r = 0; r < 3; r++) {
+                    html += '<tr class="tlrowlight rm-req-skel">';
+                    html += '<td align="center" style="width:4%;"><span class="rm-req-skel-bar" style="width:16px;"></span></td>';
+                    html += '<td align="center" style="width:8%;"><span class="rm-req-skel-box"></span></td>';
+                    html += '<td align="center" style="width:16%;"><span class="rm-req-skel-bar" style="width:' + nameWidths[r] + ';"></span></td>';
+                    html += '<td align="center" style="width:16%;"><span class="rm-req-skel-bar" style="width:' + nameWidths[(r + 1) % 3] + ';"></span></td>';
+                    html += '<td align="center" style="width:38%;"><span class="rm-req-skel-bar" style="width:82%;"></span></td>';
+                    html += '<td align="center" style="width:14%;"><span class="rm-req-skel-bar" style="width:64%;"></span></td>';
+                    html += '<td align="center" style="width:6%;"><span class="rm-req-skel-box"></span></td>';
+                    html += '</tr>';
+                }
+                $tbody.append(html);
+                suppressScrollUntil = Date.now() + 200;
+                if ($scroll && $scroll.length) $scroll.scrollTop($scroll[0].scrollHeight);
+            }
+
+            function hideRequisitionSkeleton() {
+                var $rows = $(gridSel + ' tbody tr.rm-req-skel');
+                if (!$rows.length) return;
+                suppressScrollUntil = Date.now() + 200;
+                $rows.remove();
+            }
+
+            function appendRequisitionRow($tbody, r) {
+                var slNo = dataRows().length + 1;
+                var approved = String(r.approval_status || '').toLowerCase() === 'approved';
+                var rawList = String(r.RawmaterialList || '').replace(/\r?\n/g, ',');
+                $tbody.append(
+                    '<tr class="tlrowlight rm-extra-row" data-request-id="' + escAttr(r.request_id) + '" data-rm-code="' + escAttr(r.rawmat_vendor_code) + '" data-rm-email="' + escAttr(r.rawmat_vendor_email) + '" data-vendor-name="' + escAttr(r.vendor_name) + '" data-rm-name="' + escAttr(r.rawmat_vendor_name) + '" data-raw-list="' + escAttr(rawList) + '" data-cc="' + escAttr(r.CCAddress) + '">' +
+                    '<td align="center" style="width:4%;">' + slNo + '</td>' +
+                    '<td align="center" style="width:8%;"><input type="checkbox" id="rmExtra' + slNo + '_chkSelect"' + (approved ? ' disabled="disabled"' : '') + ' /></td>' +
+                    '<td align="center" style="width:16%;">' + esc(r.vendor_name) + '</td>' +
+                    '<td align="center" style="width:16%;">' + esc(r.rawmat_vendor_name) + '</td>' +
+                    '<td align="center" style="width:38%;vertical-align:top;"><div class="rm-wrap-text">' + (r.RawmaterialHtml || '') + '</div></td>' +
+                    '<td align="center" style="width:14%;">' + esc(r.approval_status) + '</td>' +
+                    '<td align="center" style="width:6%;"><div style="display:flex;align-items:center;justify-content:center"><a href="RawMaterialRequisitionDtls.aspx?request_id=' + encodeURIComponent(r.request_id || '') + '" title="View"><i class="fa fa-eye"></i></a></div></td>' +
+                    '</tr>'
+                );
+            }
+
+            function esc(v) {
+                return $('<div>').text(v == null ? '' : v).html();
+            }
+
+            function escAttr(v) {
+                return esc(v).replace(/"/g, '&quot;');
+            }
+
+            function syncExtraApprove() {
+                var items = [];
+                $(gridSel + ' tbody tr.rm-extra-row').each(function () {
+                    var $tr = $(this);
+                    var $chk = $tr.find('input[type="checkbox"]');
+                    if (!$chk.length || $chk.prop('disabled') || !$chk.prop('checked')) return;
+                    items.push({
+                        request_id: $tr.attr('data-request-id') || '',
+                        rm_vendor_code: $tr.attr('data-rm-code') || '',
+                        rm_vendor_email: $tr.attr('data-rm-email') || '',
+                        vendor_name: $tr.attr('data-vendor-name') || '',
+                        rm_vendor_name: $tr.attr('data-rm-name') || '',
+                        raw_material_list: $tr.attr('data-raw-list') || '',
+                        hdnccemail: $tr.attr('data-cc') || ''
+                    });
+                });
+                $('#hdnExtraRequisitions').val(JSON.stringify(items));
+            }
+
+            $(document).on('change', gridSel + ' .rm-extra-row input[type="checkbox"]', syncExtraApprove);
+            $(document).on('mousedown', '[id$="btnApprove"]', syncExtraApprove);
+
+            function resetRequisitionScroll() {
+                loadSeq++;
+                pageIndex = 0;
+                noMoreData = false;
+                loading = false;
+                captureFilters();
+                bindRequisitionScroll();
+                var $scroll = $(gridSel).closest('.rm-grid-scroll');
+                if ($scroll.length && dataRows().length > 0 && $scroll[0].scrollHeight <= $scroll.innerHeight() + 1) loadNext($scroll);
+            }
+
+            captureFilters();
+            bindRequisitionScroll();
+            var $initial = $(gridSel).closest('.rm-grid-scroll');
+            if ($initial.length && dataRows().length > 0 && $initial[0].scrollHeight <= $initial.innerHeight() + 1) loadNext($initial);
+
+            if (typeof Sys !== 'undefined' && Sys.WebForms) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(resetRequisitionScroll);
+            }
+        });
+    </script>
 </asp:Content>

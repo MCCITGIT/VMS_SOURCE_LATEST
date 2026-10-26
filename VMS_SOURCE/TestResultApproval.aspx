@@ -40,37 +40,37 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Vendor:</label>
                                 <asp:TextBox ID="txtVendor" ReadOnly="true" runat="server" class="form-control"></asp:TextBox>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Brand Name:</label>
                                 <asp:TextBox ID="txtBrand" ReadOnly="true" runat="server" class="form-control"></asp:TextBox>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Product:</label>
                                 <asp:TextBox ID="txtProduct" ReadOnly="true" runat="server" class="form-control"></asp:TextBox>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Shade:</label>
                                 <asp:TextBox ID="txtShade" ReadOnly="true" runat="server" class="form-control"></asp:TextBox>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Batch No:</label>
                                 <asp:TextBox ID="txtBatchNo" ReadOnly="true" runat="server" class="form-control"></asp:TextBox>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Batch Date:</label>
                                 <asp:TextBox ID="txtBdate" ReadOnly="true" runat="server" class="form-control"></asp:TextBox>
                             </div>

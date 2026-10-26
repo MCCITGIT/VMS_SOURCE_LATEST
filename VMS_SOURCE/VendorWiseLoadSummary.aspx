@@ -289,7 +289,7 @@
                     <div class="card-body">
                         <div class="rm-add-stats-row">
                             <div class="rm-add-form">
-                                <div class="form-group pb-0 mb-0">
+                                <div class="form-group mb-0">
 
                                     <div class="rm-add-form-controls" style="align-items: flex-end">
                                         <div style="display: flex; flex-direction: column; gap: 2px ;
