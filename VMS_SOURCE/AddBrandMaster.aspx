@@ -87,8 +87,8 @@
                         <asp:TemplateField HeaderText="SlNo" HeaderStyle-HorizontalAlign="Center">
                             <ItemTemplate>
                                 <span class="abm-serial">
-                                    <span class="abm-serial-icon" aria-hidden="true"><i class="fas fa-tag"></i></span>
-                                    <span class="abm-serial-label">SlNo</span>
+                                    <%--<span class="abm-serial-icon" aria-hidden="true"><i class="fas fa-tag"></i></span>--%>
+                                    <span class="abm-serial-label">SlNo.:</span>
                                     <span class="abm-serial-num">
                                         <asp:Label ID="lblbrandid" runat="server" Text='<%# Container.DataItemIndex + 1 %>'></asp:Label>
                                     </span>

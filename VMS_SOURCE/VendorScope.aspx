@@ -2,7 +2,7 @@
 
 <%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="asp" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
-    <link href="includes/rm-procurement.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />
+    <%--<link href="includes/rm-procurement.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />--%>
     <style type="text/css">
         .rm-module .form-control.field-invalid,
         .rm-module select.form-control.field-invalid + .select2-container .select2-selection--single,
@@ -11,120 +11,216 @@
             box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12) !important;
         }
 
-        .dispatch-field-error { display: block; color: #dc3545; font-size: 12px; font-weight: 500; margin-top: 4px; line-height: 1.35; }
-        .dispatch-field-error:empty { display: none; }
+        .dispatch-field-error {
+            display: block;
+            color: #dc3545;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 4px;
+            line-height: 1.35;
+        }
+
+            .dispatch-field-error:empty {
+                display: none;
+            }
 
         /* pack multi-select (select2 tags) */
-        .rm-module .select2-container--default .select2-selection--multiple { min-height: 34px; border-color: #ced4da; }
-        .rm-module .select2-container--default .select2-selection--multiple .select2-selection__choice { background: #e8f1fb; border-color: #c9ddf3; color: #1f4e79; font-size: 12px; margin-top: 4px; }
-        .rm-module .select2-container--default .select2-selection--multiple .select2-selection__choice__remove { color: #1f4e79; }
+        .rm-module .select2-container--default .select2-selection--multiple {
+            min-height: 34px;
+            border-color: #ced4da;
+        }
 
-        .scope-hint { display: block; font-size: 11px; color: #6c757d; margin-top: 4px; }
-        .scope-pill { display: inline-block; min-width: 34px; padding: 2px 8px; border-radius: 10px; font-size: 11.5px; font-weight: 600; text-align: center; }
-        .scope-pill.is-all { background: #e9f7ef; color: #1e7e34; }
-        .scope-pill.is-some { background: #e8f1fb; color: #1f4e79; }
-        .scope-list-sub { font-size: 11px; color: #6c757d; }
+            .rm-module .select2-container--default .select2-selection--multiple .select2-selection__choice {
+                background: #e8f1fb;
+                border-color: #c9ddf3;
+                color: #1f4e79;
+                font-size: 12px;
+                margin-top: 4px;
+            }
+
+            .rm-module .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+                color: #1f4e79;
+            }
+
+        .scope-hint {
+            display: block;
+            font-size: 11px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        .scope-pill {
+            display: inline-block;
+            min-width: 34px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11.5px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+            .scope-pill.is-all {
+                background: #e9f7ef;
+                color: #1e7e34;
+            }
+
+            .scope-pill.is-some {
+                background: #e8f1fb;
+                color: #1f4e79;
+            }
+
+        .scope-list-sub {
+            font-size: 11px;
+            color: #42505d;
+        }
+        .headerGrid-subTex {
+            font-size: 10px;
+            color: #dfe6ed;
+        }
 
         /* shade-wise pack table */
-        .scope-shades { max-height: 420px; overflow-y: auto; border: 1px solid #e3e8ee; border-radius: 6px; }
-        .scope-shades table { margin: 0; }
-        .scope-shades th { position: sticky; top: 0; z-index: 1; }
-        .scope-shades td { vertical-align: middle; padding: 6px 8px; }
-        .scope-shades .scope-shade-name { white-space: nowrap; font-weight: 600; }
-        .scope-shades .scope-shade-name small { display: block; font-weight: 400; color: #6c757d; }
-        .scope-shades tr.is-off td { opacity: .55; }
-        .scope-shades tr.is-off .select2-container { pointer-events: none; }
-        .scope-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; }
-        .scope-toolbar a { margin-left: 10px; }
+        .scope-shades {
+            max-height: 420px;
+            overflow-y: auto;
+            border: 1px solid #e3e8ee;
+            border-radius: 6px;
+        }
+
+            .scope-shades table {
+                margin: 0;
+            }
+
+            .scope-shades th {
+                position: sticky;
+                top: 0;
+                z-index: 1;
+            }
+
+            .scope-shades td {
+                vertical-align: middle;
+                padding: 6px 8px;
+            }
+
+            .scope-shades .scope-shade-name {
+                white-space: nowrap;
+                font-weight: 600;
+            }
+
+                .scope-shades .scope-shade-name small {
+                    display: block;
+                    font-weight: 400;
+                    color: #6c757d;
+                }
+
+            .scope-shades tr.is-off td {
+                opacity: .55;
+            }
+
+            .scope-shades tr.is-off .select2-container {
+                pointer-events: none;
+            }
+
+        .scope-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+
+            .scope-toolbar a {
+                margin-left: 10px;
+            }
     </style>
-    <div class="rm-module rm-vendor-scope">
-        <script type="text/javascript">
-            /* ---------- small field helpers (same look as the other procurement pages) ---------- */
-            function vsSetError(controlId, labelId, message) {
-                var c = document.getElementById(controlId), l = document.getElementById(labelId);
-                if (c) { c.classList.add('field-invalid'); }
-                if (l) { l.innerHTML = message; }
-            }
-            function vsClearError(controlId, labelId) {
-                var c = document.getElementById(controlId), l = document.getElementById(labelId);
-                if (c) { c.classList.remove('field-invalid'); }
-                if (l) { l.innerHTML = ''; }
-            }
 
-            /* ---------- product autocomplete: searches inside the selected vertical ---------- */
-            function vsVertical() { var d = document.getElementById('ddlVertical'); return d ? (d.value || '') : ''; }
-            function vsSetProductContext() {
-                if (typeof $find !== 'function') { return; }
-                var b = $find('bhvScopeProduct');
-                if (b) { b.set_contextKey(vsVertical()); }
-            }
-            function onVerticalChanged() {
-                vsClearError('ddlVertical', 'valVertical');
-                vsSetProductContext();
-                resetProductField();
-            }
-            function onProductSelected(sender, e) {
-                document.getElementById('hdnProductCode').value = e.get_value();
-                document.getElementById('hdnProductName').value = e.get_text();
-                document.getElementById('txtProductSearch').value = e.get_text();
-                sender.get_element().value = e.get_text();
-                vsClearError('txtProductSearch', 'valProduct');
-                __doPostBack('<%= btnProductPicked.UniqueID %>', '');     // loads the shade-wise pack table of this product
-            }
-            function clearProductSelection() {
-                document.getElementById('hdnProductCode').value = '';
-                vsClearError('txtProductSearch', 'valProduct');
-            }
-            function resetProductField() {
-                var t = document.getElementById('txtProductSearch');
-                if (t) { t.value = ''; }
-                document.getElementById('hdnProductCode').value = '';
-                document.getElementById('hdnProductName').value = '';
-                vsClearError('txtProductSearch', 'valProduct');
-                return false;
-            }
-            function focusProductIfEmpty() {
-                var t = document.getElementById('txtProductSearch');
-                if (vsVertical() === '') { vsSetError('ddlVertical', 'valVertical', 'Please select Vertical first.'); if (t) { t.blur(); } return false; }
-                return true;
-            }
+    <script type="text/javascript">
+        /* ---------- small field helpers (same look as the other procurement pages) ---------- */
+        function vsSetError(controlId, labelId, message) {
+            var c = document.getElementById(controlId), l = document.getElementById(labelId);
+            if (c) { c.classList.add('field-invalid'); }
+            if (l) { l.innerHTML = message; }
+        }
+        function vsClearError(controlId, labelId) {
+            var c = document.getElementById(controlId), l = document.getElementById(labelId);
+            if (c) { c.classList.remove('field-invalid'); }
+            if (l) { l.innerHTML = ''; }
+        }
 
-            /* ---------- shade-wise pack table ---------- */
-            function vsShadeToggled(cb) {
-                var tr = cb.closest('tr');
-                if (tr) { tr.classList.toggle('is-off', !cb.checked); }
-                vsCountShades();
-            }
-            function vsAllShades(on) {
-                document.querySelectorAll('.scope-shades input.scope-shade-chk').forEach(function (cb) { cb.checked = on; vsShadeToggled(cb); });
-                return false;
-            }
-            function vsCountShades() {
-                var all = document.querySelectorAll('.scope-shades input.scope-shade-chk'), on = 0;
-                all.forEach(function (cb) { if (cb.checked) { on++; } });
-                var l = document.getElementById('lblShadeCount');
-                if (l) { l.innerText = all.length === 0 ? '' : (on === 0 ? 'No shade ticked = every shade (and every pack) is allowed.' : on + ' of ' + all.length + ' shade(s) allowed.'); }
-            }
-            function vsInitShades() {
-                document.querySelectorAll('.scope-shades input.scope-shade-chk').forEach(function (cb) { var tr = cb.closest('tr'); if (tr) { tr.classList.toggle('is-off', !cb.checked); } });
-                vsCountShades();
-            }
+        /* ---------- product autocomplete: searches inside the selected vertical ---------- */
+        function vsVertical() { var d = document.getElementById('ddlVertical'); return d ? (d.value || '') : ''; }
+        function vsSetProductContext() {
+            if (typeof $find !== 'function') { return; }
+            var b = $find('bhvScopeProduct');
+            if (b) { b.set_contextKey(vsVertical()); }
+        }
+        function onVerticalChanged() {
+            vsClearError('ddlVertical', 'valVertical');
+            vsSetProductContext();
+            resetProductField();
+        }
+        function onProductSelected(sender, e) {
+            document.getElementById('hdnProductCode').value = e.get_value();
+            document.getElementById('hdnProductName').value = e.get_text();
+            document.getElementById('txtProductSearch').value = e.get_text();
+            sender.get_element().value = e.get_text();
+            vsClearError('txtProductSearch', 'valProduct');
+            __doPostBack('<%= btnProductPicked.UniqueID %>', '');     // loads the shade-wise pack table of this product
+        }
+        function clearProductSelection() {
+            document.getElementById('hdnProductCode').value = '';
+            vsClearError('txtProductSearch', 'valProduct');
+        }
+        function resetProductField() {
+            var t = document.getElementById('txtProductSearch');
+            if (t) { t.value = ''; }
+            document.getElementById('hdnProductCode').value = '';
+            document.getElementById('hdnProductName').value = '';
+            vsClearError('txtProductSearch', 'valProduct');
+            return false;
+        }
+        function focusProductIfEmpty() {
+            var t = document.getElementById('txtProductSearch');
+            if (vsVertical() === '') { vsSetError('ddlVertical', 'valVertical', 'Please select Vertical first.'); if (t) { t.blur(); } return false; }
+            return true;
+        }
 
-            function validateScopeSave() {
-                var ok = true;
-                vsClearError('ddlVendor', 'valVendor'); vsClearError('ddlVertical', 'valVertical'); vsClearError('txtProductSearch', 'valProduct');
-                var v = document.getElementById('ddlVendor');
-                if (!v || v.value === '') { vsSetError('ddlVendor', 'valVendor', 'Please select Vendor.'); ok = false; }
-                if (vsVertical() === '') { vsSetError('ddlVertical', 'valVertical', 'Please select Vertical.'); ok = false; }
-                if ((document.getElementById('hdnProductCode').value || '') === '') { vsSetError('txtProductSearch', 'valProduct', 'Please select Product from the list.'); ok = false; }
-                return ok;
-            }
+        /* ---------- shade-wise pack table ---------- */
+        function vsShadeToggled(cb) {
+            var tr = cb.closest('tr');
+            if (tr) { tr.classList.toggle('is-off', !cb.checked); }
+            vsCountShades();
+        }
+        function vsAllShades(on) {
+            document.querySelectorAll('.scope-shades input.scope-shade-chk').forEach(function (cb) { cb.checked = on; vsShadeToggled(cb); });
+            return false;
+        }
+        function vsCountShades() {
+            var all = document.querySelectorAll('.scope-shades input.scope-shade-chk'), on = 0;
+            all.forEach(function (cb) { if (cb.checked) { on++; } });
+            var l = document.getElementById('lblShadeCount');
+            if (l) { l.innerText = all.length === 0 ? '' : (on === 0 ? 'No shade ticked = every shade (and every pack) is allowed.' : on + ' of ' + all.length + ' shade(s) allowed.'); }
+        }
+        function vsInitShades() {
+            document.querySelectorAll('.scope-shades input.scope-shade-chk').forEach(function (cb) { var tr = cb.closest('tr'); if (tr) { tr.classList.toggle('is-off', !cb.checked); } });
+            vsCountShades();
+        }
 
-            function vsPageInit() { vsSetProductContext(); vsInitShades(); }
-            document.addEventListener('DOMContentLoaded', vsPageInit);
-            if (window.Sys && Sys.Application) { Sys.Application.add_load(vsPageInit); }
-        </script>
+        function validateScopeSave() {
+            var ok = true;
+            vsClearError('ddlVendor', 'valVendor'); vsClearError('ddlVertical', 'valVertical'); vsClearError('txtProductSearch', 'valProduct');
+            var v = document.getElementById('ddlVendor');
+            if (!v || v.value === '') { vsSetError('ddlVendor', 'valVendor', 'Please select Vendor.'); ok = false; }
+            if (vsVertical() === '') { vsSetError('ddlVertical', 'valVertical', 'Please select Vertical.'); ok = false; }
+            if ((document.getElementById('hdnProductCode').value || '') === '') { vsSetError('txtProductSearch', 'valProduct', 'Please select Product from the list.'); ok = false; }
+            return ok;
+        }
 
+        function vsPageInit() { vsSetProductContext(); vsInitShades(); }
+        document.addEventListener('DOMContentLoaded', vsPageInit);
+        if (window.Sys && Sys.Application) { Sys.Application.add_load(vsPageInit); }
+    </script>
+
+    <div class="rm-module rm-compact rm-vendor-scope">
         <div class="breadcrumbs">
             <div class="leftFung">
                 <a href="Home.aspx" title="Home"><i class="fas fa-home"></i></a>
@@ -149,7 +245,8 @@
                         <div class="mst-panel-header-left">
                             <span class="mst-panel-icon"><i class="fas fa-sitemap"></i></span>
                             <div>
-                                <h5 class="mst-panel-title"><asp:Literal ID="litFormTitle" runat="server" Text="Declare scope"></asp:Literal></h5>
+                                <h5 class="mst-panel-title">
+                                    <asp:Literal ID="litFormTitle" runat="server" Text="Declare scope"></asp:Literal></h5>
                                 <p class="mst-panel-subtitle">Vendor &rarr; Vertical &rarr; Product &rarr; shades, each with its own packs. Untick a shade to exclude it; leave a shade's packs empty to allow all of them.</p>
                             </div>
                         </div>
@@ -158,7 +255,7 @@
                         <div class="rm-filter-stats-row">
                             <div class="rm-filter-fields">
                                 <div class="row">
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <label class="form-control-label">Vendor:<span class="mandatory">*</span></label>
                                             <asp:DropDownList ID="ddlVendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" onchange="vsClearError('ddlVendor','valVendor');"></asp:DropDownList>
@@ -172,7 +269,7 @@
                                             <asp:Label ID="valVertical" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-5">
                                         <div class="form-group">
                                             <label class="form-control-label">Product:<span class="mandatory">*</span></label>
                                             <div class="input-group product-search-group">
@@ -207,7 +304,7 @@
                                                             <tr class="headerGrid">
                                                                 <th style="width: 48px;">Allow</th>
                                                                 <th style="width: 28%;">Shade</th>
-                                                                <th>Packs <span class="scope-list-sub">(empty = all packs of this shade)</span></th>
+                                                                <th>Packs <span class="headerGrid-subTex">(empty = all packs of this shade)</span></th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
@@ -229,7 +326,8 @@
                                                     </table>
                                                 </div>
                                             </asp:Panel>
-                                            <span class="scope-hint"><asp:Literal ID="litShadeHint" runat="server" Text="Pick a product first."></asp:Literal></span>
+                                            <span class="scope-hint">
+                                                <asp:Literal ID="litShadeHint" runat="server" Text="Pick a product first."></asp:Literal></span>
                                         </div>
                                     </div>
                                 </div>
@@ -252,7 +350,9 @@
                             <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
                             <div>
                                 <h5 class="mst-panel-title">Declared scopes</h5>
-                                <p class="mst-panel-subtitle"><asp:Literal ID="litListSub" runat="server" Text="Every active scope, grouped by vendor. Edit opens it in the form above."></asp:Literal></p>
+                                <p class="mst-panel-subtitle">
+                                    <asp:Literal ID="litListSub" runat="server" Text="Every active scope, grouped by vendor. Edit opens it in the form above."></asp:Literal>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -280,12 +380,16 @@
                                         </ItemTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Shades" ItemStyle-HorizontalAlign="Left" ItemStyle-Width="20%">
-                                        <ItemTemplate><span class='<%# IIf(Convert.ToInt32(Eval("shade_count")) = 0, "scope-pill is-all", "scope-pill is-some") %>'><%# IIf(Convert.ToInt32(Eval("shade_count")) = 0, "All", Eval("shade_count")) %></span>
-                                            <span class="scope-list-sub" style="display: block; text-align: left;"><%# Eval("shade_names") %></span></ItemTemplate>
+                                        <ItemTemplate>
+                                            <span class='<%# IIf(Convert.ToInt32(Eval("shade_count")) = 0, "scope-pill is-all", "scope-pill is-some") %>'><%# IIf(Convert.ToInt32(Eval("shade_count")) = 0, "All", Eval("shade_count")) %></span>
+                                            <span class="scope-list-sub" style="display: block; text-align: left;"><%# Eval("shade_names") %></span>
+                                        </ItemTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Packs (per shade)" ItemStyle-HorizontalAlign="Left" ItemStyle-Width="22%">
-                                        <ItemTemplate><span class='<%# IIf(Convert.ToInt32(Eval("pack_count")) = 0, "scope-pill is-all", "scope-pill is-some") %>'><%# IIf(Convert.ToInt32(Eval("pack_count")) = 0, "All", Eval("pack_count")) %></span>
-                                            <span class="scope-list-sub" style="display: block; text-align: left;"><%# Eval("pack_names") %></span></ItemTemplate>
+                                        <ItemTemplate>
+                                            <span class='<%# IIf(Convert.ToInt32(Eval("pack_count")) = 0, "scope-pill is-all", "scope-pill is-some") %>'><%# IIf(Convert.ToInt32(Eval("pack_count")) = 0, "All", Eval("pack_count")) %></span>
+                                            <span class="scope-list-sub" style="display: block; text-align: left;"><%# Eval("pack_names") %></span>
+                                        </ItemTemplate>
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Declared by">
                                         <ItemTemplate>
@@ -295,8 +399,8 @@
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Action" ItemStyle-HorizontalAlign="Center" ItemStyle-Width="110px">
                                         <ItemTemplate>
-                                            <asp:LinkButton ID="btnEdit" runat="server" CommandName="EditScope" CommandArgument='<%# Eval("vs_id") %>' CssClass="btn btn-info btn-sm gridBtn mr-1" ToolTip="Edit"><i class="fas fa-edit"></i></asp:LinkButton>
-                                            <asp:LinkButton ID="btnDeactivate" runat="server" CommandName="DeactivateScope" CommandArgument='<%# Eval("vs_id") %>' CssClass="btn btn-danger btn-sm" ToolTip="Deactivate" OnClientClick="return confirm('Deactivate this scope? The vendor will no longer see this product on Product Formulation.');"><i class="fas fa-trash"></i></asp:LinkButton>
+                                            <asp:LinkButton ID="btnEdit" runat="server" CommandName="EditScope" CommandArgument='<%# Eval("vs_id") %>' CssClass="text-info" ToolTip="Edit"><i class="fas fa-edit"></i></asp:LinkButton>
+                                            <asp:LinkButton ID="btnDeactivate" runat="server" CommandName="DeactivateScope" CommandArgument='<%# Eval("vs_id") %>' CssClass="text-danger" ToolTip="Deactivate" OnClientClick="return confirm('Deactivate this scope? The vendor will no longer see this product on Product Formulation.');"><i class="fas fa-trash"></i></asp:LinkButton>
                                         </ItemTemplate>
                                     </asp:TemplateField>
                                 </Columns>
