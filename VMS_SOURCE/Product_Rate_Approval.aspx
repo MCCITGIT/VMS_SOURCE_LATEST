@@ -7,7 +7,7 @@
         .pra-kv b { color: #375973; }
         .pra-badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap; }
         .pra-APPROVED { background: #28a745; } .pra-INACTIVE { background: #6c757d; } .pra-PENDING { background: #e0a800; }
-        .pra-REJECTED { background: #dc3545; } .pra-SUPERSEDED { background: #adb5bd; } .pra-PENDING_VENDOR { background: #17a2b8; }
+        .pra-REJECTED { background: #dc3545; } .pra-SUPERSEDED { background: #adb5bd; } .pra-PENDING_VENDOR { background: #17a2b8; } .pra-PENDING_MATERIAL { background: #8a6d1f; } .pra-PENDING_HO { background: #b8860b; }
         .pra-row-active td { background: #eaf7ee !important; }
         .pra-small { font-size: 11px; color: #666; }
         .pra-rm { font-size: 11.5px; }
@@ -23,6 +23,8 @@
         .pra-matrix thead th.pra-col-superseded { background: #7d868e; }
         .pra-matrix thead th.pra-col-pending { background: #c69500; }
         .pra-matrix thead th.pra-col-pending_vendor { background: #117a8b; }
+        .pra-matrix thead th.pra-col-pending_material { background: #8a6d1f; }
+        .pra-matrix thead th.pra-col-pending_ho { background: #b8860b; }
         .pra-matrix thead th.pra-col-inactive { background: #5a6268; }
         .pra-matrix th.pra-rowhead, .pra-matrix td.pra-rowhead { position: sticky; left: 0; background: #f4f6f8; text-align: left; font-weight: 600; color: #375973; min-width: 220px; white-space: normal; z-index: 1; }
         .pra-matrix td.pra-val { text-align: right; }

@@ -1239,6 +1239,10 @@ Public Class OPC_VendorClass
         t.Columns.Add("ratio", GetType(Decimal))
         t.Columns.Add("price", GetType(Decimal))
         t.Columns.Add("uom", GetType(String))
+        ' 26-10-2026: tbl_opc_sku_formulation_dtl on VMS_TEST was given md_price / site_price (NOT NULL) on 22-Oct by a parallel change;
+        ' the page sends 0 for both - Material Dept figures of this design live in opc_sku_formulation_review. Remove when the type is reverted.
+        t.Columns.Add("md_price", GetType(Decimal)).DefaultValue = 0D
+        t.Columns.Add("site_price", GetType(Decimal)).DefaultValue = 0D
         Return t
     End Function
 
@@ -1331,6 +1335,11 @@ Public Class OPC_VendorClass
 
     Function GetSkuFormulationHoEmail() As DataSet
         Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_ho_email]", Data.CommandType.StoredProcedure)
+    End Function
+
+    ''' <summary>[opc_sku_formulation_material_email] TOAddr/CCAddr/BCCAddr of the Material Department (26-10-2026).</summary>
+    Function GetSkuFormulationMaterialEmail() As DataSet
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_material_email]", Data.CommandType.StoredProcedure)
     End Function
 
     ''' <summary>[opc_sku_formulation_approve] - HO decision: action "A" approve / "R" reject (remarks mandatory). Returns the SP message; "" on success.</summary>
@@ -1753,6 +1762,41 @@ Public Class OPC_VendorClass
     End Function
 #End Region
 
+#Region "Vendor Factory Link (Author: MUKESH BHAGAT 26-Oct-2026)"
+    ' Which Berger factories are near an FG vendor (opc_vendor_factory_link). Used by VendorFactoryLink.aspx and by the
+    ' HO / Material Dept price comparison (RM cost at those factories from LMIS_DB.dbo.PMAC_COST).
+    ''' <summary>[opc_vendor_factory_lookup] factories (org_type FACTORY) matching code / name / city.</summary>
+    Function GetVendorFactoryLookup(ByVal searchKey As String) As DataSet
+        Dim p() As SqlParameter = {New SqlParameter("@search_key", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(searchKey), CObj(DBNull.Value), searchKey.Trim())}}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_factory_lookup]", CommandType.StoredProcedure, p)
+    End Function
+
+    ''' <summary>[opc_vendor_factory_link_get] the vendor's factory (active row first).</summary>
+    Function GetVendorFactoryLinks(ByVal vendorCode As String, ByVal activeOnly As String) As DataSet
+        Dim p() As SqlParameter = {New SqlParameter("@vendor_code", SqlDbType.VarChar, 50) With {.Value = vendorCode}, New SqlParameter("@active_only", SqlDbType.Char, 1) With {.Value = If(activeOnly = "N", "N", "Y")}}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_factory_link_get]", CommandType.StoredProcedure, p)
+    End Function
+
+    ''' <summary>[opc_vendor_factory_link_list] overview: one row per vendor with its factory.</summary>
+    Function ListVendorFactoryLinks() As DataSet
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_factory_link_list]", CommandType.StoredProcedure)
+    End Function
+
+    ''' <summary>[opc_vendor_factory_link_save] sets THE factory of a vendor (one per vendor; the previous link is deactivated). Returns ok + message.</summary>
+    Function SaveVendorFactoryLink(ByVal vendorCode As String, ByVal orgCode As String, ByVal remarks As String, ByVal userId As String, ByRef message As String) As Boolean
+        Dim p() As SqlParameter = {New SqlParameter("@vendor_code", SqlDbType.VarChar, 50) With {.Value = vendorCode},
+                                   New SqlParameter("@org_code", SqlDbType.VarChar, 50) With {.Value = orgCode},
+                                   New SqlParameter("@remarks", SqlDbType.VarChar, 500) With {.Value = If(String.IsNullOrWhiteSpace(remarks), CObj(DBNull.Value), remarks.Trim())},
+                                   New SqlParameter("@user_id", SqlDbType.VarChar, 50) With {.Value = userId}}
+        Dim ds As DataSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_factory_link_save]", CommandType.StoredProcedure, p)
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0).Rows.Count > 0 Then
+            message = Convert.ToString(ds.Tables(0).Rows(0)("Message"))
+            Return Convert.ToInt32(ds.Tables(0).Rows(0)("Status")) = 1
+        End If
+        message = "No response from server." : Return False
+    End Function
+#End Region
+
 #Region "Vendor Scope (Author: MUKESH BHAGAT 14-Oct-2026; Modified-by MUKESH BHAGAT 15-Oct-2026: supplier -> vendor, packaging items removed)"
     ' A vendor (FG vendor unit) declares what it makes: vertical > product > shade > pack (VendorScope.aspx).
     ' Product_Formulation offers that vendor only what is declared here.
@@ -1850,6 +1894,80 @@ Public Class OPC_VendorClass
         Dim ds As DataSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_shade_get]", CommandType.StoredProcedure, p)
         If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0).Rows.Count > 0 Then Return Convert.ToString(ds.Tables(0).Rows(0)("shade_code")).Trim()
         Return ""
+    End Function
+
+    ' ---- Material Department review step (Author: MUKESH BHAGAT 22-10-2026) ----
+    Public Shared Function NewMaterialReviewTable() As DataTable
+        Dim dt As New DataTable()
+        dt.Columns.Add("rawmat_code", GetType(String))
+        dt.Columns.Add("site_cost", GetType(Decimal))
+        dt.Columns.Add("material_price", GetType(Decimal))
+        Return dt
+    End Function
+
+    ''' <summary>[opc_sku_formulation_forward] HO sends the latest PENDING revision to the Material Dept. Returns ok + message.</summary>
+    Function ForwardSkuFormulation(ByVal sfId As Integer, ByVal userId As String, ByRef message As String) As Boolean
+        Dim p() As SqlParameter = {New SqlParameter("@sf_id", SqlDbType.Int) With {.Value = sfId}, ScopeParam("@user_id", userId)}
+        Dim ds As DataSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_forward]", CommandType.StoredProcedure, p)
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0).Rows.Count > 0 Then
+            message = Convert.ToString(ds.Tables(0).Rows(0)("Message"))
+            Return Convert.ToInt32(ds.Tables(0).Rows(0)("Status")) = 1
+        End If
+        message = "No response from server." : Return False
+    End Function
+
+    Public Shared Function NewMaterialReviewPackTable() As DataTable
+        Dim dt As New DataTable()
+        dt.Columns.Add("pch_id", GetType(Integer))
+        dt.Columns.Add("processing_fee", GetType(Decimal))
+        dt.Columns.Add("margin_pct", GetType(Decimal))
+        Return dt
+    End Function
+
+    Public Shared Function NewMaterialReviewLineTable() As DataTable
+        Dim dt As New DataTable()
+        dt.Columns.Add("pcd_id", GetType(Integer))
+        dt.Columns.Add("amount", GetType(Decimal))
+        Return dt
+    End Function
+
+    ''' <summary>[opc_sku_formulation_material_review] Material Dept answer: per raw material site cost + suggested price, per pack
+    ''' suggested processing fee / margin %, per cost line suggested amount, remarks (packaging added 26-10-2026). Returns ok + message.</summary>
+    Function SaveMaterialReview(ByVal sfId As Integer, ByVal review As DataTable, ByVal remarks As String, ByVal userId As String, ByRef message As String,
+                                Optional ByVal packsReview As DataTable = Nothing, Optional ByVal linesReview As DataTable = Nothing) As Boolean
+        Dim sqlConn As SqlConnection = Nothing
+        Try
+            sqlConn = DBFactory.GetHelper.OpenConnection
+            Dim sqlCmd As New SqlCommand("[dbo].[opc_sku_formulation_material_review]", sqlConn)
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.Parameters.Add("@sf_id", SqlDbType.Int).Value = sfId
+            Dim pR As SqlParameter = sqlCmd.Parameters.Add("@review", SqlDbType.Structured) : pR.TypeName = "dbo.tbl_opc_sku_formulation_review" : pR.Value = review
+            Dim pP As SqlParameter = sqlCmd.Parameters.Add("@packs_review", SqlDbType.Structured) : pP.TypeName = "dbo.tbl_opc_sku_formulation_review_pack" : pP.Value = If(packsReview, NewMaterialReviewPackTable())
+            Dim pL As SqlParameter = sqlCmd.Parameters.Add("@lines_review", SqlDbType.Structured) : pL.TypeName = "dbo.tbl_opc_sku_formulation_review_line" : pL.Value = If(linesReview, NewMaterialReviewLineTable())
+            sqlCmd.Parameters.Add(ScopeParam("@remarks", remarks, 1000))
+            sqlCmd.Parameters.Add(ScopeParam("@user_id", userId))
+            Using dr As SqlDataReader = sqlCmd.ExecuteReader()
+                If dr.Read() Then
+                    message = Convert.ToString(dr("Message"))
+                    Return Convert.ToInt32(dr("Status")) = 1
+                End If
+            End Using
+            message = "No response from server." : Return False
+        Finally
+            If sqlConn IsNot Nothing Then sqlConn.Close()
+        End Try
+    End Function
+
+    ''' <summary>[opc_sku_formulation_factory_costs] RM cost per raw material at the vendor's linked factories, nearest first. HO / Material Dept only.</summary>
+    Function GetFormulationFactoryCosts(ByVal sfId As Integer, ByVal vendorCode As String) As DataSet
+        Dim p() As SqlParameter = {New SqlParameter("@sf_id", SqlDbType.Int) With {.Value = sfId}, ScopeParam("@vendor_code", vendorCode)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_factory_costs]", CommandType.StoredProcedure, p)
+    End Function
+
+    ''' <summary>[opc_sku_formulation_review_get] table 0 = forwarded / answered by + remarks, table 1 = per raw material figures. HO / Material Dept only.</summary>
+    Function GetMaterialReview(ByVal sfId As Integer) As DataSet
+        Dim p() As SqlParameter = {New SqlParameter("@sf_id", SqlDbType.Int) With {.Value = sfId}}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_review_get]", CommandType.StoredProcedure, p)
     End Function
 
     ''' <summary>Raw material search of Product_Formulation: the usual list plus the manual items of one vendor unit only.</summary>
