@@ -35,7 +35,7 @@
             window.history.forward(1);
         }
     </script>
-     <script type="text/javascript" src="Scripts/FunctionValidator.js"></script>
+    <script type="text/javascript" src="Scripts/FunctionValidator.js"></script>
     <script type="text/javascript" src="Scripts/BrandProductLinking.js?time=<%= DateTime.Now.ToString("yyyy.MM.dd-HH.mm.ss.fff") %>"></script>
 
     <div class="breadcrumbs">
@@ -64,7 +64,7 @@
                         <div class="col-md-8">
                             <div class="form-group">
                                 <label class="form-control-label">Search Text:</label>
-                                <input type="text" class="form-control" id="searchInput"  placeholder="Type to search..." oninput="searchText()">
+                                <input type="text" class="form-control" id="searchInput" placeholder="Type to search..." oninput="searchText()">
                             </div>
                         </div>
                     </div>
