@@ -36,20 +36,20 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-3">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">Quarter:<span id="Span12" class="mandatory">*</span></label>
                         <asp:DropDownList ID="ddlQuarter" CssClass="form-control select2" runat="server" AutoPostBack="true" />
 
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">Vendor:</label>
                         <asp:DropDownList ID="ddlVendor" CssClass="form-control select2" runat="server" AutoPostBack="true" />
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">Product:</label>
                         <asp:TextBox ID="txtProduct" CssClass="form-control" runat="server"></asp:TextBox>
 
