@@ -37,6 +37,7 @@ Partial Class Product_Formulation
         aceProductSearch.ContextKey = CurrentVendor()      ' product search = the products declared for this vendor on Vendor Scope
         hdnVendorUnit.Value = CurrentVendor()              ' the browser reads the vendor from here when the Vendor dropdown is not on the page (UNIT login)
         If IsPostBack AndAlso userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT Then HideVendorColumn()
+        If Not CanSeeInternal() Then HideInternalColumns()      ' Material Dept figures are never rendered for a vendor
     End Sub
 
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
@@ -157,6 +158,8 @@ Partial Class Product_Formulation
         dt.Columns.Add(New DataColumn("shade_name", GetType(String)))
         dt.Columns.Add(New DataColumn("supplier_code", GetType(String)))
         dt.Columns.Add(New DataColumn("supplier_name", GetType(String)))
+        dt.Columns.Add(New DataColumn("site_cost", GetType(String)))     ' Material Dept: nearest Berger site cost (internal)
+        dt.Columns.Add(New DataColumn("mat_price", GetType(String)))     ' Material Dept: suggested price (internal)
         dt.Columns.Add(New DataColumn("rawmat_code", GetType(String)))
         dt.Columns.Add(New DataColumn("rawmat_name", GetType(String)))
         dt.Columns.Add(New DataColumn("ratio", GetType(String)))
@@ -182,6 +185,7 @@ Partial Class Product_Formulation
         gvVendorRawMat.DataSource = dt
         gvVendorRawMat.DataBind()
         btnSubmit.Visible = dt.Rows.Count > 0
+        lblNextSn.Text = (dt.Rows.Count + 1).ToString()      ' entry line shows the number the next raw material will get
         btnSubmit.Text = If(ParseInteger(hdnId.Value) > 0, "Submit for HO approval", "Submit for HO approval")
         hdnSkuPrice.Value = CalculateSkuPrice(dt, LossPct()).ToString("0.00", CultureInfo.InvariantCulture)
         lblSkuPriceInfo.Text = hdnSkuPrice.Value
@@ -372,6 +376,7 @@ Partial Class Product_Formulation
         dr("shade_name") = If(ddlShade.SelectedValue = "", "", ddlShade.SelectedItem.Text)
         dr("supplier_code") = ddlSupplier.SelectedValue
         dr("supplier_name") = If(ddlSupplier.SelectedValue = "", "", ddlSupplier.SelectedItem.Text)
+        dr("site_cost") = "" : dr("mat_price") = ""
         dr("rawmat_code") = selectedRawMatCode
         dr("rawmat_name") = rawMatName
         dr("ratio") = ParseDecimal(txtRatio.Text).ToString("0.##", CultureInfo.InvariantCulture)
@@ -599,6 +604,8 @@ Partial Class Product_Formulation
                 dtGrid.Rows.Add(dr)
             Next
         End If
+        ViewState("MaterialInfo") = Nothing
+        If CanSeeInternal() Then LoadMaterialReview(sfId, dtGrid)
         ViewState(GridTableKey) = dtGrid
         BindRawMatGrid()
 
@@ -662,6 +669,129 @@ Partial Class Product_Formulation
 #End Region
 
 #Region "HO approval + mail"
+#Region "Material Department review (Author: MUKESH BHAGAT 22-10-2026)"
+    ''' <summary>Material Dept users: the FORMULATION_MATERIAL_USERS app setting (comma-separated login ids; for now "murthy").
+    ''' HO groups and SYSADMIN may also SEE the internal figures; only Material Dept users enter them.</summary>
+    Private Function IsMaterialUser() As Boolean
+        Dim cfg As String = Convert.ToString(ConfigurationManager.AppSettings("FORMULATION_MATERIAL_USERS"))
+        If String.IsNullOrWhiteSpace(cfg) Then cfg = "murthy"
+        For Each u As String In cfg.Split(","c)
+            If String.Equals(u.Trim(), Convert.ToString(userInfo.userIDEntity).Trim(), StringComparison.OrdinalIgnoreCase) Then Return True
+        Next
+        Return False
+    End Function
+
+    ''' <summary>Who may see the nearest-site cost and the suggested price: HO and Material Dept. Never a vendor.</summary>
+    Private Function CanSeeInternal() As Boolean
+        Return IsHoUser() OrElse IsMaterialUser()
+    End Function
+
+    ''' <summary>True while the Material Dept user is answering (status PENDING_MATERIAL, latest revision).</summary>
+    Private Function MaterialMode() As Boolean
+        Return Convert.ToString(ViewState("MaterialMode")) = "Y"
+    End Function
+
+    Private Sub HideInternalColumns()
+        For Each col As DataControlField In gvVendorRawMat.Columns
+            If col.HeaderText = "Nearest site cost" OrElse col.HeaderText = "Suggested price" Then col.Visible = False
+        Next
+        tdSiteEntry.Visible = False
+        tdMatEntry.Visible = False
+    End Sub
+
+    ''' <summary>Fills site_cost / mat_price of the grid lines from opc_sku_formulation_review and keeps the Material Dept note for the banner.</summary>
+    Private Sub LoadMaterialReview(ByVal sfId As Integer, ByVal grid As DataTable)
+        Dim ds As DataSet = New OPC_VendorClass().GetMaterialReview(sfId)
+        If ds Is Nothing OrElse ds.Tables.Count < 2 Then Exit Sub
+        If ds.Tables(0).Rows.Count > 0 Then
+            Dim h As DataRow = ds.Tables(0).Rows(0)
+            Dim info As String = ""
+            If Not IsDBNull(h("sf_forwarded_on")) Then info &= "Sent to Material Dept by " & Convert.ToString(h("sf_forwarded_by")) & " on " & Convert.ToDateTime(h("sf_forwarded_on")).ToString("dd/MM/yyyy HH:mm") & ". "
+            If Not IsDBNull(h("sf_material_on")) Then info &= "Material Dept (" & Convert.ToString(h("sf_material_by")) & ", " & Convert.ToDateTime(h("sf_material_on")).ToString("dd/MM/yyyy HH:mm") & "): " & Convert.ToString(h("sf_material_remarks"))
+            ViewState("MaterialInfo") = info.Trim()
+            Dim st As String = Convert.ToString(h("sf_status")).Trim().ToUpperInvariant()
+            ViewState("MaterialMode") = If(st = "PENDING_MATERIAL" AndAlso IsMaterialUser(), "Y", Nothing)
+        End If
+        For Each r As DataRow In ds.Tables(1).Rows
+            Dim code As String = Convert.ToString(r("rawmat_code")).Trim()
+            For Each g As DataRow In grid.Rows
+                If String.Equals(Convert.ToString(g("rawmat_code")).Trim(), code, StringComparison.OrdinalIgnoreCase) Then
+                    g("site_cost") = If(IsDBNull(r("site_cost")), "", Convert.ToDecimal(r("site_cost")).ToString("0.00", CultureInfo.InvariantCulture))
+                    g("mat_price") = If(IsDBNull(r("material_price")), "", Convert.ToDecimal(r("material_price")).ToString("0.00", CultureInfo.InvariantCulture))
+                End If
+            Next
+        Next
+    End Sub
+
+    Private Sub ShowMaterialInfo(ByVal status As String)
+        Dim info As String = Convert.ToString(ViewState("MaterialInfo"))
+        pnlMaterialInfo.Visible = CanSeeInternal() AndAlso info <> "" AndAlso Not MaterialMode()
+        If pnlMaterialInfo.Visible Then
+            lblMaterialInfoTitle.Text = If(status = "PENDING_MATERIAL", "With Material Dept - ", "Material Dept comparison - ")
+            lblMaterialInfo.Text = Server.HtmlEncode(info)
+        End If
+    End Sub
+
+    Private Function HasSuggestedPrices() As Boolean
+        For Each r As DataRow In GetGridTable().Rows
+            If ParseDecimal(Convert.ToString(r("mat_price"))) > 0D Then Return True
+        Next
+        Return False
+    End Function
+
+    ''' <summary>HO: PENDING -> PENDING_MATERIAL.</summary>
+    Protected Sub btnForward_Click(sender As Object, e As EventArgs)
+        Dim sfId As Integer = ParseInteger(hdnId.Value)
+        If sfId <= 0 OrElse Not IsHoUser() Then Exit Sub
+        Dim msg As String = ""
+        Dim ok As Boolean = New OPC_VendorClass().ForwardSkuFormulation(sfId, userInfo.userIDEntity, msg)
+        If ok Then
+            RmActionPopup.ShowSuccess(Me, msg, "Product_Formulation.aspx?id=" & sfId)
+        Else
+            CapturePackInputs() : BindPacks()
+            pnlApproval.Visible = True : valHoRemarks.Text = msg
+        End If
+    End Sub
+
+    ''' <summary>Material Dept: saves site cost + suggested price per raw material and remarks; PENDING_MATERIAL -> PENDING_HO.</summary>
+    Protected Sub btnMaterialSend_Click(sender As Object, e As EventArgs)
+        Dim sfId As Integer = ParseInteger(hdnId.Value)
+        If sfId <= 0 OrElse Not IsMaterialUser() Then Exit Sub
+        CapturePackInputs()
+        Dim review As DataTable = OPC_VendorClass.NewMaterialReviewTable()
+        For Each r As DataRow In GetGridTable().Rows
+            Dim site As Decimal = ParseDecimal(Convert.ToString(r("site_cost"))), sug As Decimal = ParseDecimal(Convert.ToString(r("mat_price")))
+            review.Rows.Add(Convert.ToString(r("rawmat_code")).Trim(), If(site > 0D, CObj(site), DBNull.Value), If(sug > 0D, CObj(sug), DBNull.Value))
+        Next
+        Dim msg As String = ""
+        Dim ok As Boolean = New OPC_VendorClass().SaveMaterialReview(sfId, review, txtMaterialRemarks.Text, userInfo.userIDEntity, msg)
+        If ok Then
+            RmActionPopup.ShowSuccess(Me, msg, "Product_Formulation.aspx?id=" & sfId)
+        Else
+            BindRawMatGrid() : BindPacks()
+            pnlMaterial.Visible = True : valMaterial.Text = msg
+        End If
+    End Sub
+
+    ''' <summary>HO on PENDING_HO: copies the Material Dept suggested prices into the price column and opens revise mode;
+    ''' HO can still change them, then presses "Send revised rate to vendor".</summary>
+    Protected Sub btnUseSuggested_Click(sender As Object, e As EventArgs)
+        If Not IsHoUser() Then Exit Sub
+        ViewState("ReviseMode") = "Y"
+        Dim remarks As String = txtHoRemarks.Text
+        Binddata(ParseInteger(hdnId.Value))
+        Dim grid As DataTable = GetGridTable()
+        For Each r As DataRow In grid.Rows
+            Dim sug As Decimal = ParseDecimal(Convert.ToString(r("mat_price")))
+            If sug > 0D Then r("rate") = sug.ToString("0.00", CultureInfo.InvariantCulture)
+        Next
+        ViewState(GridTableKey) = grid
+        BindRawMatGrid() : BindPacks()
+        txtHoRemarks.Text = If(remarks <> "", remarks, "Rate revised as per Material Department comparison.")
+        lblReviseNote.Text = "Suggested prices copied into the Price column. Adjust if needed, then press 'Send revised rate to vendor'."
+    End Sub
+#End Region
+
     ''' <summary>HO side = HO groups and SYSADMIN. Everyone else is the vendor side: only they see
     ''' "Submit revised version", "Propose change", "Resubmit" and "Accept revised rate".
     ''' To test the vendor side, log in with the unit (vendor) user.</summary>
@@ -675,6 +805,8 @@ Partial Class Product_Formulation
             Case "APPROVED" : Return "APPROVED" & If(approvedBy <> "", " by " & approvedBy, "")
             Case "REJECTED" : Return "REJECTED" & If(approvedBy <> "", " by " & approvedBy, "")
             Case "PENDING_VENDOR" : Return "WAITING FOR VENDOR (HO revised the rate)"
+            Case "PENDING_MATERIAL" : Return "UNDER REVIEW AT HO (with Material Dept)"
+            Case "PENDING_HO" : Return "UNDER REVIEW AT HO (Material Dept replied)"
             Case "SUPERSEDED" : Return "SUPERSEDED (a newer revision was submitted)"
             Case "INACTIVE" : Return "INACTIVE (replaced by a newer release)"
             Case Else : Return "PENDING HO APPROVAL"
@@ -695,7 +827,12 @@ Partial Class Product_Formulation
         End If
         Dim reviseMode As Boolean = Convert.ToString(ViewState("ReviseMode")) = "Y"
         Dim hoOnly As Boolean = IsHoUser()            ' HO side (HO groups + SYSADMIN): no vendor editing, no vendor buttons
-        pnlApproval.Visible = IsHoUser() AndAlso status = "PENDING" AndAlso isLatest
+        Dim inMaterialReview As Boolean = MaterialMode()
+        pnlApproval.Visible = IsHoUser() AndAlso (status = "PENDING" OrElse status = "PENDING_HO") AndAlso isLatest
+        btnForward.Visible = pnlApproval.Visible AndAlso status = "PENDING" AndAlso Not reviseMode
+        btnUseSuggested.Visible = pnlApproval.Visible AndAlso status = "PENDING_HO" AndAlso Not reviseMode AndAlso HasSuggestedPrices()
+        pnlMaterial.Visible = inMaterialReview
+        ShowMaterialInfo(status)
         btnRevise.Visible = pnlApproval.Visible AndAlso Not reviseMode
         btnApprove.Visible = pnlApproval.Visible AndAlso Not reviseMode
         btnReject.Visible = pnlApproval.Visible AndAlso Not reviseMode
@@ -730,6 +867,10 @@ Partial Class Product_Formulation
         ElseIf status = "REJECTED" Then
             editable = isLatest AndAlso Not hoOnly
             btnSubmit.Text = "Resubmit for HO approval"
+        ElseIf status = "PENDING_MATERIAL" OrElse status = "PENDING_HO" Then
+            ' with the Material Dept / back at HO: nobody edits the formulation except HO in revise mode (final price)
+            editable = isLatest AndAlso reviseMode AndAlso hoOnly
+            btnSubmit.Text = "Send revised rate to vendor"
         Else
             editable = False                        ' INACTIVE release / SUPERSEDED revision: history only
         End If
@@ -739,7 +880,9 @@ Partial Class Product_Formulation
             lblReadOnlyNote.Text = If(status = "INACTIVE" OrElse status = "SUPERSEDED", "This is a historical record and cannot be changed.",
                                    If(Not isLatest, "A newer revision exists - open it to make changes.",
                                    If(btnPropose.Visible, "Approved and in force. Press 'Propose change' to start a new negotiation.",
-                                   If(status = "PENDING_VENDOR", "Waiting for the vendor to accept or counter the revised rate.", "Read-only view."))))
+                                   If(status = "PENDING_VENDOR", "Waiting for the vendor to accept or counter the revised rate.",
+                                   If(status = "PENDING_MATERIAL", If(CanSeeInternal(), "With the Material Department for rate comparison.", "Under review at HO."),
+                                   If(status = "PENDING_HO", If(CanSeeInternal(), "Material Department has replied - HO to decide (approve, reject or revise the rate).", "Under review at HO."), "Read-only view."))))))
         Else
             lblReadOnlyNote.Text = ""
         End If
@@ -764,6 +907,10 @@ Partial Class Product_Formulation
             For Each id As String In New String() {"txtRowRatio", "txtRowRate"}
                 Dim t As TextBox = TryCast(row.FindControl(id), TextBox)
                 If t IsNot Nothing Then t.ReadOnly = Not editable
+            Next
+            For Each id As String In New String() {"txtSiteCost", "txtMatPrice"}
+                Dim t As TextBox = TryCast(row.FindControl(id), TextBox)
+                If t IsNot Nothing Then t.ReadOnly = Not MaterialMode()
             Next
         Next
         For Each item As RepeaterItem In rptPack.Items
@@ -1008,6 +1155,10 @@ Partial Class Product_Formulation
             Dim txtRowRate As TextBox = TryCast(gvVendorRawMat.Rows(i).FindControl("txtRowRate"), TextBox)
             If txtRowRatio IsNot Nothing Then grid.Rows(i)("ratio") = ParseDecimal(txtRowRatio.Text).ToString("0.##", CultureInfo.InvariantCulture)
             If txtRowRate IsNot Nothing Then grid.Rows(i)("rate") = ParseDecimal(txtRowRate.Text).ToString("0.00", CultureInfo.InvariantCulture)
+            Dim txtSite As TextBox = TryCast(gvVendorRawMat.Rows(i).FindControl("txtSiteCost"), TextBox)
+            Dim txtMat As TextBox = TryCast(gvVendorRawMat.Rows(i).FindControl("txtMatPrice"), TextBox)
+            If txtSite IsNot Nothing AndAlso Not txtSite.ReadOnly Then grid.Rows(i)("site_cost") = If(ParseDecimal(txtSite.Text) > 0D, ParseDecimal(txtSite.Text).ToString("0.00", CultureInfo.InvariantCulture), "")
+            If txtMat IsNot Nothing AndAlso Not txtMat.ReadOnly Then grid.Rows(i)("mat_price") = If(ParseDecimal(txtMat.Text) > 0D, ParseDecimal(txtMat.Text).ToString("0.00", CultureInfo.InvariantCulture), "")
         Next
         ViewState(GridTableKey) = grid
 

@@ -390,6 +390,17 @@
                 width: 110px;
             }
 
+            .pf-sku-table .pf-c-site,
+            .pf-sku-table .pf-c-mat {
+                width: 105px;
+                background: #fff8e6;
+            }
+
+            .pf-sku-table th.pf-c-site,
+            .pf-sku-table th.pf-c-mat {
+                background: #8a6d1f;
+            }
+
             .pf-sku-table .pf-c-act {
                 width: 70px;
             }
@@ -399,11 +410,16 @@
                 text-overflow: ellipsis;
             }
 
-            /* the autocomplete flyouts (SKU, raw material) render inside the entry cells - never clip them */
+            /* the autocomplete flyouts (SKU, raw material) render inside the entry cells - never clip them.
+               22-10-2026: the wrap itself scrolls horizontally again (the flyouts and select2 lists attach to the page body, not the wrap) */
             .pf-sku-table,
-            .pf-sku-table .pf-entry-row td,
-            .pf-section .pf-table-wrap {
+            .pf-sku-table .pf-entry-row td {
                 overflow: visible !important;
+            }
+
+            .pf-section .pf-table-wrap {
+                overflow-x: auto;
+                padding-bottom: 4px;
             }
 
 
@@ -1114,6 +1130,27 @@
                                     <ItemStyle CssClass="pf-c-price pf-right" />
                                     <FooterStyle CssClass="pf-c-price pf-right" />
                                 </asp:TemplateField>
+                                <%-- Modified-by MUKESH BHAGAT on 22-10-2026 : Material Dept comparison - INTERNAL, removed server-side for vendor logins --%>
+                                <asp:TemplateField HeaderText="Nearest site cost">
+                                    <ItemTemplate>
+                                        <asp:TextBox ID="txtSiteCost" runat="server" CssClass="pf-num pf-site" Text='<%# Eval("site_cost") %>' Placeholder="-" AutoComplete="Off" ReadOnly="true"
+                                            onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this);" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
+                                    </ItemTemplate>
+                                    <FooterTemplate><span class="pf-muted">Material Dept</span></FooterTemplate>
+                                    <HeaderStyle CssClass="pf-c-site pf-right" />
+                                    <ItemStyle CssClass="pf-c-site pf-right" />
+                                    <FooterStyle CssClass="pf-c-site pf-center" />
+                                </asp:TemplateField>
+                                <asp:TemplateField HeaderText="Suggested price">
+                                    <ItemTemplate>
+                                        <asp:TextBox ID="txtMatPrice" runat="server" CssClass="pf-num pf-mat" Text='<%# Eval("mat_price") %>' Placeholder="-" AutoComplete="Off" ReadOnly="true"
+                                            onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this);" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
+                                    </ItemTemplate>
+                                    <FooterTemplate><span class="pf-muted">internal</span></FooterTemplate>
+                                    <HeaderStyle CssClass="pf-c-mat pf-right" />
+                                    <ItemStyle CssClass="pf-c-mat pf-right" />
+                                    <FooterStyle CssClass="pf-c-mat pf-center" />
+                                </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Action">
                                     <ItemTemplate>
                                         <asp:LinkButton ID="btnDeleteRow" runat="server" CommandName="DeleteRow" CommandArgument='<%# Container.DataItemIndex %>' CausesValidation="false"
@@ -1129,7 +1166,7 @@
                         <table class="pf-table pf-sku-table" style="margin-top: -1px; border-top-left-radius: 0; border-top-right-radius: 0;">
                             <tbody>
                                 <tr class="pf-entry-row">
-                                    <td class="pf-c-sn pf-center"><i class="fas fa-plus"></i></td>
+                                    <td class="pf-c-sn pf-center"><asp:Label ID="lblNextSn" runat="server" Text="1" CssClass="pf-muted"></asp:Label></td>
                                     <td class="pf-c-vendor" id="tdVendorEntry" runat="server">
                                         <asp:Panel ID="pnlVendorDdl" runat="server">
                                         <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlvendor_SelectedIndexChanged"
@@ -1188,6 +1225,9 @@
                                             onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this);" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
                                         <asp:Label ID="valRate" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                                     </td>
+                                    <%-- entry-row cells under the two internal columns (removed with them for vendor logins) so the columns line up --%>
+                                    <td class="pf-c-site" id="tdSiteEntry" runat="server"></td>
+                                    <td class="pf-c-mat" id="tdMatEntry" runat="server"></td>
                                     <td class="pf-c-act pf-center">
                                         <asp:Button ID="btnAdd" runat="server" Text="Add" CssClass="pf-btn pf-btn-primary" ClientIDMode="Static" OnClick="btnAdd_Click" />
                                     </td>
@@ -1226,8 +1266,25 @@
                             <asp:Button ID="btnApprove" runat="server" Text="Approve" CssClass="pf-btn pf-btn-save" ClientIDMode="Static" OnClick="btnApprove_Click" OnClientClick="return rmConfirmPostback('btnApprove', 'approve');" />
                             <asp:Button ID="btnReject" runat="server" Text="Reject" CssClass="pf-btn" Style="background: #dc3545; border-color: #dc3545; color: #fff; font-weight: 600;" ClientIDMode="Static" OnClick="btnReject_Click" OnClientClick="return rmConfirmPostback('btnReject', 'submit');" />
                             <asp:Button ID="btnRevise" runat="server" Text="Revise rate &amp; send to vendor" CssClass="pf-btn pf-btn-primary" ClientIDMode="Static" OnClick="btnRevise_Click" />
+                            <asp:Button ID="btnForward" runat="server" Text="Send to Material Dept" CssClass="pf-btn" Style="background: #8a6d1f; border-color: #8a6d1f; color: #fff; font-weight: 600;" ClientIDMode="Static" OnClick="btnForward_Click" OnClientClick="return confirm('Send this revision to the Material Department for rate comparison?');" />
+                            <asp:Button ID="btnUseSuggested" runat="server" Text="Use suggested prices &amp; revise" CssClass="pf-btn" Style="background: #8a6d1f; border-color: #8a6d1f; color: #fff; font-weight: 600;" ClientIDMode="Static" OnClick="btnUseSuggested_Click" />
                         </div>
                         <asp:Label ID="lblReviseNote" runat="server" CssClass="pf-muted" Style="display: block; margin-top: 4px;"></asp:Label>
+                    </asp:Panel>
+
+                    <%-- Material Dept: compare with the nearest Berger site rate and suggest a price (internal - never shown to a vendor) --%>
+                    <asp:Panel ID="pnlMaterial" runat="server" Visible="false" Style="margin-top: 10px; padding: 10px; border: 1px solid #8a6d1f; background: #fff8e6; border-radius: 6px;">
+                        <b>Material Department review.</b> Enter the nearest Berger approved site cost and your suggested price per raw material in the two highlighted columns above, add remarks, then send to HO. The vendor will not see these figures.
+                        <label class="pf-label" style="margin-top: 6px;">Remarks for HO</label>
+                        <asp:TextBox ID="txtMaterialRemarks" runat="server" TextMode="MultiLine" Rows="2" MaxLength="1000" Style="width: 100%;"></asp:TextBox>
+                        <asp:Label ID="valMaterial" runat="server" CssClass="dispatch-field-error"></asp:Label>
+                        <div class="pf-actions" style="margin-top: 6px;">
+                            <asp:Button ID="btnMaterialSend" runat="server" Text="Send comparison to HO" CssClass="pf-btn pf-btn-save" ClientIDMode="Static" OnClick="btnMaterialSend_Click" OnClientClick="return confirm('Send your comparison to HO?');" />
+                        </div>
+                    </asp:Panel>
+                    <asp:Panel ID="pnlMaterialInfo" runat="server" Visible="false" Style="margin-top: 8px; padding: 8px 10px; border-radius: 6px; font-size: 12px; background: #fff8e6; color: #5c4a12; border: 1px solid #e6d9b0;">
+                        <b><asp:Label ID="lblMaterialInfoTitle" runat="server"></asp:Label></b>
+                        <asp:Label ID="lblMaterialInfo" runat="server"></asp:Label>
                     </asp:Panel>
 
                     <%-- vendor side of a HO counter-offer --%>

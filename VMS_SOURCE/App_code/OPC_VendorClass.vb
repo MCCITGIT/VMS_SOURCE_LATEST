@@ -1785,6 +1785,55 @@ Public Class OPC_VendorClass
         Return ""
     End Function
 
+    ' ---- Material Department review step (Author: MUKESH BHAGAT 22-10-2026) ----
+    Public Shared Function NewMaterialReviewTable() As DataTable
+        Dim dt As New DataTable()
+        dt.Columns.Add("rawmat_code", GetType(String))
+        dt.Columns.Add("site_cost", GetType(Decimal))
+        dt.Columns.Add("material_price", GetType(Decimal))
+        Return dt
+    End Function
+
+    ''' <summary>[opc_sku_formulation_forward] HO sends the latest PENDING revision to the Material Dept. Returns ok + message.</summary>
+    Function ForwardSkuFormulation(ByVal sfId As Integer, ByVal userId As String, ByRef message As String) As Boolean
+        Dim p() As SqlParameter = {New SqlParameter("@sf_id", SqlDbType.Int) With {.Value = sfId}, ScopeParam("@user_id", userId)}
+        Dim ds As DataSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_forward]", CommandType.StoredProcedure, p)
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0).Rows.Count > 0 Then
+            message = Convert.ToString(ds.Tables(0).Rows(0)("Message"))
+            Return Convert.ToInt32(ds.Tables(0).Rows(0)("Status")) = 1
+        End If
+        message = "No response from server." : Return False
+    End Function
+
+    ''' <summary>[opc_sku_formulation_material_review] Material Dept answer (per raw material site cost + suggested price, remarks). Returns ok + message.</summary>
+    Function SaveMaterialReview(ByVal sfId As Integer, ByVal review As DataTable, ByVal remarks As String, ByVal userId As String, ByRef message As String) As Boolean
+        Dim sqlConn As SqlConnection = Nothing
+        Try
+            sqlConn = DBFactory.GetHelper.OpenConnection
+            Dim sqlCmd As New SqlCommand("[dbo].[opc_sku_formulation_material_review]", sqlConn)
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.Parameters.Add("@sf_id", SqlDbType.Int).Value = sfId
+            Dim pR As SqlParameter = sqlCmd.Parameters.Add("@review", SqlDbType.Structured) : pR.TypeName = "dbo.tbl_opc_sku_formulation_review" : pR.Value = review
+            sqlCmd.Parameters.Add(ScopeParam("@remarks", remarks, 1000))
+            sqlCmd.Parameters.Add(ScopeParam("@user_id", userId))
+            Using dr As SqlDataReader = sqlCmd.ExecuteReader()
+                If dr.Read() Then
+                    message = Convert.ToString(dr("Message"))
+                    Return Convert.ToInt32(dr("Status")) = 1
+                End If
+            End Using
+            message = "No response from server." : Return False
+        Finally
+            If sqlConn IsNot Nothing Then sqlConn.Close()
+        End Try
+    End Function
+
+    ''' <summary>[opc_sku_formulation_review_get] table 0 = forwarded / answered by + remarks, table 1 = per raw material figures. HO / Material Dept only.</summary>
+    Function GetMaterialReview(ByVal sfId As Integer) As DataSet
+        Dim p() As SqlParameter = {New SqlParameter("@sf_id", SqlDbType.Int) With {.Value = sfId}}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_review_get]", CommandType.StoredProcedure, p)
+    End Function
+
     ''' <summary>Raw material search of Product_Formulation: the usual list plus the manual items of one vendor unit only.</summary>
     Function SearchRawMaterialForFormulation(ByVal searchText As String, ByVal unitCode As String) As DataSet
         Dim p() As SqlParameter = {ScopeParam("@search_key", searchText), ScopeParam("@unit_code", unitCode, 20)}
