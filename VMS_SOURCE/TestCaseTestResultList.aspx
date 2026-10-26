@@ -40,46 +40,46 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Vendor:</label>
                                 <asp:DropDownList ID="ddlVendor" CssClass="form-control select2" runat="server" AutoPostBack="true" />
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Brand:</label>
                                 <asp:DropDownList ID="ddlBrand" CssClass="form-control select2" runat="server" AutoPostBack="True" />
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Product:</label>
                                 <asp:DropDownList ID="ddlProduct" CssClass="form-control select2" runat="server" AutoPostBack="True" />
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Batch No:</label>
                                 <asp:TextBox ID="txtBatchNo" runat="server" CssClass="form-control"></asp:TextBox>
                             </div>
                         </div>
 
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Batch From Date:</label>
                                 <asp:TextBox ID="txtAsOndate" runat="server" CssClass="form-control" MaxLength="10" TextMode="Date"></asp:TextBox>
                             </div>
                         </div>
 
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">To Date:</label>
                                 <asp:TextBox ID="txtAsOndateTo" runat="server" CssClass="form-control" MaxLength="10" TextMode="Date"></asp:TextBox>
                             </div>
                         </div>
 
                         <%--<div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Test Name:</label>
                                 <asp:TextBox ID="txtTestName" runat="server" class="form-control"></asp:TextBox>
                             </div>

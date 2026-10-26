@@ -47,7 +47,7 @@
         <div class="card-body">
             <div class="row mb-3">
                 <div class="col-md-4">
-                    <div class="form-group pb-0 mb-0">
+                    <div class="form-group mb-0">
                         <label class="form-control-label">Vendor Name:</label>
                         <asp:DropDownList ID="ddlVendor" ClientIDMode="Static" CssClass="form-control select2" runat="server">
                         </asp:DropDownList>

@@ -65,7 +65,7 @@
         <div class="card-body">
             <div class="rm-add-stats-row">
                 <div class="rm-add-form">
-                    <div class="form-group pb-0 mb-0">
+                    <div class="form-group mb-0">
                         <label class="form-control-label">Brand Name:<span id="Span2" class="mandatory">*</span></label>
                         <div class="rm-add-form-controls">
                             <asp:TextBox ID="txtBrandName" ClientIDMode="Static" CssClass="form-control" runat="server" AutoComplete="Off" onkeyup="clearBrandValidation();" Placeholder="Enter Here"></asp:TextBox>

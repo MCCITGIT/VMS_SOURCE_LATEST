@@ -102,7 +102,7 @@
         <div class="card-body">
             <div class="rm-add-stats-row">
                 <div class="rm-add-form">
-                    <div class="form-group pb-0 mb-0">
+                    <div class="form-group mb-0">
                         <label class="form-control-label">Search Raw Material:<span id="Span2" class="mandatory">*</span></label>
                         <div class="rm-add-form-controls">
                             <div class="input-group product-search-group" style="flex: 1 1 auto; min-width: 0;">

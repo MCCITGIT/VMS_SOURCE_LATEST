@@ -40,19 +40,19 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Frequency:</label>
                                 <asp:DropDownList ID="ddlFrequency" CssClass="form-control select2" runat="server" />
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Result Type:</label>
                                 <asp:DropDownList ID="ddlResultType" CssClass="form-control select2" runat="server" AutoPostBack="True" />
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Test Name:</label>
                                 <asp:TextBox ID="txtTestName" runat="server" CssClass="form-control"></asp:TextBox>
                             </div>
