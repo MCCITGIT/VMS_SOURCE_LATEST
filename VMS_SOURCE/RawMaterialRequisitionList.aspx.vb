@@ -192,8 +192,8 @@ Partial Class RawMaterialRequisitionList
 
     Private Function BuildDispatchListUrl(ByVal rmVendorCode As String) As String
         Dim redirectUrl As String = "Dispatch_List.aspx?rmvendor_code=" & Server.UrlEncode(rmVendorCode)
-        'Dim baseUrl As String = "https://bpilweb.bergerindia.com/vms/"
-        Dim baseUrl As String = "http://localhost:64930/"
+        Dim baseUrl As String = "https://bpilweb.bergerindia.com/vms/"
+        'Dim baseUrl As String = "http://localhost:64930/"
         Return New Uri(New Uri(baseUrl), redirectUrl).ToString()
     End Function
 
@@ -339,10 +339,10 @@ Partial Class RawMaterialRequisitionList
 
     End Sub
 
-    Protected Sub gvRequisition_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvRequisition.PageIndexChanging
-        gvRequisition.PageIndex = e.NewPageIndex
-        BindData()
-    End Sub
+    'Protected Sub gvRequisition_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvRequisition.PageIndexChanging
+    '    gvRequisition.PageIndex = e.NewPageIndex
+    '    BindData()
+    'End Sub
 
     Private Sub PopulateRawMatVendor()
         Dim obj As New OPC_VendorClass()
