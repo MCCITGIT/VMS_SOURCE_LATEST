@@ -58,13 +58,13 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-4">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">Vendor:<span class="mandatory">*</span></label>
                         <asp:DropDownList ID="ddlVendor" class="form-control" AutoPostBack="true" runat="server"></asp:DropDownList>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">As On Date:<span class="mandatory">*</span></label>
                         <asp:TextBox ID="txtAsOndate" class="form-control" runat="server" TextMode="Date"></asp:TextBox>
                         <asp:RangeValidator ID="RangeValidator2" runat="server" ControlToValidate="txtAsOndate" ErrorMessage="Choose only the enabled dates" Type="Date" OnInit="RangeValidator2_Init">*Enter Correct date</asp:RangeValidator>

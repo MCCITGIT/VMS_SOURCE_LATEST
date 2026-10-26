@@ -140,7 +140,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-12 text-center">
+                    <div class="col-md-12 text-center mt-2">
                         <asp:UpdatePanel runat="server">
                             <ContentTemplate>
                                 <asp:Button ID="btnSubmit" runat="server" Text="Submit" CssClass="btn btn-primary btn-sm" />

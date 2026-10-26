@@ -47,7 +47,7 @@
     <div class="card">
         <div class="card-body">
             <div class="rm-add-form">
-                <div class="form-group pb-0 mb-0">
+                <div class="form-group mb-0">
                     <label class="form-control-label">Brand Name:<span id="Span12" class="mandatory">*</span></label>
                     <div class="rm-add-form-controls">
                         <asp:TextBox ID="txtBrandName" ClientIDMode="Static" class="form-control" runat="server" AutoComplete="Off" Placeholder="Enter Here"></asp:TextBox>
@@ -87,8 +87,8 @@
                         <asp:TemplateField HeaderText="SlNo" HeaderStyle-HorizontalAlign="Center">
                             <ItemTemplate>
                                 <span class="abm-serial">
-                                    <span class="abm-serial-icon" aria-hidden="true"><i class="fas fa-tag"></i></span>
-                                    <span class="abm-serial-label">SlNo</span>
+                                    <%--<span class="abm-serial-icon" aria-hidden="true"><i class="fas fa-tag"></i></span>--%>
+                                    <span class="abm-serial-label">SlNo.:</span>
                                     <span class="abm-serial-num">
                                         <asp:Label ID="lblbrandid" runat="server" Text='<%# Container.DataItemIndex + 1 %>'></asp:Label>
                                     </span>
