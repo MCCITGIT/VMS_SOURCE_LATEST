@@ -40,7 +40,7 @@
                             <div class="rm-filter-fields">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="form-group pb-0">
+                                        <div class="form-group">
                                             <label class="form-control-label">Vendor Name:</label>
                                             <asp:DropDownList ID="ddlVendor" ClientIDMode="Static" CssClass="form-control select2" runat="server">
                                             </asp:DropDownList>

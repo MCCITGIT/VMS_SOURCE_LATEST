@@ -234,19 +234,19 @@
                     <div class="col-md-5">
                         <div class="form-group">
                             <label class="form-control-label">Upload Filled Template:</label>
-                            <asp:FileUpload ID="fuPoTemplate" runat="server" ClientIDMode="Static" CssClass="form-control" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+                            <asp:fileupload id="fuPoTemplate" runat="server" clientidmode="Static" cssclass="form-control" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
                         </div>
                     </div>
                     <div class="col-md-4 form-btn-mt">
-                        <asp:Button ID="btnUploadTemplate" runat="server" Text="Upload" CssClass="btn btn-primary btn-sm" ClientIDMode="Static" CausesValidation="False" OnClick="btnUploadTemplate_Click" OnClientClick="return validatePoTemplateUpload();" />
-                        <asp:Button ID="btnDownloadTemplate" runat="server" Text="Download Template" CssClass="btn btn-success btn-sm" ClientIDMode="Static" CausesValidation="False" OnClick="btnDownloadTemplate_Click" />
+                        <asp:button id="btnUploadTemplate" runat="server" text="Upload" cssclass="btn btn-primary btn-sm" clientidmode="Static" causesvalidation="False" onclick="btnUploadTemplate_Click" onclientclick="return validatePoTemplateUpload();" />
+                        <asp:button id="btnDownloadTemplate" runat="server" text="Download Template" cssclass="btn btn-success btn-sm" clientidmode="Static" causesvalidation="False" onclick="btnDownloadTemplate_Click" />
                     </div>
                     <div class="col-md-12">
-                        <asp:Label ID="lblRefPoNo" runat="server" ClientIDMode="Static" CssClass="po-ref-badge"></asp:Label>
-                        <asp:HiddenField ID="hdnRefPoNo" runat="server" ClientIDMode="Static" />
+                        <asp:label id="lblRefPoNo" runat="server" clientidmode="Static" cssclass="po-ref-badge"></asp:label>
+                        <asp:hiddenfield id="hdnRefPoNo" runat="server" clientidmode="Static" />
                     </div>
                 </div>
-                <asp:Label ID="lblUploadMsg" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                <asp:label id="lblUploadMsg" runat="server" clientidmode="Static" cssclass="dispatch-field-error"></asp:label>
             </div>
         </div>
 
@@ -257,63 +257,63 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-control-label">Supplier:<span id="spanVendor" class="mandatory p-vendor-select">*</span></label>
-                            <asp:DropDownList ID="ddlVendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="2" runat="server"></asp:DropDownList>
-                            <asp:Label ID="valVendor" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
-                            <asp:HiddenField ID="hdnRmVendor" runat="server" ClientIDMode="Static" />
+                            <asp:dropdownlist id="ddlVendor" clientidmode="Static" cssclass="form-control select2" tabindex="2" runat="server"></asp:dropdownlist>
+                            <asp:label id="valVendor" runat="server" clientidmode="Static" cssclass="dispatch-field-error"></asp:label>
+                            <asp:hiddenfield id="hdnRmVendor" runat="server" clientidmode="Static" />
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label class="form-control-label">Product:<span id="spanProduct" class="mandatory p-vendor-select">*</span></label>
                             <div class="input-group product-search-group">
-                                <asp:TextBox ID="txtProductSearch" ClientIDMode="Static" CssClass="form-control" TabIndex="4" runat="server" AutoComplete="Off" Placeholder="Enter Product" onkeyup="clearProductSelection();"></asp:TextBox>
+                                <asp:textbox id="txtProductSearch" clientidmode="Static" cssclass="form-control" tabindex="4" runat="server" autocomplete="Off" placeholder="Enter Product" onkeyup="clearProductSelection();"></asp:textbox>
                                 <div class="input-group-append">
                                     <button type="button" class="btn btn-outline-secondary product-reset-btn" onclick="resetProductField(); return false;" title="Reset SKU"><i class="fas fa-sync-alt fa-xs"></i></button>
                                 </div>
                             </div>
-                            <asp:HiddenField ID="hdnProductCode" ClientIDMode="Static" runat="server" />
-                            <asp:AutoCompleteExtender ID="aceProductSearch" runat="server"
-                                TargetControlID="txtProductSearch"
-                                ServiceMethod="RawMaterialSearch"
-                                CompletionInterval="200"
-                                EnableCaching="false"
-                                CompletionSetCount="20"
-                                FirstRowSelected="true"
-                                OnClientItemSelected="onProductSelected"
-                                CompletionListCssClass="vmsAutoComplete"
-                                CompletionListItemCssClass="vmsAutoCompleteItem"
-                                CompletionListHighlightedItemCssClass="vmsAutoCompleteItemHighlight">
-                            </asp:AutoCompleteExtender>
-                            <asp:Label ID="valProduct" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                            <asp:hiddenfield id="hdnProductCode" clientidmode="Static" runat="server" />
+                            <asp:autocompleteextender id="aceProductSearch" runat="server"
+                                targetcontrolid="txtProductSearch"
+                                servicemethod="RawMaterialSearch"
+                                completioninterval="200"
+                                enablecaching="false"
+                                completionsetcount="20"
+                                firstrowselected="true"
+                                onclientitemselected="onProductSelected"
+                                completionlistcssclass="vmsAutoComplete"
+                                completionlistitemcssclass="vmsAutoCompleteItem"
+                                completionlisthighlighteditemcssclass="vmsAutoCompleteItemHighlight">
+                            </asp:autocompleteextender>
+                            <asp:label id="valProduct" runat="server" clientidmode="Static" cssclass="dispatch-field-error"></asp:label>
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label class="form-control-label">Quantity:<span id="spanQty" class="mandatory">*</span></label>
-                            <asp:TextBox ID="txtQty" ClientIDMode="Static" CssClass="form-control" TabIndex="4" runat="server" AutoComplete="Off" Placeholder="Enter Qty" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');"></asp:TextBox>
-                            <asp:Label ID="valQty" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                            <asp:textbox id="txtQty" clientidmode="Static" cssclass="form-control" tabindex="4" runat="server" autocomplete="Off" placeholder="Enter Qty" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');"></asp:textbox>
+                            <asp:label id="valQty" runat="server" clientidmode="Static" cssclass="dispatch-field-error"></asp:label>
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label class="form-control-label">Rate:<span id="spanRate" class="mandatory">*</span></label>
-                            <asp:TextBox ID="txtRate" ClientIDMode="Static" CssClass="form-control" TabIndex="4" runat="server" AutoComplete="Off" Placeholder="Enter Rate" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');"></asp:TextBox>
-                            <asp:Label ID="valRate" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                            <asp:textbox id="txtRate" clientidmode="Static" cssclass="form-control" tabindex="4" runat="server" autocomplete="Off" placeholder="Enter Rate" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');"></asp:textbox>
+                            <asp:label id="valRate" runat="server" clientidmode="Static" cssclass="dispatch-field-error"></asp:label>
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label class="form-control-label">GST:<span id="spanPrdGst" class="mandatory p-vendor-select">*</span></label>
-                            <asp:DropDownList ID="ddlPrdGst" ClientIDMode="Static" CssClass="form-control select2" TabIndex="2" runat="server">
+                            <asp:dropdownlist id="ddlPrdGst" clientidmode="Static" cssclass="form-control select2" tabindex="2" runat="server">
                                 <asp:ListItem Text="Select" Value="" />
                                 <asp:ListItem Text="18%" Value="18" />
                                 <asp:ListItem Text="12%" Value="12" />
-                            </asp:DropDownList>
-                            <asp:Label ID="lblPrdGst" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                            </asp:dropdownlist>
+                            <asp:label id="lblPrdGst" runat="server" clientidmode="Static" cssclass="dispatch-field-error"></asp:label>
                         </div>
                     </div>
                     <div class="col-md-1 form-btn-mt">
-                        <asp:LinkButton ID="ImgbtnAdd" runat="server" CssClass="btn btn-success btn-sm rm-btn-icon" ClientIDMode="Static" ToolTip="Add" OnClick="ImgbtnAdd_Click"><i class="fas fa-plus"></i></asp:LinkButton>
+                        <asp:linkbutton id="ImgbtnAdd" runat="server" cssclass="btn btn-success btn-sm rm-btn-icon" clientidmode="Static" tooltip="Add" onclick="ImgbtnAdd_Click"><i class="fas fa-plus"></i></asp:linkbutton>
                     </div>
                 </div>
             </div>
@@ -325,19 +325,19 @@
                     <div class="col-md-2">
                         <div class="form-group">
                             <label class="form-control-label">Freight:<span id="spanFreight" class="mandatory">*</span></label>
-                            <asp:TextBox ID="txtFreight" ClientIDMode="Static" CssClass="form-control" TabIndex="4" runat="server" AutoComplete="Off" Placeholder="Enter Freight" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');"></asp:TextBox>
-                            <asp:Label ID="lblFreight" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                            <asp:textbox id="txtFreight" clientidmode="Static" cssclass="form-control" tabindex="4" runat="server" autocomplete="Off" placeholder="Enter Freight" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');"></asp:textbox>
+                            <asp:label id="lblFreight" runat="server" clientidmode="Static" cssclass="dispatch-field-error"></asp:label>
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label class="form-control-label">Freight GST:</label>
-                            <asp:DropDownList ID="ddlGst" ClientIDMode="Static" CssClass="form-control select2" TabIndex="2" runat="server">
+                            <asp:dropdownlist id="ddlGst" clientidmode="Static" cssclass="form-control select2" tabindex="2" runat="server">
                                 <asp:ListItem Text="Select" Value="" />
                                 <asp:ListItem Text="18%" Value="18" />
                                 <asp:ListItem Text="12%" Value="12" />
-                            </asp:DropDownList>
-                            <asp:Label ID="lblGst" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                            </asp:dropdownlist>
+                            <asp:label id="lblGst" runat="server" clientidmode="Static" cssclass="dispatch-field-error"></asp:label>
                         </div>
                     </div>
                 </div>
@@ -355,7 +355,7 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive rm-grid-scroll">
-                    <asp:UpdatePanel ID="UpdatePanel1" runat="server">
+                    <asp:updatepanel id="UpdatePanel1" runat="server">
                         <ContentTemplate>
                             <asp:Panel ID="pnlPoGrid" runat="server" CssClass="table-responsive rm-grid-scroll">
                                 <asp:GridView ID="gvPoItems"
@@ -404,25 +404,25 @@
                             <asp:AsyncPostBackTrigger ControlID="imgbtnSearch" EventName="Click" />
                             <asp:PostBackTrigger ControlID="gvFormulationList" />
                         </Triggers>--%>
-                    </asp:UpdatePanel>
+                    </asp:updatepanel>
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12 text-center mt-3">
-                    <asp:Button ID="btnSubmit" runat="server" Text="Submit" CssClass="btn btn-primary btn-sm" ClientIDMode="Static" OnClick="btnSubmit_Click" OnClientClick="return validatePoSubmit();" />
-                    <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="btn btn-secondary btn-sm" OnClick="btnBack_Click" />
+                <div class="row">
+                    <div class="col-md-12 text-center mt-3">
+                        <asp:button id="btnSubmit" runat="server" text="Submit" cssclass="btn btn-primary btn-sm" clientidmode="Static" onclick="btnSubmit_Click" onclientclick="return validatePoSubmit();" />
+                        <asp:button id="btnBack" runat="server" text="Back" cssclass="btn btn-secondary btn-sm" onclick="btnBack_Click" />
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <asp:HiddenField ID="hdnPoSavedTarget" runat="server" />
-    <asp:ModalPopupExtender ID="mpePoSaved" runat="server"
-        TargetControlID="hdnPoSavedTarget"
-        PopupControlID="pnlPoSaved"
-        BackgroundCssClass="po-saved-backdrop">
-    </asp:ModalPopupExtender>
-    <asp:Panel ID="pnlPoSaved" runat="server" CssClass="po-saved-popup" Style="display: none;">
+    <asp:hiddenfield id="hdnPoSavedTarget" runat="server" />
+    <asp:modalpopupextender id="mpePoSaved" runat="server"
+        targetcontrolid="hdnPoSavedTarget"
+        popupcontrolid="pnlPoSaved"
+        backgroundcssclass="po-saved-backdrop">
+    </asp:modalpopupextender>
+    <asp:panel id="pnlPoSaved" runat="server" cssclass="po-saved-popup" style="display: none;">
         <div class="po-saved-body">
             <div class="po-saved-icon"><i class="fas fa-check"></i></div>
             <h5 class="po-saved-title">Success</h5>
@@ -433,7 +433,7 @@
             <asp:HyperLink ID="lnkPreviewPdf" runat="server" Target="_blank" CssClass="btn po-saved-preview" Text="Preview PDF" Visible="false"></asp:HyperLink>
             <asp:Button ID="btnPoSavedOk" runat="server" Text="OK" CssClass="btn po-saved-ok" OnClick="btnPoSavedOk_Click" />
         </div>
-    </asp:Panel>
+    </asp:panel>
 
     <script type="text/javascript">
         function onProductSelected(sender, e) {
