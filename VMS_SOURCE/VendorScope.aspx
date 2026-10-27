@@ -221,6 +221,8 @@
     </script>
 
     <div class="rm-module rm-compact rm-vendor-scope">
+        <%-- the result popup (RmActionPopup.Show) needs rmShowResult from this script --%>
+        <script type="text/javascript" src="Scripts/rm-status-confirm.js?v=<%= DateTime.Now.Ticks %>"></script>
         <div class="breadcrumbs">
             <div class="leftFung">
                 <a href="Home.aspx" title="Home"><i class="fas fa-home"></i></a>
