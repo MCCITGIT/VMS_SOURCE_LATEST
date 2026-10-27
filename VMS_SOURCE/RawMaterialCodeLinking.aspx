@@ -44,21 +44,21 @@
         }
 
         .rm-rawmat-code-link .upgradDataGrid .rm-berger-code-input {
-            display: block;
+            /*display: block;
             width: 100%;
             min-width: 160px;
             max-width: 240px;
             margin: 0 auto;
             min-height: 40px !important;
             height: 40px !important;
-            padding: 8px 12px !important;
+            padding: 8px 12px !important;*/
             background: #ffffff !important;
-            border: 1px solid #64748b !important;
+            /*border: 1px solid #64748b !important;
             border-radius: 8px !important;
             color: #0f172a !important;
             font-size: 14px !important;
             font-weight: 600 !important;
-            letter-spacing: 0.02em;
+            letter-spacing: 0.02em;*/
             box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.08) !important;
         }
 
@@ -198,7 +198,7 @@
                                 <div class="form-group mb-0">
                                     <label class="form-control-label">&nbsp;</label>
                                     <div class="rm-code-link-search-actions">
-                                        <asp:LinkButton CssClass="btn btn-primary btn-sm rm-btn-icon" ID="imgbtnSearch" runat="server" ClientIDMode="Static" OnClick="imgbtnSearch_Click" OnClientClick="return validateRawMaterialCodeLinkingSearch();" ToolTip="Search"><i class="fas fa-search"></i></asp:LinkButton>
+                                        <asp:LinkButton CssClass="btn btn-primary btn-sm rm-btn-icon" ID="imgbtnSearch" runat="server" ClientIDMode="Static" OnClick="imgbtnSearch_Click" OnClientClick="return validateRawMaterialCodeLinkingSearch();" ToolTip="Search">Search</asp:LinkButton>
                                         <asp:Button ID="btnReset" runat="server" Text="Reset" CssClass="btn btn-outline-danger btn-sm" OnClick="btnReset_Click" CausesValidation="false" />
                                     </div>
                                 </div>
