@@ -18,6 +18,8 @@
         .vfl-current { margin-top: 2px; padding: 8px 10px; border-radius: 6px; background: #f6f8fb; border: 1px solid #e3e8ee; font-size: 12.5px; }
     </style>
     <div class="rm-module rm-vendor-factory">
+        <%-- the result popup (RmActionPopup.Show) needs rmShowResult from this script --%>
+        <script type="text/javascript" src="Scripts/rm-status-confirm.js?v=<%= DateTime.Now.Ticks %>"></script>
         <script type="text/javascript">
             function vflSetError(id, lbl, msg) { var c = document.getElementById(id), l = document.getElementById(lbl); if (c) { c.classList.add('field-invalid'); } if (l) { l.innerHTML = msg; } }
             function vflClearError(id, lbl) { var c = document.getElementById(id), l = document.getElementById(lbl); if (c) { c.classList.remove('field-invalid'); } if (l) { l.innerHTML = ''; } }
