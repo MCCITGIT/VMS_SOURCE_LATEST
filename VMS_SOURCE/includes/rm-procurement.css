@@ -141,7 +141,7 @@
     box-shadow: 0 12px 28px rgba(80, 60, 30, 0.08) !important;
 }*/
 
-.rm-module .card-body {
+/*.rm-module .card-body {
     padding: 18px 22px 20px !important;
 }
 
@@ -152,9 +152,9 @@
     justify-content: space-between;
     background: transparent !important;
     border: 0 !important;
-}
+}*/
 
-.rm-module .mst-panel-header-left {
+/*.rm-module .mst-panel-header-left {
     display: flex;
     align-items: center;
 }
@@ -171,9 +171,9 @@
     border-radius: 10px !important;
     color: #2f6fed !important;
     font-size: 15px;
-}
+}*/
 
-.rm-module .mst-panel-title {
+/*.rm-module .mst-panel-title {
     margin: 0 0 2px 0;
     color: #111827 !important;
     font-size: 16px !important;
@@ -184,10 +184,10 @@
     margin: 0;
     color: #8a93a3 !important;
     font-size: 12px !important;
-}
+}*/
 
 /* Forms */
-.rm-module .form-control-label {
+/*.rm-module .form-control-label {
     color: #334155 !important;
     font-size: 13px !important;
     font-weight: 600 !important;
@@ -261,10 +261,10 @@
     display: flex;
     align-items: center;
     gap: 16px;
-}
+}*/
 
 /* Buttons */
-.rm-module .btn,
+/*.rm-module .btn,
 .rm-module a.btn,
 .rm-module input.btn,
 .rm-module button.btn,
@@ -398,7 +398,7 @@
     margin: 0 !important;
     height: 42px;
     min-width: 88px;
-}
+}*/
 
 .rm-module .rm-wrap-text {
     display: block;
@@ -788,7 +788,7 @@ body:has(.rm-module) .select2-container--default .select2-results__option--highl
 }
 
 /* Modals used in RM receipt */
-.rm-module .modal-content,
+/*.rm-module .modal-content,
 body:has(.rm-module) .bootstrapModal .modal-content {
     border: 0;
     border-radius: 16px !important;
@@ -920,7 +920,7 @@ body:has(.rm-module) .bootstrapModal .modal-title {
 
 .rm-confirm-actions .btn {
     min-width: 110px;
-}
+}*/
 
 .rm-module #lblErrorMessage,
 .rm-module span[id$="lblErrorMessage"] {
@@ -1663,7 +1663,7 @@ body:has(.rm-formulation-list) .rm-formulation-list .select2-container--default 
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
+/*@media (prefers-reduced-motion: reduce) {
     .rm-module,
     .rm-module *,
     .rm-confirm-overlay,
@@ -1681,4 +1681,4 @@ body:has(.rm-formulation-list) .rm-formulation-list .select2-container--default 
         transition: none !important;
         transform: none !important;
     }
-}
+}*/

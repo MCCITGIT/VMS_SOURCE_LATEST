@@ -1,9 +1,9 @@
 <%@ Page Title="" Language="VB" MasterPageFile="~/MasterPage.master" AutoEventWireup="false" CodeFile="VendorPO_DepotLinking.aspx.vb" Inherits="VendorPO_DepotLinking" %>
 
-<asp:Content ID="Content1" ContentPlaceHolderID="ContentPlaceHolder1" Runat="Server">
-      <link href="includes/rm-procurement.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />
-    <div class="rm-module rm-compact">
-        <style type="text/css">
+<asp:Content ID="Content1" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
+    <%--<link href="includes/rm-procurement.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />--%>
+
+    <%--<style type="text/css">
             .rm-module .upgradDataGrid td.rm-wrap-text {
                 width: 38% !important;
                 max-width: none !important;
@@ -58,22 +58,23 @@
             .rm-module .rm-wrap-text {
                 text-align: left;
             }
-        </style>
-        <script type="text/javascript" src="Scripts/FunctionValidator.js"></script>
-        <script type="text/javascript" src="Scripts/VendorPO_DepotLinking.js?time=<%= DateTime.Now.ToString("yyyy.MM.dd-HH.mm.ss.fff") %>"></script>
-        <script type="text/javascript">
-            function checkAllDepot(checkbox) {
-                var list = document.getElementById('chkbxListApplDepots');
-                if (!list) {
-                    return;
-                }
-                var boxes = list.getElementsByTagName('input');
-                for (var i = 0; i < boxes.length; i++) {
-                    boxes[i].checked = checkbox.checked;
-                }
+        </style>--%>
+    <script type="text/javascript" src="Scripts/FunctionValidator.js"></script>
+    <script type="text/javascript" src="Scripts/VendorPO_DepotLinking.js?time=<%= DateTime.Now.ToString("yyyy.MM.dd-HH.mm.ss.fff") %>"></script>
+    <script type="text/javascript">
+        function checkAllDepot(checkbox) {
+            var list = document.getElementById('chkbxListApplDepots');
+            if (!list) {
+                return;
             }
-        </script>
+            var boxes = list.getElementsByTagName('input');
+            for (var i = 0; i < boxes.length; i++) {
+                boxes[i].checked = checkbox.checked;
+            }
+        }
+    </script>
 
+    <div class="rm-module rm-compact">
         <div class="breadcrumbs">
             <div class="leftFung">
                 <a href="Home.aspx" title="Home"><i class="fas fa-home"></i></a>
@@ -90,25 +91,24 @@
             <ContentTemplate>
                 <div class="card">
                     <div class="card-body">
-                        <div class="rm-filter-stats-row">
-                            <div class="rm-filter-fields">
-                                <div class="rm-filter-inline">
-                                    <div class="form-group pb-0">
-                                        <label class="form-control-label">Vendor:</label>
-                                        <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true"></asp:DropDownList>
-                                    </div>
-                                    <div class="form-group pb-0">
-                                        <label class="form-control-label">PO No:</label>
-                                        <asp:DropDownList ID="ddlPoNo" ClientIDMode="Static" CssClass="form-control select2" TabIndex="2" runat="server"></asp:DropDownList>
-                                    </div>
-                                    
-                                    <div class="rm-filter-actions">
-                                        <asp:LinkButton CssClass="btn btn-primary btn-sm rm-btn-icon" ID="imgbtnSearch" runat="server" ClientIDMode="Static" ToolTip="Search"><i class="fas fa-search"></i></asp:LinkButton>
-                                        <asp:LinkButton CssClass="btn btn-success btn-sm" ID="btnExcel" runat="server" ClientIDMode="Static" ToolTip="Download Excel"><i class="fa fa-file-excel"></i>&nbsp;Download Excel</asp:LinkButton>
-                                        <asp:Button ID="btnReset" runat="server" Text="Reset" CssClass="btn btn-warning btn-sm" />
-                                    </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-control-label">Vendor:</label>
+                                    <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true"></asp:DropDownList>
                                 </div>
-                            </div>                           
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-control-label">PO No:</label>
+                                    <asp:DropDownList ID="ddlPoNo" ClientIDMode="Static" CssClass="form-control select2" TabIndex="2" runat="server"></asp:DropDownList>
+                                </div>
+                            </div>
+                            <div class="col-md-4 form-btn-mt">
+                                <asp:LinkButton CssClass="btn btn-primary btn-sm" ID="imgbtnSearch" runat="server" ClientIDMode="Static" ToolTip="Search">Search</asp:LinkButton>
+                                <asp:LinkButton CssClass="btn btn-success btn-sm" ID="btnExcel" runat="server" ClientIDMode="Static" ToolTip="Download Excel"><i class="fa fa-file-excel"></i>&nbsp;Download Excel</asp:LinkButton>
+                                <asp:Button ID="btnReset" runat="server" Text="Reset" CssClass="btn btn-warning btn-sm" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -119,10 +119,18 @@
         </asp:UpdatePanel>
 
         <div class="card">
+            <div class="mst-panel-header">
+                <div class="mst-panel-header-left">
+                    <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
+                    <div>
+                        <h5 class="mst-panel-title">Select Depots</h5>
+                        <p class="mst-panel-subtitle">Browse and manage user profiles</p>
+                    </div>
+                </div>
+            </div>
             <div class="card-body">
                 <asp:UpdatePanel ID="UpdatePanelGrid" runat="server">
-                    <ContentTemplate>                       
-                        <label class="form-control-label">Select Depots:</label>
+                    <ContentTemplate>
                         <div class="CheckBoxList">
                             <asp:CheckBox ID="chkSelectAll" ClientIDMode="Static" runat="server" CssClass="checkAll" Text="Select All" onclick="checkAllDepot(this)" />
                             <asp:CheckBoxList ID="chkbxListApplDepots" ClientIDMode="Static" runat="server" TabIndex="3" RepeatColumns="3"

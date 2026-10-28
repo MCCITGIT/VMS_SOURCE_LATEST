@@ -9,6 +9,7 @@ Partial Class RawMaterialRequisitionList
     Inherits System.Web.UI.Page
 
     Dim userInfo As VMSUserEntity = New VMSUserEntity()
+    Private Const RequisitionPageSize As Integer = 10
     Private Sub CheckLogin()
         If (Not (Session(Constant.SessionKeys.UserInfo) Is Nothing)) Then
             userInfo = CType(Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
@@ -141,6 +142,8 @@ Partial Class RawMaterialRequisitionList
                 End If
             Next
 
+            AppendLoadedRequisitions(dtApprove, mailRows)
+
             If dtApprove.Rows.Count = 0 Then
                 lblErrorMessage.Text = ""
                 RmActionPopup.ShowError(Me, "Please select at least one pending requisition to approve.")
@@ -192,8 +195,8 @@ Partial Class RawMaterialRequisitionList
 
     Private Function BuildDispatchListUrl(ByVal rmVendorCode As String) As String
         Dim redirectUrl As String = "Dispatch_List.aspx?rmvendor_code=" & Server.UrlEncode(rmVendorCode)
-        'Dim baseUrl As String = "https://bpilweb.bergerindia.com/vms/"
-        Dim baseUrl As String = "http://localhost:64930/"
+        Dim baseUrl As String = "https://bpilweb.bergerindia.com/vms/"
+        'Dim baseUrl As String = "http://localhost:64930/"
         Return New Uri(New Uri(baseUrl), redirectUrl).ToString()
     End Function
 
@@ -302,7 +305,7 @@ Partial Class RawMaterialRequisitionList
 
             'Grid Binding
             Dim table As DataTable = RmGridHelper.GetTable(ds)
-            RmGridHelper.BindPaged(gvRequisition, table)
+            RmGridHelper.BindPaged(gvRequisition, FirstRequisitionPage(table))
 
 
             'Summary Binding
@@ -339,10 +342,10 @@ Partial Class RawMaterialRequisitionList
 
     End Sub
 
-    Protected Sub gvRequisition_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvRequisition.PageIndexChanging
-        gvRequisition.PageIndex = e.NewPageIndex
-        BindData()
-    End Sub
+    'Protected Sub gvRequisition_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvRequisition.PageIndexChanging
+    '    gvRequisition.PageIndex = e.NewPageIndex
+    '    BindData()
+    'End Sub
 
     Private Sub PopulateRawMatVendor()
         Dim obj As New OPC_VendorClass()
@@ -383,7 +386,110 @@ Partial Class RawMaterialRequisitionList
     End Sub
 #End Region
 
-    Private Function FormatRawMaterialListHtml(ByVal rawList As String) As String
+    Private Function FirstRequisitionPage(ByVal dt As DataTable) As DataTable
+        If dt Is Nothing OrElse dt.Rows.Count = 0 Then
+            Return dt
+        End If
+
+        Dim pageDt As DataTable = dt.Clone()
+        Dim take As Integer = Math.Min(RequisitionPageSize, dt.Rows.Count)
+        For i As Integer = 0 To take - 1
+            pageDt.ImportRow(dt.Rows(i))
+        Next
+        Return pageDt
+    End Function
+
+    <System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreRequisitions(pageIndex As Integer, vendorCode As String, rawmatVendorCode As String, approvalStatus As String) As Object
+        Dim obj As New OPC_VendorClass()
+        Dim ds As DataSet = obj.GetRawMaterialRequestList(If(vendorCode, String.Empty), If(rawmatVendorCode, String.Empty), If(approvalStatus, String.Empty))
+        Dim rows As New List(Of Object)
+        Dim total As Integer = 0
+        Dim table As DataTable = RmGridHelper.GetTable(ds)
+
+        If table IsNot Nothing Then
+            total = table.Rows.Count
+            Dim start As Integer = pageIndex * RequisitionPageSize
+            Dim last As Integer = Math.Min(start + RequisitionPageSize, total) - 1
+            For i As Integer = start To last
+                Dim r As DataRow = table.Rows(i)
+                Dim rawList As String = Convert.ToString(r("RawmaterialList"))
+                rows.Add(New With {
+                    .vendor_name = Convert.ToString(r("vendor_name")),
+                    .vendor_code = Convert.ToString(r("vendor_code")),
+                    .request_id = Convert.ToString(r("request_id")),
+                    .rawmat_vendor_name = Convert.ToString(r("rawmat_vendor_name")),
+                    .rawmat_vendor_code = Convert.ToString(r("rawmat_vendor_code")),
+                    .rawmat_vendor_email = Convert.ToString(r("rawmat_vendor_email")),
+                    .CCAddress = Convert.ToString(r("CCAddress")),
+                    .RawmaterialList = rawList,
+                    .RawmaterialHtml = FormatRawMaterialListHtml(rawList),
+                    .approval_status = Convert.ToString(r("approval_status"))
+                })
+            Next
+        End If
+
+        Return New With {.rows = rows, .total = total}
+    End Function
+
+    Private Sub AppendLoadedRequisitions(ByVal dtApprove As DataTable, ByVal mailRows As List(Of Dictionary(Of String, String)))
+        Dim raw As String = hdnExtraRequisitions.Value
+        hdnExtraRequisitions.Value = String.Empty
+        If String.IsNullOrWhiteSpace(raw) Then
+            Return
+        End If
+
+        Dim items As List(Of Dictionary(Of String, Object)) = Nothing
+        Try
+            Dim serializer As New System.Web.Script.Serialization.JavaScriptSerializer()
+            items = serializer.Deserialize(Of List(Of Dictionary(Of String, Object)))(raw)
+        Catch
+            Return
+        End Try
+
+        If items Is Nothing Then
+            Return
+        End If
+
+        For Each item As Dictionary(Of String, Object) In items
+            Dim requestId As Integer
+            If Not Integer.TryParse(ReadLoadedItem(item, "request_id"), requestId) Then
+                Continue For
+            End If
+
+            Dim alreadySelected As Boolean = False
+            For Each existing As DataRow In dtApprove.Rows
+                If Convert.ToInt32(existing("request_id")) = requestId Then
+                    alreadySelected = True
+                    Exit For
+                End If
+            Next
+            If alreadySelected Then
+                Continue For
+            End If
+
+            dtApprove.Rows.Add(requestId, "A")
+
+            Dim mailInfo As New Dictionary(Of String, String)()
+            mailInfo("request_id") = requestId.ToString()
+            mailInfo("rm_vendor_code") = ReadLoadedItem(item, "rm_vendor_code")
+            mailInfo("rm_vendor_email") = ReadLoadedItem(item, "rm_vendor_email")
+            mailInfo("vendor_name") = ReadLoadedItem(item, "vendor_name")
+            mailInfo("rm_vendor_name") = ReadLoadedItem(item, "rm_vendor_name")
+            mailInfo("raw_material_list") = ReadLoadedItem(item, "raw_material_list")
+            mailInfo("hdnccemail") = ReadLoadedItem(item, "hdnccemail")
+            mailRows.Add(mailInfo)
+        Next
+    End Sub
+
+    Private Function ReadLoadedItem(ByVal item As Dictionary(Of String, Object), ByVal key As String) As String
+        If item Is Nothing OrElse Not item.ContainsKey(key) OrElse item(key) Is Nothing Then
+            Return String.Empty
+        End If
+        Return Convert.ToString(item(key)).Trim()
+    End Function
+
+    Private Shared Function FormatRawMaterialListHtml(ByVal rawList As String) As String
         If String.IsNullOrWhiteSpace(rawList) Then
             Return String.Empty
         End If
@@ -422,12 +528,12 @@ Partial Class RawMaterialRequisitionList
 
             html.Append("<div class=""rm-rawmat-line"">")
             html.Append("<span class=""rm-rawmat-name"">")
-            html.Append(Server.HtmlEncode(materialName))
+            html.Append(System.Web.HttpContext.Current.Server.HtmlEncode(materialName))
             html.Append("</span>")
             html.Append("<span class=""qty"">")
             If qtyText <> "" Then
                 html.Append(" Qty: ")
-                html.Append(Server.HtmlEncode(qtyText))
+                html.Append(System.Web.HttpContext.Current.Server.HtmlEncode(qtyText))
             End If
             html.Append("</span>")
             html.Append("</div>")

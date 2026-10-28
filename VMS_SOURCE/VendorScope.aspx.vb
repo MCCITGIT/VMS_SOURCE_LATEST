@@ -3,13 +3,15 @@ Imports System.Data
 Imports System.Collections.Generic
 
 ' Author: MUKESH BHAGAT  Created: 14-Oct-2026
-' Modified-by MUKESH BHAGAT 15-Oct-2026: per VENDOR (unit) instead of supplier; packaging items removed;
-'                                        HO / SYSADMIN only; searchable (select2) dropdowns, product autocomplete, shade / pack tag lists.
-' HO declares what each FG vendor makes: vertical > product > shades (none = all) > packs (none = all).
-' Product_Formulation offers a vendor only what is declared here.
+' Modified-by MUKESH BHAGAT 15-Oct-2026: per VENDOR (unit) instead of supplier; packaging items removed; HO / SYSADMIN only;
+'                                        searchable (select2) dropdowns, product autocomplete.
+' Modified-by MUKESH BHAGAT 19-10-2026: packs are declared SHADE-WISE - one row per shade with its own pack list, so
+'                                        Product_Formulation can offer exactly the packs of the shade that is picked.
+' HO declares what each FG vendor makes: vertical > product > shades (none ticked = all) > packs per shade (none = all).
 Partial Class VendorScope
     Inherits System.Web.UI.Page
     Dim userInfo As VMSUserEntity = New VMSUserEntity()
+    Private Const NoShade As String = ""          ' shd_code of the single row shown for a product without shades
 
     ''' <summary>HO groups and SYSADMIN only (same rule as the HO side of Product_Formulation). Vendors never open this page.</summary>
     Private Sub CheckLogin()
@@ -35,7 +37,7 @@ Partial Class VendorScope
     End Sub
 
 #Region "autocomplete"
-    ''' <summary>Products of the vertical passed as context key (opc_vendor_scope_lookup_product). Value = product code, text = "code-description".</summary>
+    ''' <summary>Products of the vertical passed as context key (opc_vendor_scope_lookup_product, SKU master only). Value = product code, text = "code-description".</summary>
     <System.Web.Script.Services.ScriptMethod(),
     System.Web.Services.WebMethod()>
     Public Shared Function ProductSearch(ByVal prefixText As String, ByVal count As Integer, ByVal contextKey As String) As String()
@@ -86,34 +88,84 @@ Partial Class VendorScope
         ddlVertical.Items.Insert(0, New ListItem(Constant.Common.Selec, String.Empty, True))
     End Sub
 
-    ''' <summary>Shade and pack lists of the chosen product (shades from the SKU master, packs from mstr_sku).</summary>
-    Private Sub BindShadePack()
-        lstShade.Items.Clear()
-        lstPack.Items.Clear()
+    ''' <summary>One table row per shade of the chosen product, each with the packs that exist for that shade
+    ''' (shades from the SKU master, shade + pack pairs from mstr_sku). A product without shades gets one "(no shade)" row.</summary>
+    Private Sub BindShadePacks()
+        rptShades.DataSource = Nothing
+        rptShades.DataBind()
+        pnlShades.Visible = False
         Dim prd As String = hdnProductCode.Value.Trim()
         If prd = "" Then
-            litShadeHint.Text = "Pick a product first. Leave empty to allow every shade."
-            litPackHint.Text = "Pick a product first. Leave empty to allow every pack."
+            litShadeHint.Text = "Pick a product first."
             Exit Sub
         End If
         Dim obj As New OPC_VendorClass()
 
+        ' shade + pack pairs of the product
+        Dim packsByShade As New Dictionary(Of String, List(Of ListItem))(StringComparer.OrdinalIgnoreCase)
+        Dim dsP As DataSet = obj.GetScopePacks(ddlVertical.SelectedValue, prd)
+        If HasRows(dsP) Then
+            For Each dr As DataRow In dsP.Tables(0).Rows
+                Dim shd As String = Convert.ToString(dr("shd_code")).Trim()
+                Dim desc As String = Convert.ToString(dr("pack_desc")).Trim()
+                Dim code As String = Convert.ToString(dr("pack_code")).Trim()
+                If Not packsByShade.ContainsKey(shd) Then packsByShade(shd) = New List(Of ListItem)()
+                ' several pack codes can share one size ("1 L" = 001000 and 001008): one tag per size, value = every code of that size
+                Dim same As ListItem = packsByShade(shd).Find(Function(x) x.Text = desc)
+                If same Is Nothing Then packsByShade(shd).Add(New ListItem(desc, code)) Else same.Value &= "|" & code
+            Next
+        End If
+
+        ' rows = shades of the product; a product without shades = one row keyed ""
+        Dim rows As New DataTable()
+        rows.Columns.Add("shd_code", GetType(String))
+        rows.Columns.Add("shd_name", GetType(String))
+        rows.Columns.Add("pack_hint", GetType(String))
         Dim dsS As DataSet = obj.GetShadeCodeList(prd)
         If HasRows(dsS) Then
             For Each dr As DataRow In dsS.Tables(0).Rows
                 Dim code As String = Convert.ToString(dr("Shade_Code")).Trim()
-                lstShade.Items.Add(New ListItem(code & " - " & Convert.ToString(dr("Shade_Desc")).Trim(), code))
+                Dim cnt As Integer = If(packsByShade.ContainsKey(code), packsByShade(code).Count, 0)
+                rows.Rows.Add(code, code & " - " & Convert.ToString(dr("Shade_Desc")).Trim(), If(cnt = 0, "no pack in the SKU master", cnt & " pack(s)"))
             Next
         End If
-        litShadeHint.Text = If(lstShade.Items.Count = 0, "This product has no shades.", lstShade.Items.Count & " shade(s) available. Leave empty to allow all of them.")
+        If rows.Rows.Count = 0 Then
+            ' no shade: every pack of the product in one row (packsByShade may still be keyed by a dummy shade code)
+            Dim allPacks As New List(Of ListItem)()
+            For Each kv In packsByShade
+                For Each li In kv.Value
+                    Dim same As ListItem = allPacks.Find(Function(x) x.Text = li.Text)
+                    If same Is Nothing Then
+                        allPacks.Add(New ListItem(li.Text, li.Value))
+                    ElseIf Not ("|" & same.Value & "|").Contains("|" & li.Value & "|") Then
+                        same.Value &= "|" & li.Value
+                    End If
+                Next
+            Next
+            packsByShade.Clear()
+            packsByShade(NoShade) = allPacks
+            rows.Rows.Add(NoShade, "(no shade)", allPacks.Count & " pack(s)")
+        End If
 
-        Dim dsP As DataSet = obj.GetScopePacks(ddlVertical.SelectedValue, prd)
-        If HasRows(dsP) Then
-            For Each dr As DataRow In dsP.Tables(0).Rows
-                lstPack.Items.Add(New ListItem(Convert.ToString(dr("pack_desc")).Trim(), Convert.ToString(dr("pack_code")).Trim()))
-            Next
-        End If
-        litPackHint.Text = If(lstPack.Items.Count = 0, "No pack found for this product in the SKU master.", lstPack.Items.Count & " pack(s) available. Leave empty to allow all of them.")
+        rptShades.DataSource = rows
+        rptShades.DataBind()
+        For Each item As RepeaterItem In rptShades.Items
+            Dim shd As String = CType(item.FindControl("hdnShd"), HiddenField).Value
+            Dim chk As CheckBox = CType(item.FindControl("chkShade"), CheckBox)
+            Dim lst As ListBox = CType(item.FindControl("lstPacks"), ListBox)
+            chk.InputAttributes("class") = "scope-shade-chk"
+            chk.InputAttributes("onchange") = "vsShadeToggled(this);"
+            chk.Checked = False
+            If shd = NoShade Then chk.Checked = True : chk.Visible = False
+            If packsByShade.ContainsKey(shd) Then
+                For Each li In packsByShade(shd)
+                    lst.Items.Add(New ListItem(li.Text, li.Value))
+                Next
+            End If
+        Next
+        pnlShades.Visible = True
+        litShadeHint.Text = If(rows.Rows(0)("shd_code").ToString() = NoShade, "This product has no shades - choose its packs (empty = all).",
+                               rows.Rows.Count & " shade(s). Tick the shades the vendor makes (none ticked = all) and, per shade, the packs (empty = all packs of that shade).")
     End Sub
 
     Private Sub BindGrid()
@@ -127,7 +179,7 @@ Partial Class VendorScope
 
 #Region "events"
     Protected Sub btnProductPicked_Click(sender As Object, e As EventArgs)
-        BindShadePack()
+        BindShadePacks()
     End Sub
 
     Protected Sub btnSave_Click(sender As Object, e As EventArgs)
@@ -138,10 +190,29 @@ Partial Class VendorScope
         If hdnProductCode.Value.Trim() = "" Then valProduct.Text = "Please select Product from the list." : ok = False
         If Not ok Then Exit Sub
 
+        ' shades = ticked rows (none ticked = all shades); packs = the selected packs of every included row, with their shade
+        Dim shades As New DataTable() : shades.Columns.Add("vss_shd_code", GetType(String))
+        Dim packs As New DataTable() : packs.Columns.Add("vsp_shd_code", GetType(String)) : packs.Columns.Add("vsp_pack_code", GetType(String))
+        Dim anyTicked As Boolean = False
+        For Each item As RepeaterItem In rptShades.Items
+            If CType(item.FindControl("chkShade"), CheckBox).Checked AndAlso CType(item.FindControl("hdnShd"), HiddenField).Value <> NoShade Then anyTicked = True
+        Next
+        For Each item As RepeaterItem In rptShades.Items
+            Dim shd As String = CType(item.FindControl("hdnShd"), HiddenField).Value
+            Dim ticked As Boolean = CType(item.FindControl("chkShade"), CheckBox).Checked
+            If anyTicked AndAlso Not ticked AndAlso shd <> NoShade Then Continue For      ' excluded shade
+            If shd <> NoShade AndAlso anyTicked Then shades.Rows.Add(shd)
+            For Each li As ListItem In CType(item.FindControl("lstPacks"), ListBox).Items
+                If li.Selected Then
+                    For Each code As String In li.Value.Split("|"c)        ' one row per pack code of the chosen size
+                        packs.Rows.Add(shd, code)
+                    Next
+                End If
+            Next
+        Next
+
         Dim msg As String = ""
-        Dim saved As Boolean = New OPC_VendorClass().SaveScope(ddlVendor.SelectedValue, ddlVertical.SelectedValue, hdnProductCode.Value.Trim(),
-                                                             SelectedCodes("vss_shd_code", lstShade), SelectedCodes("vsp_pack_code", lstPack),
-                                                             userInfo.userIDEntity, msg)
+        Dim saved As Boolean = New OPC_VendorClass().SaveScope(ddlVendor.SelectedValue, ddlVertical.SelectedValue, hdnProductCode.Value.Trim(), shades, packs, userInfo.userIDEntity, msg)
         If saved Then
             ClearForm()
             BindGrid()
@@ -172,15 +243,6 @@ Partial Class VendorScope
 #End Region
 
 #Region "helpers"
-    Private Function SelectedCodes(ByVal colName As String, ByVal lb As ListBox) As DataTable
-        Dim dt As New DataTable()
-        dt.Columns.Add(colName, GetType(String))
-        For Each li As ListItem In lb.Items
-            If li.Selected Then dt.Rows.Add(li.Value)
-        Next
-        Return dt
-    End Function
-
     ''' <summary>Fills the form from a saved scope. Saving again replaces that scope (same vendor + vertical + product).</summary>
     Private Sub LoadScope(ByVal vsId As Integer)
         Dim obj As New OPC_VendorClass()
@@ -207,14 +269,26 @@ Partial Class VendorScope
         End If
         txtProductSearch.Text = hdnProductName.Value
 
-        BindShadePack()
+        BindShadePacks()
+        ' declared shades -> ticked rows; declared packs -> selected in their shade's row ('' shade = every row)
+        Dim declaredShades As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
         For Each dr As DataRow In ds.Tables(1).Rows
-            Dim li As ListItem = lstShade.Items.FindByValue(Convert.ToString(dr("code")))
-            If li IsNot Nothing Then li.Selected = True
+            declaredShades.Add(Convert.ToString(dr("code")).Trim())
         Next
-        For Each dr As DataRow In ds.Tables(2).Rows
-            Dim li As ListItem = lstPack.Items.FindByValue(Convert.ToString(dr("code")))
-            If li IsNot Nothing Then li.Selected = True
+        For Each item As RepeaterItem In rptShades.Items
+            Dim shd As String = CType(item.FindControl("hdnShd"), HiddenField).Value
+            Dim chk As CheckBox = CType(item.FindControl("chkShade"), CheckBox)
+            If shd <> NoShade Then chk.Checked = declaredShades.Contains(shd)
+            Dim lst As ListBox = CType(item.FindControl("lstPacks"), ListBox)
+            For Each dr As DataRow In ds.Tables(2).Rows
+                Dim pShd As String = Convert.ToString(dr("shd_code")).Trim()
+                If pShd = "" OrElse String.Equals(pShd, shd, StringComparison.OrdinalIgnoreCase) Then
+                    Dim stored As String = Convert.ToString(dr("code")).Trim()
+                    For Each li As ListItem In lst.Items          ' a tag is selected when any of its pack codes was stored
+                        If ("|" & li.Value & "|").Contains("|" & stored & "|") Then li.Selected = True
+                    Next
+                End If
+            Next
         Next
         litFormTitle.Text = "Edit scope - " & Server.HtmlEncode(ddlVendor.SelectedItem.Text & " / " & prd)
         BindGrid()
@@ -228,7 +302,7 @@ Partial Class VendorScope
         txtProductSearch.Text = ""
         hdnProductCode.Value = ""
         hdnProductName.Value = ""
-        BindShadePack()
+        BindShadePacks()
         litFormTitle.Text = "Declare scope"
     End Sub
 

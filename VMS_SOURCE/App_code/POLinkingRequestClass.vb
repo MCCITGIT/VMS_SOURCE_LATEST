@@ -945,7 +945,7 @@ Public Class POLinkingRequestClass
         End Try
     End Function
 
-    Public Function InsertRawMaterialPo(ByVal vendor_code As String, ByVal supplier_code As String, ByVal user_id As String, ByVal tbl As DataTable, ByVal gstValue As Decimal, ByVal freightCost As Decimal, Optional ByVal refPoNo As String = "") As String
+    Public Function InsertRawMaterialPo(ByVal vendor_code As String, ByVal supplier_code As String, ByVal user_id As String, ByVal tbl As DataTable, ByVal freightGst As Nullable(Of Decimal), ByVal freightCost As Decimal, Optional ByVal refPoNo As String = "") As String
         Dim sqlConn As SqlConnection = Nothing
         Dim sqlTrans As SqlTransaction = Nothing
         Dim poNo As String = String.Empty
@@ -974,7 +974,7 @@ Public Class POLinkingRequestClass
             sqlParams(2).Precision = 18
             sqlParams(2).Scale = 2
             sqlParams(2).Direction = Data.ParameterDirection.Input
-            sqlParams(2).Value = gstValue
+            sqlParams(2).Value = If(freightGst.HasValue, CObj(freightGst.Value), DBNull.Value)
 
             sqlParams(3) = New SqlParameter()
             sqlParams(3).ParameterName = "@freight"
@@ -1040,14 +1040,20 @@ Public Class POLinkingRequestClass
         Return poNo
     End Function
 
-    Public Function GetRawMaterialPoList(ByVal vendorCode As String) As DataSet
-        Dim sqlParams(0) As SqlParameter
+    Public Function GetRawMaterialPoList(ByVal userId As String, ByVal vendorCode As String) As DataSet
+        Dim sqlParams(1) As SqlParameter
 
         sqlParams(0) = New SqlParameter()
-        sqlParams(0).ParameterName = "@vendor_code"
+        sqlParams(0).ParameterName = "@user_id"
         sqlParams(0).DbType = DbType.String
         sqlParams(0).Direction = ParameterDirection.Input
-        sqlParams(0).Value = If(String.IsNullOrWhiteSpace(vendorCode), CObj(DBNull.Value), vendorCode.Trim())
+        sqlParams(0).Value = userId
+
+        sqlParams(1) = New SqlParameter()
+        sqlParams(1).ParameterName = "@vendor_code"
+        sqlParams(1).DbType = DbType.String
+        sqlParams(1).Direction = ParameterDirection.Input
+        sqlParams(1).Value = If(String.IsNullOrWhiteSpace(vendorCode), CObj(DBNull.Value), vendorCode.Trim())
 
         Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[raw_mtrl_po_list]", CommandType.StoredProcedure, sqlParams)
     End Function
@@ -1162,6 +1168,183 @@ Public Class POLinkingRequestClass
             sqlCmd.Transaction = sqlTrans
             sqlCmd.CommandType = CommandType.StoredProcedure
             sqlCmd.CommandText = "[dbo].[opc_brand_product_linking_insert]"
+            sqlCmd.Parameters.AddRange(sqlParams)
+
+            Dim adapter As New SqlDataAdapter(sqlCmd)
+            adapter.Fill(ds)
+
+            sqlTrans.Commit()
+
+        Catch ex As SqlException
+            If sqlTrans IsNot Nothing Then
+                sqlTrans.Rollback()
+            End If
+            Throw
+
+        Finally
+            If sqlConn IsNot Nothing Then
+                sqlConn.Close()
+            End If
+        End Try
+
+        Return ds
+    End Function
+
+    Public Function GetBrandProductLinkList(Optional ByVal brandId As String = "") As DataSet
+        Dim sqlParams(0) As SqlParameter
+        Dim parsedBrandId As Integer
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@brand_id"
+        sqlParams(0).SqlDbType = SqlDbType.Int
+        sqlParams(0).Direction = Data.ParameterDirection.Input
+        If Integer.TryParse(Convert.ToString(brandId).Trim(), parsedBrandId) AndAlso parsedBrandId > 0 Then
+            sqlParams(0).Value = parsedBrandId
+        Else
+            sqlParams(0).Value = DBNull.Value
+        End If
+
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_brand_product_linking_list]", CommandType.StoredProcedure, sqlParams)
+    End Function
+
+    Public Function GetBrandProductList() As DataSet
+        Dim DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_brand_product_list]", CommandType.StoredProcedure)
+        Return DS
+    End Function
+
+    Public Function GetBrandProductLinksByBrand(ByVal brandId As Integer) As DataSet
+        Dim sqlParams(0) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@brand_id"
+        sqlParams(0).SqlDbType = SqlDbType.Int
+        sqlParams(0).Direction = Data.ParameterDirection.Input
+        sqlParams(0).Value = brandId
+
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_brand_product_linking_get]", CommandType.StoredProcedure, sqlParams)
+    End Function
+
+    Public Function UpdateBrandProductLinks(ByVal brandId As Integer, ByVal userId As String, ByVal tbl As DataTable) As DataSet
+        Dim sqlConn As SqlConnection = Nothing
+        Dim sqlTrans As SqlTransaction = Nothing
+        Dim ds As New DataSet()
+
+        sqlConn = DBFactory.GetHelper.OpenConnection()
+        sqlTrans = sqlConn.BeginTransaction()
+
+        Dim sqlParams(2) As SqlParameter
+
+        Try
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@brand_id"
+            sqlParams(0).SqlDbType = SqlDbType.Int
+            sqlParams(0).Direction = Data.ParameterDirection.Input
+            sqlParams(0).Value = brandId
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@user_id"
+            sqlParams(1).SqlDbType = SqlDbType.VarChar
+            sqlParams(1).Size = 20
+            sqlParams(1).Direction = Data.ParameterDirection.Input
+            sqlParams(1).Value = If(String.IsNullOrWhiteSpace(userId), CObj(DBNull.Value), userId.Trim())
+
+            sqlParams(2) = New SqlParameter()
+            sqlParams(2).ParameterName = "@tbl"
+            sqlParams(2).SqlDbType = SqlDbType.Structured
+            sqlParams(2).TypeName = "dbo.tbl_opc_brand_product_linking"
+            sqlParams(2).Direction = Data.ParameterDirection.Input
+            sqlParams(2).Value = tbl
+
+            Dim sqlCmd As New SqlCommand()
+            sqlCmd.Connection = sqlConn
+            sqlCmd.Transaction = sqlTrans
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.CommandText = "[dbo].[opc_brand_product_linking_update]"
+            sqlCmd.Parameters.AddRange(sqlParams)
+
+            Dim adapter As New SqlDataAdapter(sqlCmd)
+            adapter.Fill(ds)
+
+            sqlTrans.Commit()
+
+        Catch ex As SqlException
+            If sqlTrans IsNot Nothing Then
+                sqlTrans.Rollback()
+            End If
+            Throw
+
+        Finally
+            If sqlConn IsNot Nothing Then
+                sqlConn.Close()
+            End If
+        End Try
+
+        Return ds
+    End Function
+#End Region
+
+#Region "Vendor Factory Linking"
+    Public Function GetVendorFactoryLookup() As DataSet
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_factory_lookup]", CommandType.StoredProcedure)
+    End Function
+
+    Public Function GetVendorFactoryLinks(ByVal vendorCode As String) As DataSet
+        Dim DS As System.Data.DataSet
+        Dim sqlParams(1) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@vendor_code"
+        sqlParams(0).DbType = DbType.String
+        sqlParams(0).Direction = Data.ParameterDirection.Input
+        sqlParams(0).Value = If(String.IsNullOrWhiteSpace(vendorCode), CObj(DBNull.Value), vendorCode.Trim())
+
+        sqlParams(1) = New SqlParameter()
+        sqlParams(1).ParameterName = "@active_only"
+        sqlParams(1).DbType = DbType.String
+        sqlParams(1).Direction = Data.ParameterDirection.Input
+        sqlParams(1).Value = "Y"
+
+        DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_factory_link_get]", CommandType.StoredProcedure, sqlParams)
+        Return DS
+    End Function
+
+    Public Function SaveVendorFactoryLinks(ByVal vendorCode As String, ByVal tbl As DataTable, ByVal userId As String) As DataSet
+        Dim sqlConn As SqlConnection = Nothing
+        Dim sqlTrans As SqlTransaction = Nothing
+        Dim ds As New DataSet()
+
+        sqlConn = DBFactory.GetHelper.OpenConnection()
+        sqlTrans = sqlConn.BeginTransaction()
+
+        Dim sqlParams(2) As SqlParameter
+
+        Try
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@vendor_code"
+            sqlParams(0).SqlDbType = SqlDbType.VarChar
+            sqlParams(0).Size = 50
+            sqlParams(0).Direction = Data.ParameterDirection.Input
+            sqlParams(0).Value = If(String.IsNullOrWhiteSpace(vendorCode), CObj(DBNull.Value), vendorCode.Trim())
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@links"
+            sqlParams(1).SqlDbType = SqlDbType.Structured
+            sqlParams(1).TypeName = "dbo.tbl_opc_vendor_factory_link"
+            sqlParams(1).Direction = Data.ParameterDirection.Input
+            sqlParams(1).Value = tbl
+
+            sqlParams(2) = New SqlParameter()
+            sqlParams(2).ParameterName = "@user_id"
+            sqlParams(2).SqlDbType = SqlDbType.VarChar
+            sqlParams(2).Size = 50
+            sqlParams(2).Direction = Data.ParameterDirection.Input
+            sqlParams(2).Value = If(String.IsNullOrWhiteSpace(userId), CObj(DBNull.Value), userId.Trim())
+
+            Dim sqlCmd As New SqlCommand()
+            sqlCmd.Connection = sqlConn
+            sqlCmd.Transaction = sqlTrans
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.CommandText = "[dbo].[opc_vendor_factory_link_save]"
             sqlCmd.Parameters.AddRange(sqlParams)
 
             Dim adapter As New SqlDataAdapter(sqlCmd)

@@ -56,7 +56,7 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-3">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">Region:</label>
                         <asp:UpdatePanel ID="UpdatePanel2" runat="server">
                             <ContentTemplate>
@@ -66,7 +66,7 @@
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">Depot:</label>
                         <asp:UpdatePanel ID="UpdatePanel1" runat="server">
                             <ContentTemplate>
@@ -95,13 +95,13 @@
                     <!-- Row for Address 1 and Address 2 -->
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Address 1:</label>
                                 <label class="form-control-label box-label textarea-label" id="lblAddr1" runat="server"></label>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Address 2:</label>
                                 <label class="form-control-label box-label textarea-label" id="lblAddr2" runat="server"></label>
                             </div>
@@ -111,37 +111,37 @@
                     <!-- Row for other details -->
                     <div class="row">
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">City:</label>
                                 <label class="form-control-label box-label" id="lblcity" runat="server"></label>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">State:</label>
                                 <label class="form-control-label box-label" id="lblstate" runat="server"></label>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">PinCode:</label>
                                 <label class="form-control-label box-label" id="lblpin" runat="server"></label>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Phone No:</label>
                                 <label class="form-control-label box-label" id="lblphno" runat="server"></label>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">Email ID:</label>
                                 <label class="form-control-label box-label" id="lblemail" runat="server"></label>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="form-group pb-0">
+                            <div class="form-group">
                                 <label class="form-control-label">GSTN No:</label>
                                 <label class="form-control-label box-label" id="lblgstn" runat="server"></label>
                             </div>

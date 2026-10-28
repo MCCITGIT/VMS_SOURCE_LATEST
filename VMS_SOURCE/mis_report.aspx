@@ -24,7 +24,7 @@
         <div class="card-body">
             <div class="row align-items-end">
                 <div class="col-md-3">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">Fin Year:</label>
                         <asp:DropDownList ID="ddlFinYear" class="form-control select2" runat="server" />
                     </div>

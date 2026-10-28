@@ -530,7 +530,9 @@ body {
         transition: background-color 0.18s ease;
         /*text-align: center;*/
     }
-
+    .upgradDataGrid td span {
+        font-weight:normal;
+    }
     .upgradDataGrid tr td:last-child {
         border-right: 1px;
     }
@@ -609,15 +611,15 @@ body {
         animation: gvDispatchSkelShimmer 1.2s ease-in-out infinite;
     }
 
-    @keyframes gvDispatchSkelShimmer {
-        0% {
-            background-position: 100% 0;
-        }
-
-        100% {
-            background-position: 0 0;
-        }
+@keyframes gvDispatchSkelShimmer {
+    0% {
+        background-position: 100% 0;
     }
+
+    100% {
+        background-position: 0 0;
+    }
+}
 
 /* End Grid */
 .CheckBoxList table tr td {
@@ -1070,11 +1072,11 @@ body {
     }
 
     .sideNavBarView ul li a {
-        padding: 0.6rem 0.25rem 0.6rem 0.65rem;
+        padding: 0.6rem 0.25rem 0.6rem 0.55rem;
         display: block;
         color: #FFF;
         font-family: Montserrat;
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         font-style: normal;
         font-weight: 500;
         line-height: 1.5rem;
@@ -1104,8 +1106,8 @@ body {
 
     .sideNavBarView ul li a::after {
         position: absolute;
-        top: 18px;
-        right: 8px;
+        top: 19px;
+        right: 6px;
         font-size: 1.025rem;
         content: "";
     }
@@ -1628,6 +1630,7 @@ body {
 .select2-container--default .select2-selection--single .select2-selection__rendered {
     line-height: 28px;
     height: 30px;
+    white-space: normal;
 }
 
 .SumoSelect {
@@ -1871,9 +1874,9 @@ body {
     color: #FFF;
 }
 
-.modal-body {
+/*.modal-body {
     padding: 0.5rem 0.75rem;
-}
+}*/
 
 .modal-footer {
     padding: 0.15rem 0.75rem;
@@ -2094,8 +2097,8 @@ body {
 
 .modal-body {
     padding: 0.5rem 0.95rem;
-    max-height: 500px;
-    overflow-y: auto;
+    max-height: 400px;
+    overflow-y: auto !important;
 }
 
 .modal-footer {
@@ -3225,93 +3228,93 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.popup[style*="height:150px"],
-.popup[style*="height: 150px"],
-.popup[style*="height:170px"],
-.popup[style*="height: 170px"] {
-    height: auto !important;
-}
+    .popup[style*="height:150px"],
+    .popup[style*="height: 150px"],
+    .popup[style*="height:170px"],
+    .popup[style*="height: 170px"] {
+        height: auto !important;
+    }
 
-.popup[style*="width:20%"],
-.popup[style*="width: 20%"] {
-    width: 360px !important;
-}
+    .popup[style*="width:20%"],
+    .popup[style*="width: 20%"] {
+        width: 360px !important;
+    }
 
-.popup div[style*="background-color"] {
-    background: #253e50 !important;
-    color: #fff !important;
-    height: auto !important;
-    min-height: 0;
-    margin: 0;
-    padding: 0.5rem 0.75rem !important;
-    box-sizing: border-box;
-    line-height: 1.3;
-    text-align: left !important;
-    font-size: 0.95rem;
-    font-weight: 600;
-    letter-spacing: 0.25px;
-    border: 0 !important;
-}
+    .popup div[style*="background-color"] {
+        background: #253e50 !important;
+        color: #fff !important;
+        height: auto !important;
+        min-height: 0;
+        margin: 0;
+        padding: 0.5rem 0.75rem !important;
+        box-sizing: border-box;
+        line-height: 1.3;
+        text-align: left !important;
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 0.25px;
+        border: 0 !important;
+    }
 
-.popup div[style*="background-color"] span,
-.popup div[style*="background-color"] label {
-    color: #fff !important;
-    font-size: 0.95rem;
-    font-weight: 600;
-    letter-spacing: 0.25px;
-}
+        .popup div[style*="background-color"] span,
+        .popup div[style*="background-color"] label {
+            color: #fff !important;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.25px;
+        }
 
-.popup table {
-    width: 100% !important;
-    margin: 0;
-    border-spacing: 0 !important;
-    border-collapse: separate !important;
-}
+    .popup table {
+        width: 100% !important;
+        margin: 0;
+        border-spacing: 0 !important;
+        border-collapse: separate !important;
+    }
 
-.popup table td {
-    padding: 10px 16px;
-}
+        .popup table td {
+            padding: 10px 16px;
+        }
 
-.popup input[type="submit"],
-.popup input[type="button"],
-.popup button {
-    background-color: #007bff;
-    border: 1px solid #007bff;
-    color: #fff !important;
-    border-radius: 14px;
-    padding: 4px 20px;
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.4;
-    min-width: 75px;
-    width: auto !important;
-    height: auto !important;
-    cursor: pointer;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+    .popup input[type="submit"],
+    .popup input[type="button"],
+    .popup button {
+        background-color: #007bff;
+        border: 1px solid #007bff;
+        color: #fff !important;
+        border-radius: 14px;
+        padding: 4px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.4;
+        min-width: 75px;
+        width: auto !important;
+        height: auto !important;
+        cursor: pointer;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-.popup input[type="submit"]:hover,
-.popup input[type="button"]:hover,
-.popup button:hover {
-    background-color: #0069d9;
-    border-color: #0062cc;
-}
+        .popup input[type="submit"]:hover,
+        .popup input[type="button"]:hover,
+        .popup button:hover {
+            background-color: #0069d9;
+            border-color: #0062cc;
+        }
 
-.popup input[value="Cancel"],
-.popup input[value="cancel"],
-.popup input[value="Close"],
-.popup input[value="close"] {
-    background-color: #6c757d;
-    border-color: #6c757d;
-}
+    .popup input[value="Cancel"],
+    .popup input[value="cancel"],
+    .popup input[value="Close"],
+    .popup input[value="close"] {
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
 
-.popup input[value="Cancel"]:hover,
-.popup input[value="cancel"]:hover,
-.popup input[value="Close"]:hover,
-.popup input[value="close"]:hover {
-    background-color: #5a6268;
-    border-color: #545b62;
-}
+        .popup input[value="Cancel"]:hover,
+        .popup input[value="cancel"]:hover,
+        .popup input[value="Close"]:hover,
+        .popup input[value="close"]:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+        }
 
 /* Responsive */
 @media (max-width: 520px) {
@@ -4046,22 +4049,22 @@ div:has(> .ajax__calendar_container) {
         border-spacing: 0 !important;
     }
 
-    .ajax__calendar_container table,
-    .ajax__calendar_container table * {
-        box-sizing: content-box !important;
-    }
+        .ajax__calendar_container table,
+        .ajax__calendar_container table * {
+            box-sizing: content-box !important;
+        }
 
-    .ajax__calendar_container table td,
-    .ajax__calendar_container table th {
-        padding: 1px !important;
-        margin: 0 !important;
-        border: 0 !important;
-        width: auto !important;
-        height: auto !important;
-        box-sizing: content-box !important;
-        vertical-align: middle;
-        white-space: nowrap;
-    }
+            .ajax__calendar_container table td,
+            .ajax__calendar_container table th {
+                padding: 1px !important;
+                margin: 0 !important;
+                border: 0 !important;
+                width: auto !important;
+                height: auto !important;
+                box-sizing: content-box !important;
+                vertical-align: middle;
+                white-space: nowrap;
+            }
 
 .ajax__calendar_body {
     width: 170px !important;
@@ -4078,9 +4081,9 @@ div:has(> .ajax__calendar_container) {
     box-sizing: content-box !important;
 }
 
-.ajax__calendar_days table {
-    width: auto !important;
-}
+    .ajax__calendar_days table {
+        width: auto !important;
+    }
 
 .ajax__calendar_dayname,
 .ajax__calendar_day {
@@ -4088,14 +4091,14 @@ div:has(> .ajax__calendar_container) {
     box-sizing: content-box !important;
 }
 
-.popupvendor:has([style*="visibility: visible"] > .ajax__calendar_container),
+/*.popupvendor:has([style*="visibility: visible"] > .ajax__calendar_container),
 .popupvendor:has([style*="visibility:visible"] > .ajax__calendar_container),
 .modal-body:has([style*="visibility: visible"] > .ajax__calendar_container),
 .modal-body:has([style*="visibility:visible"] > .ajax__calendar_container),
 .table-responsive:has([style*="visibility: visible"] > .ajax__calendar_container),
 .table-responsive:has([style*="visibility:visible"] > .ajax__calendar_container) {
     overflow: visible !important;
-}
+}*/
 
 .PagerGrid {
     position: sticky;
@@ -4121,4 +4124,160 @@ div:has(> .ajax__calendar_container) {
     position: absolute;
     top: 9px;
     right: 18px;
+}
+/* Modals used in RM receipt */
+/*.rm-module .modal-content,
+body:has(.rm-module) .bootstrapModal .modal-content {
+    border: 0;
+    border-radius: 16px !important;
+    overflow: hidden;
+    animation: rm-fade-in-up 0.28s ease;
+}
+
+.rm-module .modal-header,
+body:has(.rm-module) .bootstrapModal .modal-header {
+    background: #ffffff;
+    border-bottom: 1px solid #eef1f5;
+}
+
+.rm-module .modal-title,
+body:has(.rm-module) .bootstrapModal .modal-title {
+    font-weight: 800;
+    color: #111827;
+}*/
+
+.rm-confirm-overlay {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 10050;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(31, 41, 55, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.24s ease, visibility 0.24s ease;
+}
+
+.rm-confirm-overlay.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.rm-confirm-dialog {
+    width: 100%;
+    max-width: 420px;
+    background: #ffffff;
+    border: 1px solid #eee8de;
+    border-radius: 18px;
+    box-shadow: 0 18px 40px rgba(80, 60, 30, 0.16);
+    padding: 28px 24px 22px;
+    text-align: center;
+    font-family: "Inter", Arial, Helvetica, sans-serif;
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+    transition: opacity 0.24s ease, transform 0.24s ease, box-shadow 0.24s ease;
+}
+
+.rm-confirm-overlay.is-open .rm-confirm-dialog {
+    opacity: 1;
+    transform: none;
+}
+
+.rm-confirm-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff4e5;
+    border: 1px solid #f3d2a4;
+    border-radius: 50%;
+    color: #d9822b;
+    font-size: 20px;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.rm-confirm-overlay.is-open .rm-confirm-icon {
+    animation: rm-pop 0.32s ease;
+}
+
+.rm-confirm-dialog.is-success .rm-confirm-icon {
+    background: #e8f8ee;
+    border-color: #86d5a4;
+    color: #15803d;
+}
+
+.rm-confirm-dialog.is-error .rm-confirm-icon {
+    background: #fff1f2;
+    border-color: #fecdd3;
+    color: #e11d48;
+}
+
+.rm-confirm-dialog.is-success .rm-confirm-cancel,
+.rm-confirm-dialog.is-error .rm-confirm-cancel {
+    display: none;
+}
+
+.rm-confirm-title {
+    margin: 0 0 8px;
+    color: #111827;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.rm-confirm-text {
+    margin: 0 0 22px;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.45;
+    white-space: pre-line;
+}
+
+.rm-confirm-dialog.is-error .rm-confirm-title {
+    color: #e11d48;
+}
+
+.rm-confirm-dialog.is-error .rm-confirm-text {
+    text-align: left;
+    color: #e11d48 !important;
+    font-weight: 600;
+}
+
+.rm-confirm-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.rm-confirm-actions .btn {
+    min-width: 110px;
+}
+.customCalender {
+    position:relative;
+}
+@media (prefers-reduced-motion: reduce) {
+    .rm-module,
+    .rm-module *,
+    .rm-confirm-overlay,
+    .rm-confirm-dialog,
+    .rm-confirm-icon,
+    .rm-card,
+    .rm-metric-card,
+    .rm-upload-box,
+    .rm-list-card,
+    .rm-status-badge,
+    .rm-stat-card,
+    .standalone-breadcrumbs,
+    .standalone-breadcrumbs * {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+    }
 }

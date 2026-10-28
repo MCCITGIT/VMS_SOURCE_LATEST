@@ -113,6 +113,7 @@ Partial Class FormulationMstrList
             Next
         End If
         RmGridHelper.BindPaged(gvFormulationList, table)
+        hdnFormulationPage.Value = gvFormulationList.PageIndex.ToString()
         UpdateSummary(table)
     End Sub
 
@@ -207,6 +208,64 @@ Partial Class FormulationMstrList
         gvFormulationList.PageIndex = e.NewPageIndex
         Binddata()
     End Sub
+
+    <System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreFormulations(pageIndex As Integer, brand As String, vendor As String, productCode As String, viewMode As String) As Object
+        Dim vendorFilter As String = If(vendor, String.Empty)
+        Dim sessionUser = System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo)
+        If sessionUser IsNot Nothing Then
+            Dim info As VMSUserEntity = CType(sessionUser, VMSUserEntity)
+            If info.userGroupCodeEntity = Constant.UserFormAccess.UNIT Then
+                vendorFilter = Convert.ToString(info.userBranchEntity).Trim()
+            End If
+        End If
+
+        Dim obj As New OPC_VendorClass()
+        Dim ds As DataSet = obj.ListSkuFormulation(If(brand, String.Empty), vendorFilter, If(productCode, String.Empty), "N", If(String.IsNullOrEmpty(viewMode), "ALL", viewMode))     ' 28-10-2026: default = Everything
+        Dim table As DataTable = RmGridHelper.GetTable(ds)
+        If table IsNot Nothing Then
+            Dim map As New Dictionary(Of String, String) From {{"sf_id", "fh_id"}, {"brand_name", "Brand_Name"}, {"sf_brand_code", "Brand_Code"}, {"sf_vendor_code", "vendor_code"}, {"sf_product_code", "Sku_Code"}, {"product_name", "Sku_Desc"}}
+            For Each kv In map
+                If table.Columns.Contains(kv.Key) AndAlso Not table.Columns.Contains(kv.Value) Then table.Columns(kv.Key).ColumnName = kv.Value
+            Next
+        End If
+
+        Dim rows As New List(Of Object)
+        Dim total As Integer = 0
+        Const pageSize As Integer = 10
+        If table IsNot Nothing Then
+            total = table.Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            For i As Integer = start To last
+                Dim r As DataRow = table.Rows(i)
+                rows.Add(New With {
+                    .fh_id = Convert.ToString(r("fh_id")),
+                    .Brand_Name = Convert.ToString(r("Brand_Name")),
+                    .vendor_name = Convert.ToString(r("vendor_name")),
+                    .Sku_Desc = Convert.ToString(r("Sku_Desc")),
+                    .version_text = Convert.ToString(r("version_text")),
+                    .sf_sku_price = FormatSkuPrice(r("sf_sku_price")),
+                    .sf_status = Convert.ToString(r("sf_status")),
+                    .pack_count = Convert.ToString(r("pack_count"))
+                })
+            Next
+        End If
+
+        Return New With {.rows = rows, .total = total}
+    End Function
+
+    Private Shared Function FormatSkuPrice(ByVal value As Object) As String
+        If value Is Nothing OrElse IsDBNull(value) OrElse Convert.ToString(value).Trim() = "" Then
+            Return String.Empty
+        End If
+        Dim price As Decimal
+        If Decimal.TryParse(Convert.ToString(value), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, price) OrElse Decimal.TryParse(Convert.ToString(value), price) Then
+            Return price.ToString("0.00")
+        End If
+        Return Convert.ToString(value)
+    End Function
+
     Private Sub VendorDetailsListLoad()
         Dim ds As DataSet
         Dim obj As New OPC_VendorClass()
