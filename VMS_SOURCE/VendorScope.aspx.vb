@@ -37,7 +37,7 @@ Partial Class VendorScope
     End Sub
 
 #Region "autocomplete"
-    ''' <summary>Products of the vertical passed as context key (opc_vendor_scope_lookup_product). Value = product code, text = "code-description".</summary>
+    ''' <summary>Products of the vertical passed as context key (opc_vendor_scope_lookup_product, SKU master only). Value = product code, text = "code-description".</summary>
     <System.Web.Script.Services.ScriptMethod(),
     System.Web.Services.WebMethod()>
     Public Shared Function ProductSearch(ByVal prefixText As String, ByVal count As Integer, ByVal contextKey As String) As String()

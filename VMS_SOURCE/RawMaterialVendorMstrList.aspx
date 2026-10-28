@@ -227,8 +227,8 @@
                 <a href="Home.aspx" title="Home"><i class="fas fa-home"></i></a>
                 <div class="diveider">/</div>
                 <div class="pageTitleWrap">
-                    <h3 class="pageTitle">Raw Material Vendor Master</h3>
-                    <p class="pageSubTitle">Browse and manage raw material vendors</p>
+                    <h3 class="pageTitle">Supplier Master</h3>
+                    <p class="pageSubTitle">Browse and manage suppliers</p>
                 </div>
             </div>
             <div class="rightFung"></div>
@@ -242,7 +242,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="form-control-label">Vendor Name:</label>
+                                    <label class="form-control-label">Supplier Name:</label>
                                     <asp:DropDownList ID="ddlVendor" ClientIDMode="Static" CssClass="form-control select2" runat="server">
                                     </asp:DropDownList>
                                 </div>
@@ -294,7 +294,7 @@
                 <div class="mst-panel-header-left">
                     <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
                     <div>
-                        <h5 class="mst-panel-title">Vendor List</h5>
+                        <h5 class="mst-panel-title">Supplier List</h5>
                         <p class="mst-panel-subtitle">All raw material vendors currently on record</p>
                     </div>
                 </div>
@@ -322,7 +322,7 @@
                                         <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="4%" />
                                     </asp:TemplateField>
 
-                                    <asp:TemplateField HeaderText="Vendor Code">
+                                    <asp:TemplateField HeaderText="Supplier Code">
                                         <ItemTemplate>
                                             <asp:Label ID="lblVendorCode" runat="server" Text='<%# Bind("vendor_code") %>'></asp:Label>
                                             <asp:HiddenField ID="hdnVendorCode" runat="server" Value='<%# Bind("vendor_code") %>' />
@@ -331,7 +331,7 @@
                                         <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                     </asp:TemplateField>
 
-                                    <asp:TemplateField HeaderText="Vendor Name">
+                                    <asp:TemplateField HeaderText="Supplier Name">
                                         <ItemTemplate>
                                             <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vendor_name") %>'></asp:Label>
                                         </ItemTemplate>

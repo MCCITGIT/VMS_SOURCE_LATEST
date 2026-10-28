@@ -43,42 +43,21 @@
             background: #f1f5f9 !important;
         }
 
-        .rm-rawmat-code-link .upgradDataGrid .rm-berger-code-input {
-            /*display: block;
+        .rm-rawmat-code-link .upgradDataGrid .rm-berger-code-ddl {
             width: 100%;
-            min-width: 160px;
-            max-width: 240px;
-            margin: 0 auto;
-            min-height: 40px !important;
-            height: 40px !important;
-            padding: 8px 12px !important;*/
-            background: #ffffff !important;
-            /*border: 1px solid #64748b !important;
-            border-radius: 8px !important;
-            color: #0f172a !important;
-            font-size: 14px !important;
-            font-weight: 600 !important;
-            letter-spacing: 0.02em;*/
-            box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+            min-width: 180px;
+            background: #ffffff;
         }
 
-            .rm-rawmat-code-link .upgradDataGrid .rm-berger-code-input:focus {
-                background: #ffffff !important;
-                border-color: #2563eb !important;
-                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2), inset 0 1px 3px rgba(15, 23, 42, 0.06) !important;
-                outline: none;
-            }
+        .rm-rawmat-code-link .upgradDataGrid th.rm-not-sold-header {
+            white-space: normal !important;
+            line-height: 1.35;
+            letter-spacing: 0.02em;
+        }
 
-            .rm-rawmat-code-link .upgradDataGrid .rm-berger-code-input::placeholder {
-                color: #64748b !important;
-                font-weight: 400 !important;
-                opacity: 1;
-            }
-
-            .rm-rawmat-code-link .upgradDataGrid .rm-berger-code-input.field-invalid {
-                border-color: #dc3545 !important;
-                box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15) !important;
-            }
+        body:has(.rm-module) .select2-container--default .select2-selection--single .select2-selection__rendered {
+            text-align: left;
+        }
     </style>
     <div class="rm-module rm-compact rm-rawmat-code-link">
         <script type="text/javascript">
@@ -158,7 +137,7 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-5">
+                            <div class="col-md-4">
                                 <div class="form-group mb-0">
                                     <label class="form-control-label">Search Raw Material:</label>
                                     <div class="input-group product-search-group">
@@ -194,11 +173,23 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
+                                <div class="form-group mb-0">
+                                    <label class="form-control-label">Status:</label>
+                                    <div class="input-group product-search-group">
+                                        <asp:DropDownList ID="ddlStatus" runat="server" ClientIDMode="AutoID" CssClass="form-control select2">
+                                            <%--<asp:ListItem Text="Select" Value=""></asp:ListItem>
+                                            <asp:ListItem Text="Pending" Value="Pending"></asp:ListItem>
+                                            <asp:ListItem Text="Submitted" Value="Submitted"></asp:ListItem>--%>
+                                        </asp:DropDownList>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
                                 <div class="form-group mb-0">
                                     <label class="form-control-label">&nbsp;</label>
                                     <div class="rm-code-link-search-actions">
-                                        <asp:LinkButton CssClass="btn btn-primary btn-sm rm-btn-icon" ID="imgbtnSearch" runat="server" ClientIDMode="Static" OnClick="imgbtnSearch_Click" OnClientClick="return validateRawMaterialCodeLinkingSearch();" ToolTip="Search">Search</asp:LinkButton>
+                                        <asp:LinkButton CssClass="btn btn-primary btn-sm rm-btn-icon" ID="imgbtnSearch" runat="server" ClientIDMode="Static" OnClick="imgbtnSearch_Click" OnClientClick="return searchCodeLinkWithLoader();" ToolTip="Search">Search</asp:LinkButton>
                                         <asp:Button ID="btnReset" runat="server" Text="Reset" CssClass="btn btn-outline-danger btn-sm" OnClick="btnReset_Click" CausesValidation="false" />
                                     </div>
                                 </div>
@@ -214,7 +205,7 @@
                             <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
                             <div>
                                 <h5 class="mst-panel-title">Raw Material List</h5>
-                                <p class="mst-panel-subtitle">Enter or update Berger code for each raw material</p>
+                                <p class="mst-panel-subtitle">Select a Berger code for each raw material</p>
                             </div>
                         </div>
                     </div>
@@ -247,23 +238,31 @@
                                         <ItemTemplate>
                                             <asp:Label ID="lblrawmatname" runat="server" Text='<%# Bind("Raw_Mat_Name") %>'></asp:Label>
                                         </ItemTemplate>
-                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="45%" />
-                                        <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="45%" />
+                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="32%" />
+                                        <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="32%" />
                                     </asp:TemplateField>
                                     <asp:TemplateField HeaderText="Berger Code" HeaderStyle-HorizontalAlign="Center">
                                         <ItemTemplate>
-                                            <asp:TextBox ID="txtBergerCode" runat="server" CssClass="form-control form-control-sm rm-berger-code-input" AutoComplete="Off"
-                                                Placeholder="Enter Berger code" oninput="clearCodeLinkGridFieldValidation(this);"></asp:TextBox>
+                                            <%--<asp:DropDownList ID="ddlBergerCode" runat="server" CssClass="form-control select2" onchange="clearCodeLinkGridFieldValidation(this);"></asp:DropDownList>--%>
+                                            <%--<asp:DropDownList ID="ddlBergerCode" runat="server" ClientIDMode="AutoID" CssClass="form-control select2" TabIndex="2" onchange="clearCodeLinkGridFieldValidation(this);"></asp:DropDownList>--%>
+                                            <asp:DropDownList ID="ddlBergerCode" runat="server" ClientIDMode="AutoID" CssClass="form-control select2"></asp:DropDownList>
                                         </ItemTemplate>
-                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="30%" />
-                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="30%" CssClass="rm-berger-code-cell" />
+                                        <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="25%" />
+                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="25%" CssClass="rm-berger-code-cell" />
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Berger doesn't sell this product." HeaderStyle-HorizontalAlign="Center">
+                                        <ItemTemplate>
+                                            <asp:CheckBox ID="chkBergerNotSold" runat="server" onclick="toggleBergerCodeDropdown(this);" />
+                                        </ItemTemplate>
+                                        <HeaderStyle CssClass="rm-not-sold-header" HorizontalAlign="Center" VerticalAlign="Middle" Width="18%" />
+                                        <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="18%" />
                                     </asp:TemplateField>
                                 </Columns>
                             </asp:GridView>
                         </div>
                         <asp:Label ID="valGrid" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                         <div class="rm-code-link-actions">
-                            <asp:Button ID="btnSubmit" ClientIDMode="Static" runat="server" Text="Submit" CssClass="btn btn-primary btn-sm" OnClick="btnSubmit_Click" OnClientClick="return validateRawMaterialCodeLinkingSubmit();" />
+                            <asp:Button ID="btnSubmit" ClientIDMode="Static" runat="server" Text="Submit" CssClass="btn btn-primary btn-sm" OnClick="btnSubmit_Click" OnClientClick="return submitCodeLinkWithLoader();" />
                         </div>
                     </div>
                 </div>
@@ -274,4 +273,68 @@
         </asp:UpdatePanel>
     </div>
     <script type="text/javascript" src="Scripts/rm-status-confirm.js?v=<%= DateTime.Now.Ticks %>"></script>
+    <script>
+        function toggleBergerCodeDropdown(chk) {
+            var row = chk.closest ? chk.closest("tr") : null;
+            if (!row) {
+                return;
+            }
+
+            var ddl = row.querySelector("select");
+            if (!ddl) {
+                return;
+            }
+
+            if (chk.checked) {
+                ddl.value = "";
+                ddl.classList.remove("field-invalid");
+            }
+
+            ddl.disabled = chk.checked;
+            if (window.jQuery && window.jQuery(ddl).data("select2")) {
+                var $ddl = window.jQuery(ddl);
+                if (chk.checked) {
+                    $ddl.val("").trigger("change");
+                }
+                $ddl.prop("disabled", chk.checked);
+            }
+        }
+
+        // function initBergerCodeSelect2() {
+        //     var $grid = window.jQuery("#gvrawMatDetails");
+        //     if (!$grid.length || !window.jQuery.fn.select2) {
+        //         return;
+        //     }
+
+        //     $grid.find("select.select2").each(function () {
+        //         var $ddl = window.jQuery(this);
+        //         if ($ddl.data("select2")) {
+        //             $ddl.select2("destroy");
+        //         }
+        //         $ddl.select2({
+        //             width: "100%",
+        //             dropdownParent: window.jQuery(document.body)
+        //         });
+        //     });
+        // }
+
+        // window.jQuery(document).ready(function () {
+        //     setTimeout(initBergerCodeSelect2, 0);
+        // });
+
+        // if (typeof Sys !== "undefined" && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+        //     Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function () {
+        //         setTimeout(initBergerCodeSelect2, 0);
+        //     });
+        // }
+
+        // window.jQuery(document).on("scroll", ".rm-grid-scroll", function () {
+        //     window.jQuery("#gvrawMatDetails select.select2").each(function () {
+        //         var $ddl = window.jQuery(this);
+        //         if ($ddl.data("select2")) {
+        //             $ddl.select2("close");
+        //         }
+        //     });
+        // });
+    </script>
 </asp:Content>

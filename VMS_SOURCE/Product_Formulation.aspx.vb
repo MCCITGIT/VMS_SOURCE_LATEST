@@ -697,6 +697,13 @@ Partial Class Product_Formulation
         Return False
     End Function
 
+    ''' <summary>Public link to a formulation for the mails (28-10-2026): VMS_SITE_URL from Web.config, else the request's own host.</summary>
+    Private Function FormulationLink(ByVal sfId As Integer) As String
+        Dim site As String = Convert.ToString(ConfigurationManager.AppSettings("VMS_SITE_URL")).Trim()
+        If site = "" Then Return Request.Url.GetLeftPart(UriPartial.Authority) & ResolveUrl("~/Product_Formulation.aspx?id=" & sfId)
+        Return site.TrimEnd("/"c) & "/Product_Formulation.aspx?id=" & sfId
+    End Function
+
     ''' <summary>Who may see the nearest-site cost and the suggested price: HO and Material Dept. Never a vendor.</summary>
     Private Function CanSeeInternal() As Boolean
         Return IsHoUser() OrElse IsMaterialUser()
@@ -908,7 +915,9 @@ Partial Class Product_Formulation
         Dim who As String = If(toMaterial, "Material Dept", "HO")
         Dim toAddress As String = "", ccAddress As String = "", bccAddress As String = ""
         Try
-            Dim dsMail As DataSet = If(toMaterial, New OPC_VendorClass().GetSkuFormulationMaterialEmail(), New OPC_VendorClass().GetSkuFormulationHoEmail())
+            Dim dsMail As DataSet = If(toMaterial,
+                                       New OPC_VendorClass().GetSkuFormulationMaterialEmail(Convert.ToString(ConfigurationManager.AppSettings("FORMULATION_MATERIAL_USERS")), Convert.ToString(ConfigurationManager.AppSettings("FORMULATION_MATERIAL_GROUPS"))),
+                                       New OPC_VendorClass().GetSkuFormulationHoEmail())
             If dsMail IsNot Nothing AndAlso dsMail.Tables.Count > 0 AndAlso dsMail.Tables(0).Rows.Count > 0 Then
                 toAddress = Convert.ToString(dsMail.Tables(0).Rows(0)("TOAddr")).Trim()
                 ccAddress = Convert.ToString(dsMail.Tables(0).Rows(0)("CCAddr")).Trim()
@@ -919,7 +928,7 @@ Partial Class Product_Formulation
         End Try
         If toAddress = "" Then Return who & " mail NOT sent - no address configured."
         Try
-            Dim link As String = Request.Url.GetLeftPart(UriPartial.Authority) & ResolveUrl("~/Product_Formulation.aspx?id=" & sfId)
+            Dim link As String = FormulationLink(sfId)
             Dim td As String = "style='border:1px solid #999;padding:4px 8px;'"
             Dim sb As New StringBuilder()
             If toMaterial Then
@@ -1018,7 +1027,8 @@ Partial Class Product_Formulation
             pnlHoRemarks.Style("color") = If(status = "REJECTED", "#721c24", If(status = "PENDING_VENDOR", "#0c5460", "#155724"))
         End If
         Dim reviseMode As Boolean = Convert.ToString(ViewState("ReviseMode")) = "Y"
-        Dim hoOnly As Boolean = IsHoUser()            ' HO side (HO groups + SYSADMIN): no vendor editing, no vendor buttons
+        ' 27-10-2026: Material Dept users (own group HO-MATERIAL, not an HO group) are HO side too: never vendor editing / vendor buttons
+        Dim hoOnly As Boolean = IsHoUser() OrElse IsMaterialUser()            ' HO side (HO groups + SYSADMIN + Material Dept): no vendor editing, no vendor buttons
         Dim inMaterialReview As Boolean = MaterialMode()
         pnlApproval.Visible = IsHoUser() AndAlso (status = "PENDING" OrElse status = "PENDING_HO") AndAlso isLatest
         btnForward.Visible = pnlApproval.Visible AndAlso status = "PENDING" AndAlso Not reviseMode
@@ -1046,7 +1056,7 @@ Partial Class Product_Formulation
             ' active release: read-only until the vendor presses "Propose change" (then a new negotiation cycle starts on submit)
             Dim proposeMode As Boolean = Convert.ToString(ViewState("ProposeMode")) = "Y"
             editable = isLatest AndAlso proposeMode
-            btnPropose.Visible = isLatest AndAlso Not proposeMode AndAlso Not IsHoUser()
+            btnPropose.Visible = isLatest AndAlso Not proposeMode AndAlso Not hoOnly
             btnSubmit.Text = "Submit change for HO approval"
         ElseIf status = "PENDING" Then
             ' vendor may still replace their own proposal; HO edits only after "Revise rate"
@@ -1206,7 +1216,7 @@ Partial Class Product_Formulation
         If toAddress = "" Then Return who & " mail NOT sent - no TOAddr returned"
         Try
             Dim sb As New StringBuilder()
-            Dim link As String = Request.Url.GetLeftPart(UriPartial.Authority) & ResolveUrl("~/Product_Formulation.aspx?id=" & sfId)
+            Dim link As String = FormulationLink(sfId)
             Dim td As String = "style='border:1px solid #999;padding:4px 8px;'"
             If toVendor Then
                 sb.Append("<p>Dear Vendor,</p><p>HO has reviewed your SKU formulation and revised the rate. Please open it in VMS and either <b>accept</b> the revised rate or submit a counter-proposal.</p>")

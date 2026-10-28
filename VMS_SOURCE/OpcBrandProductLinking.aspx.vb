@@ -7,6 +7,7 @@ Partial Class OpcBrandProductLinking
 
     Dim userInfo As VMSUserEntity = New VMSUserEntity()
     Private Const ProductVertical As String = "RETAIL"
+    Private Const BrandIdKey As String = "BrandId"
 
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
         CheckLogin()
@@ -15,8 +16,63 @@ Partial Class OpcBrandProductLinking
         If Not IsPostBack Then
             PopulateBrand()
             PopulateProduct()
+
+            Dim brandId As Integer
+            If Integer.TryParse(Convert.ToString(Request.QueryString(BrandIdKey)), brandId) AndAlso brandId > 0 Then
+                ViewState("EditBrandId") = brandId
+                btnSubmit.Text = Constant.GeneralMessages.btnUpdate
+                LoadSavedLinks(brandId)
+            Else
+                btnSubmit.Text = Constant.GeneralMessages.btnSubmit
+            End If
+
             BindLinks()
         End If
+    End Sub
+
+    Private ReadOnly Property IsEditMode As Boolean
+        Get
+            Return ViewState("EditBrandId") IsNot Nothing
+        End Get
+    End Property
+
+    Private ReadOnly Property EditBrandId As Integer
+        Get
+            Return Convert.ToInt32(ViewState("EditBrandId"))
+        End Get
+    End Property
+
+    Private Sub LoadSavedLinks(ByVal brandId As Integer)
+        Dim obj As New POLinkingRequestClass()
+        Dim ds As DataSet = obj.GetBrandProductLinksByBrand(brandId)
+
+        ViewState.Remove("BrandProductLinks")
+        Dim dt As DataTable = GetLinks()
+        Dim brandName As String = String.Empty
+
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            For Each saved As DataRow In ds.Tables(0).Rows
+                brandName = Convert.ToString(saved("brand_name"))
+                Dim row As DataRow = dt.NewRow()
+                row("BrandId") = brandId.ToString()
+                row("BrandName") = brandName
+                row("ProductName") = Convert.ToString(saved("prd_name"))
+                row("PrdCode") = Convert.ToString(saved("prd_code"))
+                row("PrdSbl") = Convert.ToString(saved("prd_sbl"))
+                dt.Rows.Add(row)
+            Next
+        End If
+        ViewState("BrandProductLinks") = dt
+
+        Dim brandItem As ListItem = ddlBrand.Items.FindByValue(brandId.ToString())
+        If brandItem Is Nothing Then
+            brandItem = New ListItem(If(String.IsNullOrWhiteSpace(brandName), brandId.ToString(), brandName), brandId.ToString())
+            ddlBrand.Items.Add(brandItem)
+        End If
+        ddlBrand.ClearSelection()
+        brandItem.Selected = True
+        ddlBrand.Enabled = False
+        ddlProduct.ClearSelection()
     End Sub
 
     Private Sub CheckLogin()
@@ -91,15 +147,15 @@ Partial Class OpcBrandProductLinking
     End Sub
 
     Private Sub ShowMessage(ByVal message As String, ByVal isSuccess As Boolean)
-        lblMessage.Text = message
-        lblMessage.ForeColor = If(isSuccess, System.Drawing.Color.Green, System.Drawing.Color.Red)
+        lblMessage.Text = String.Empty
+        RmActionPopup.Show(Me, message, isSuccess)
     End Sub
 
     Protected Sub btnAdd_Click(ByVal sender As Object, ByVal e As EventArgs)
         ClearFieldErrors()
         lblMessage.Text = String.Empty
 
-        Dim brandId As String = ddlBrand.SelectedValue.Trim()
+        Dim brandId As String = If(IsEditMode, EditBrandId.ToString(), ddlBrand.SelectedValue.Trim())
 
         If String.IsNullOrWhiteSpace(brandId) Then
             SetFieldError(ddlBrand, valBrand, "Please select a brand.")
@@ -208,16 +264,25 @@ Partial Class OpcBrandProductLinking
 
         Try
             Dim obj As New POLinkingRequestClass()
-            Dim ds As DataSet = obj.InsertBrandProductLinks(userInfo.userIDEntity, saveTable)
+            Dim ds As DataSet
+            If IsEditMode Then
+                ds = obj.UpdateBrandProductLinks(EditBrandId, userInfo.userIDEntity, saveTable)
+            Else
+                ds = obj.InsertBrandProductLinks(userInfo.userIDEntity, saveTable)
+            End If
 
             If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0).Rows.Count > 0 Then
                 Dim status As Integer = Convert.ToInt32(ds.Tables(0).Rows(0)("status"))
                 Dim message As String = Convert.ToString(ds.Tables(0).Rows(0)("message"))
 
                 If status = 1 Then
-                    ViewState.Remove("BrandProductLinks")
-                    ddlBrand.SelectedIndex = 0
-                    ddlProduct.ClearSelection()
+                    If IsEditMode Then
+                        LoadSavedLinks(EditBrandId)
+                    Else
+                        ViewState.Remove("BrandProductLinks")
+                        ddlBrand.SelectedIndex = 0
+                        ddlProduct.ClearSelection()
+                    End If
                     BindLinks()
                     ShowMessage(message, True)
                 Else
@@ -233,13 +298,22 @@ Partial Class OpcBrandProductLinking
     End Sub
 
     Protected Sub btnReset_Click(ByVal sender As Object, ByVal e As EventArgs)
-        ViewState.Remove("BrandProductLinks")
         ClearFieldErrors()
         lblMessage.Text = String.Empty
-        If ddlBrand.Items.Count > 0 Then
-            ddlBrand.SelectedIndex = 0
+
+        If IsEditMode Then
+            LoadSavedLinks(EditBrandId)
+        Else
+            ViewState.Remove("BrandProductLinks")
+            If ddlBrand.Items.Count > 0 Then
+                ddlBrand.SelectedIndex = 0
+            End If
+            ddlProduct.ClearSelection()
         End If
-        ddlProduct.ClearSelection()
         BindLinks()
+    End Sub
+
+    Protected Sub btnBack_Click(ByVal sender As Object, ByVal e As EventArgs)
+        Response.Redirect("~/OpcBrandProductLinkingList.aspx")
     End Sub
 End Class

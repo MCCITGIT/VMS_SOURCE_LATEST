@@ -167,10 +167,12 @@
                 <div class="row">
                     <div class="col-md-12 text-center mt-3">
                         <asp:Button ID="btnSubmit" runat="server" Text="Submit" CssClass="btn btn-primary btn-sm" OnClick="btnSubmit_Click" />
-                        <asp:Button ID="btnReset" runat="server" Text="Reset" CssClass="btn btn-warning btn-sm" CausesValidation="False" OnClick="btnReset_Click" />
+                        <asp:Button ID="btnReset" runat="server" Text="Reset" CssClass="btn btn-warning btn-sm" CausesValidation="False" OnClick="btnReset_Click" Visible="false" />
+                        <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="btn btn-secondary btn-sm" CausesValidation="False" OnClick="btnBack_Click" />
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <script type="text/javascript" src="Scripts/rm-status-confirm.js?v=<%= DateTime.Now.Ticks %>"></script>
 </asp:Content>

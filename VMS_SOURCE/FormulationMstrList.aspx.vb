@@ -221,7 +221,7 @@ Partial Class FormulationMstrList
         End If
 
         Dim obj As New OPC_VendorClass()
-        Dim ds As DataSet = obj.ListSkuFormulation(If(brand, String.Empty), vendorFilter, If(productCode, String.Empty), "N", If(String.IsNullOrEmpty(viewMode), "ACTIVE", viewMode))
+        Dim ds As DataSet = obj.ListSkuFormulation(If(brand, String.Empty), vendorFilter, If(productCode, String.Empty), "N", If(String.IsNullOrEmpty(viewMode), "ALL", viewMode))     ' 28-10-2026: default = Everything
         Dim table As DataTable = RmGridHelper.GetTable(ds)
         If table IsNot Nothing Then
             Dim map As New Dictionary(Of String, String) From {{"sf_id", "fh_id"}, {"brand_name", "Brand_Name"}, {"sf_brand_code", "Brand_Code"}, {"sf_vendor_code", "vendor_code"}, {"sf_product_code", "Sku_Code"}, {"product_name", "Sku_Desc"}}
