@@ -94,9 +94,9 @@
                                 <div class="form-group">
                                     <label class="form-control-label">Show:</label>
                                     <asp:DropDownList ID="ddlView" ClientIDMode="Static" CssClass="form-control select2" TabIndex="3" runat="server">
-                                        <asp:ListItem Value="ACTIVE" Text="Active releases (in force)" Selected="True"></asp:ListItem>
+                                        <asp:ListItem Value="ALL" Text="Everything (full history)" Selected="True"></asp:ListItem>
+                                        <asp:ListItem Value="ACTIVE" Text="Active releases (in force)"></asp:ListItem>
                                         <asp:ListItem Value="NEGOTIATION" Text="Under negotiation (pending / rejected)"></asp:ListItem>
-                                        <asp:ListItem Value="ALL" Text="Everything (full history)"></asp:ListItem>
                                     </asp:DropDownList>
                                 </div>
                             </div>
