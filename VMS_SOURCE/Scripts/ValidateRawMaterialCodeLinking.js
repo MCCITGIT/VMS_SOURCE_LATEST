@@ -33,40 +33,85 @@ function validateRawMaterialCodeLinkingSearch() {
     return true;
 }
 
-function validateRawMaterialCodeLinkingSubmit() {
-    var valGrid = document.getElementById("valGrid");
-    if (valGrid) {
-        valGrid.innerHTML = "";
+function showCodeLinkPageLoader() {
+    var progress = document.querySelector("[id$='updProgress']");
+    if (progress) {
+        progress.style.display = "block";
     }
+}
 
-    var grid = document.getElementById("gvrawMatDetails");
-    if (!grid) {
-        if (valGrid) {
-            valGrid.innerHTML = "No raw material records available to submit.";
-        }
+function postBackCodeLinkWithLoader(button) {
+    if (!button) {
         return false;
     }
 
-    var bergerInputs = grid.querySelectorAll("input[id*='txtBergerCode']");
-    var hasValue = false;
+    var target = button.name || "";
+    if (!target) {
+        var href = button.getAttribute("href") || "";
+        var match = href.match(/__doPostBack\('([^']+)'/);
+        target = match ? match[1] : "";
+    }
+    if (!target) {
+        return false;
+    }
 
-    for (var i = 0; i < bergerInputs.length; i++) {
-        bergerInputs[i].classList.remove("field-invalid");
-        if (bergerInputs[i].value && bergerInputs[i].value.trim() !== "") {
+    showCodeLinkPageLoader();
+    window.setTimeout(function () {
+        __doPostBack(target, "");
+    }, 0);
+    return false;
+}
+
+function searchCodeLinkWithLoader() {
+    if (validateRawMaterialCodeLinkingSearch() === false) {
+        return false;
+    }
+
+    return postBackCodeLinkWithLoader(document.getElementById("imgbtnSearch"));
+}
+
+function submitCodeLinkWithLoader() {
+    if (validateRawMaterialCodeLinkingSubmit() === false) {
+        return false;
+    }
+
+    return postBackCodeLinkWithLoader(document.getElementById("btnSubmit"));
+}
+
+function validateRawMaterialCodeLinkingSubmit() {
+    var grid = document.getElementById("gvrawMatDetails");
+    var valGrid = document.getElementById("valGrid");
+    var rows = grid ? grid.querySelectorAll("tbody tr") : [];
+    var hasValue = false;
+    var firstOpen = null;
+
+    for (var i = 0; i < rows.length; i++) {
+        var chk = rows[i].querySelector("input[id*='chkBergerNotSold']");
+        var ddl = rows[i].querySelector("select");
+        if (ddl) {
+            ddl.classList.remove("field-invalid");
+        }
+        if (chk && chk.checked) {
             hasValue = true;
+            continue;
+        }
+        if (ddl && ddl.value && ddl.value.trim() !== "") {
+            hasValue = true;
+        } else if (!firstOpen && ddl) {
+            firstOpen = ddl;
         }
     }
 
     if (!hasValue) {
         if (valGrid) {
-            valGrid.innerHTML = "Please enter Berger code for at least one raw material.";
+            valGrid.innerHTML = "Please select Berger code for at least one raw material.";
         }
-        if (bergerInputs.length > 0) {
-            bergerInputs[0].classList.add("field-invalid");
-            bergerInputs[0].scrollIntoView({ behavior: "smooth", block: "center" });
+        if (firstOpen) {
+            firstOpen.classList.add("field-invalid");
+            firstOpen.scrollIntoView({ behavior: "smooth", block: "center" });
         }
         return false;
     }
 
-    return rmConfirmPostback("btnSubmit", "submit");
+    return true;
 }
