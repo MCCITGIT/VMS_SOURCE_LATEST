@@ -2,14 +2,19 @@
 
 <%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="asp" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
-    <link href="includes/rm-procurement.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />
+    <%--<link href="includes/rm-procurement.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />--%>
     <style type="text/css">
         .rm-module .form-control.field-invalid,
         .rm-module select.form-control.field-invalid + .select2-container .select2-selection--single {
             border: 1px solid #dc3545 !important;
             box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12) !important;
         }
-        .dispatch-field-error { display: block; color: #dc3545; font-size: 12px; font-weight: 500; margin-top: 4px; line-height: 1.35; }
+        .dispatch-field-error {     display: block;
+    color: #dc3545;
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 0px;
+    line-height: 1;}
         .dispatch-field-error:empty { display: none; }
         .vfl-hint { display: block; font-size: 11px; color: #6c757d; margin-top: 4px; }
         .vfl-sub { font-size: 11px; color: #6c757d; }

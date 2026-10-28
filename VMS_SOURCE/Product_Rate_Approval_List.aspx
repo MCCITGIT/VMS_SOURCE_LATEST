@@ -1,15 +1,57 @@
 <%@ Page Title="Product Rate Approval List" Language="VB" MasterPageFile="~/MasterPage.master" AutoEventWireup="false" CodeFile="Product_Rate_Approval_List.aspx.vb" Inherits="Product_Rate_Approval_List" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
-    <link href="includes/rm-procurement.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />
+    <%--<link href="includes/rm-procurement.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />--%>
     <style type="text/css">
-        .pra-badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap; }
-        .pra-APPROVED { background: #28a745; } .pra-INACTIVE { background: #6c757d; } .pra-PENDING { background: #e0a800; }
-        .pra-REJECTED { background: #dc3545; } .pra-SUPERSEDED { background: #adb5bd; } .pra-PENDING_VENDOR { background: #17a2b8; } .pra-PENDING_MATERIAL { background: #8a6d1f; } .pra-PENDING_HO { background: #b8860b; }
-        .pra-small { font-size: 11px; color: #666; }
+        .pra-badge {
+            display: inline-block;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+        }
+
+        .pra-APPROVED {
+            background: #28a745;
+        }
+
+        .pra-INACTIVE {
+            background: #6c757d;
+        }
+
+        .pra-PENDING {
+            background: #e0a800;
+        }
+
+        .pra-REJECTED {
+            background: #dc3545;
+        }
+
+        .pra-SUPERSEDED {
+            background: #adb5bd;
+        }
+
+        .pra-PENDING_VENDOR {
+            background: #17a2b8;
+        }
+
+        .pra-PENDING_MATERIAL {
+            background: #8a6d1f;
+        }
+
+        .pra-PENDING_HO {
+            background: #b8860b;
+        }
+
+        .pra-small {
+            font-size: 11px;
+            color: #666;
+        }
     </style>
 
-    <div class="rm-module">
+    <div class="rm-module rm-compact">
         <div class="breadcrumbs">
             <div class="leftFung">
                 <a href="Home.aspx" title="Home"><i class="fas fa-home"></i></a>
@@ -86,11 +128,13 @@
                                 <ItemStyle HorizontalAlign="Right" Width="7%" />
                             </asp:TemplateField>
                             <asp:TemplateField HeaderText="Submitted">
-                                <ItemTemplate><%# Eval("created_by") %><br /><span class="pra-small"><%# String.Format("{0:dd/MM/yyyy HH:mm}", Eval("created_on")) %></span></ItemTemplate>
+                                <ItemTemplate><%# Eval("created_by") %><br />
+                                    <span class="pra-small"><%# String.Format("{0:dd/MM/yyyy HH:mm}", Eval("created_on")) %></span></ItemTemplate>
                                 <ItemStyle Width="10%" />
                             </asp:TemplateField>
                             <asp:TemplateField HeaderText="HO decision">
-                                <ItemTemplate><%# Eval("sf_approved_by") %><br /><span class="pra-small"><%# If(Eval("sf_approved_on") Is DBNull.Value, "", String.Format("{0:dd/MM/yyyy HH:mm}", Eval("sf_approved_on"))) %></span></ItemTemplate>
+                                <ItemTemplate><%# Eval("sf_approved_by") %><br />
+                                    <span class="pra-small"><%# If(Eval("sf_approved_on") Is DBNull.Value, "", String.Format("{0:dd/MM/yyyy HH:mm}", Eval("sf_approved_on"))) %></span></ItemTemplate>
                                 <ItemStyle Width="10%" />
                             </asp:TemplateField>
                             <asp:TemplateField HeaderText="Action">
