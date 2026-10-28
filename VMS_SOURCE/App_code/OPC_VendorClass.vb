@@ -1337,9 +1337,13 @@ Public Class OPC_VendorClass
         Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_ho_email]", Data.CommandType.StoredProcedure)
     End Function
 
-    ''' <summary>[opc_sku_formulation_material_email] TOAddr/CCAddr/BCCAddr of the Material Department (26-10-2026).</summary>
-    Function GetSkuFormulationMaterialEmail() As DataSet
-        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_material_email]", Data.CommandType.StoredProcedure)
+    ''' <summary>[opc_sku_formulation_material_email] TOAddr/CCAddr/BCCAddr of the Material Department (26-10-2026).
+    ''' Modified-by MUKESH BHAGAT 28-10-2026: addresses come from user_profile; the two Web.config lists (users, groups) say who the Material Dept is.</summary>
+    Function GetSkuFormulationMaterialEmail(Optional ByVal users As String = "", Optional ByVal groups As String = "") As DataSet
+        Dim sqlParams(1) As SqlParameter
+        sqlParams(0) = New SqlParameter("@users", SqlDbType.VarChar, 500) With {.Value = If(users, "")}
+        sqlParams(1) = New SqlParameter("@groups", SqlDbType.VarChar, 500) With {.Value = If(groups, "")}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_material_email]", Data.CommandType.StoredProcedure, sqlParams)
     End Function
 
     ''' <summary>[opc_sku_formulation_approve] - HO decision: action "A" approve / "R" reject (remarks mandatory). Returns the SP message; "" on success.</summary>
