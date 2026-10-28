@@ -172,9 +172,9 @@ Public Class OPC_VendorClass
         DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[GetRawmaterialDataList]", Data.CommandType.StoredProcedure)
         Return DS
     End Function
-    Public Function GetRawmaterialBergerCodeLinking(ByVal rmName As String, ByVal bergerCode As String) As DataSet
+    Public Function GetRawmaterialBergerCodeLinking(ByVal rmName As String, ByVal bergerCode As String, ByVal status As String) As DataSet
         Dim ds As DataSet
-        Dim sqlParams(1) As SqlParameter
+        Dim sqlParams(2) As SqlParameter
 
         sqlParams(0) = New SqlParameter()
         sqlParams(0).ParameterName = "@rm_name"
@@ -188,7 +188,18 @@ Public Class OPC_VendorClass
         sqlParams(1).Direction = ParameterDirection.Input
         sqlParams(1).Value = If(Not String.IsNullOrWhiteSpace(bergerCode), CObj(bergerCode.Trim()), DBNull.Value)
 
+        sqlParams(2) = New SqlParameter()
+        sqlParams(2).ParameterName = "@status"
+        sqlParams(2).DbType = DbType.String
+        sqlParams(2).Direction = ParameterDirection.Input
+        sqlParams(2).Value = If(Not String.IsNullOrWhiteSpace(status), CObj(status.Trim()), DBNull.Value)
+
         ds = DBFactory.GetHelper().ExecuteDataSet("[dbo].[GetRawmaterialBergerCodeLinking]", CommandType.StoredProcedure, sqlParams)
+        Return ds
+    End Function
+    Public Function GetOpcSkuPrdCodeList() As DataSet
+        Dim ds As DataSet
+        ds = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_prd_code_list]", CommandType.StoredProcedure)
         Return ds
     End Function
     Function InsertUpdateRawmaterialBergerCodeLinking(ByVal userId As String, ByVal tbl As DataTable) As Integer
