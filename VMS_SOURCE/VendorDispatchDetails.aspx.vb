@@ -205,9 +205,15 @@ Partial Class VendorDispatchDetails
 
             Dim uniqueId As String = Guid.NewGuid().ToString("N")
 
-            Dim DocsFileName As String = fileNameWithoutExt & "_" & uniqueId & fileExt
+            'Modified-by MUKESH BHAGAT on 16-10-2026 : cleaned name (UploadFileName.SafeFileName) - commas, spaces, quotes etc. in the
 
-            DocsOrgFileName = fileNameWithoutExt & "_" & uniqueId & fileExt
+
+            'original name broke the download header; the GUID suffix keeps it unique as before.
+
+
+            Dim DocsFileName As String = UploadFileName.SafeFileName(fileNameWithoutExt & "_" & uniqueId & fileExt)
+
+            DocsOrgFileName = DocsFileName
 
             Dim Obj As VendorDispatchClass = New VendorDispatchClass()
             Dim Objunit As New UnitDespatchClassVr1

@@ -112,24 +112,43 @@ Partial Class UnitDespatchPlanListVr1
         End If
 
     End Sub
+    'Modified-by MUKESH BHAGAT on 16-10-2026 : the download used to WriteFile + TransmitFile the same file (sent twice),
+    'never end the response (the page HTML was appended to the file) and read the MIME type from the registry, and any
+    'failure (file missing on the server, registry denied) was an unhandled exception that the server turned into a
+    'redirect - the user never saw why. Now: one TransmitFile, response completed, and a clear message that names the
+    'server path when the file is not there (full path shown to SYSADMIN / HO only).
     Private Sub DownloadDocument(ByVal genReportPath As String, ByVal DocumentName As String, ByVal FileName As String)
-        If genReportPath <> String.Empty AndAlso DocumentName <> String.Empty Then
-            Dim appSupervisionFileAbsolutePath As String = String.Concat(genReportPath, DocumentName)
+        Dim fullPath As String = String.Concat(genReportPath, DocumentName)
+        Try
+            If genReportPath = String.Empty OrElse DocumentName = String.Empty OrElse Not File.Exists(fullPath) Then
+                ShowDownloadError("The challan document is not on the server.", fullPath)
+                Exit Sub
+            End If
             Response.Clear()
+            Response.ClearHeaders()
+            Response.Buffer = True
             Response.Charset = ""
-            Response.ContentType = GetMIMETypeNew(appSupervisionFileAbsolutePath)
-            Response.WriteFile(genReportPath & DocumentName)
-            Response.AppendHeader("content-disposition", "attachment; filename=" & FileName)
-            Response.TransmitFile(String.Concat(appSupervisionFileAbsolutePath))
+            Response.ContentType = MimeMapping.GetMimeMapping(fullPath)
+            Response.AppendHeader("Content-Disposition", "attachment; filename=""" & FileName & """")
+            Response.AppendHeader("Content-Length", New FileInfo(fullPath).Length.ToString())
             Response.Cache.SetCacheability(HttpCacheability.NoCache)
+            Response.TransmitFile(fullPath)
             Response.Flush()
-            ' Response.End()
-            'HttpContext.Current.Response.Flush()
-            'HttpContext.Current.Response.SuppressContent = True
-            'HttpContext.Current.ApplicationInstance.CompleteRequest()
-        Else
-            ScriptManager.RegisterStartupScript(Me, [GetType](), "showalert", "alert('Files or Directory Not Found!!');", True)
-        End If
+            Response.SuppressContent = True
+            HttpContext.Current.ApplicationInstance.CompleteRequest()      ' stop here: no page HTML after the file bytes
+        Catch ex As Threading.ThreadAbortException
+            Throw
+        Catch ex As Exception
+            ShowDownloadError("The challan document could not be downloaded: " & ex.Message, fullPath)
+        End Try
+    End Sub
+
+    ''' <summary>Shows why a download failed. SYSADMIN and HO also see the full server path so the file can be located.</summary>
+    Private Sub ShowDownloadError(ByVal message As String, ByVal fullPath As String)
+        Dim g As String = Convert.ToString(userInfo.userGroupCodeEntity)
+        Dim showPath As Boolean = g = Constant.UserFormAccess.SYSADMIN OrElse g = Constant.UserFormAccess.HO OrElse g = Constant.UserFormAccess.HOMARKETING OrElse g = Constant.UserFormAccess.HOACCOUNTS
+        lblErrorMessage.Text = Server.HtmlEncode(message) & If(showPath, "<br /><small>Path: " & Server.HtmlEncode(fullPath) & "</small>", "")
+        ScriptManager.RegisterStartupScript(Me, [GetType](), "dlerr", "alert(" & HttpUtility.JavaScriptStringEncode(message & If(showPath, vbLf & "Path: " & fullPath, ""), True) & ");", True)
     End Sub
     Public Function GetMIMETypeNew(ByVal filepath As String) As String
         Dim regPerm As RegistryPermission = New RegistryPermission(RegistryPermissionAccess.Read, "\\HKEY_CLASSES_ROOT")

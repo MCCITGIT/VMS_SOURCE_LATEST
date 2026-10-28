@@ -1,8 +1,8 @@
 ﻿<%@ Page Title="Brand Product Linking" Language="VB" MasterPageFile="~/MasterPage.master" AutoEventWireup="false" CodeFile="OpcBrandProductLinking.aspx.vb" Inherits="OpcBrandProductLinking" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
-    <link href="includes/rm-procurement.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />
-    <link href="includes/rm-supplier-master-cards.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />
+    <%--<link href="includes/rm-procurement.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />
+    <link href="includes/rm-supplier-master-cards.css?v=<%= DateTime.Now.Ticks %>" rel="stylesheet" type="text/css" />--%>
     <style type="text/css">
         .rm-module .form-control.field-invalid {
             border: 1px solid #dc3545 !important;
@@ -10,12 +10,12 @@
         }
 
         .dispatch-field-error {
-            display: block;
-            color: #dc3545;
-            font-size: 12px;
-            font-weight: 500;
-            margin-top: 4px;
-            line-height: 1.35;
+    display: block;
+    color: #dc3545;
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 0px;
+    line-height: 1;
         }
 
         .dispatch-field-error:empty {
@@ -167,10 +167,12 @@
                 <div class="row">
                     <div class="col-md-12 text-center mt-3">
                         <asp:Button ID="btnSubmit" runat="server" Text="Submit" CssClass="btn btn-primary btn-sm" OnClick="btnSubmit_Click" />
-                        <asp:Button ID="btnReset" runat="server" Text="Reset" CssClass="btn btn-warning btn-sm" CausesValidation="False" OnClick="btnReset_Click" />
+                        <asp:Button ID="btnReset" runat="server" Text="Reset" CssClass="btn btn-warning btn-sm" CausesValidation="False" OnClick="btnReset_Click" Visible="false" />
+                        <asp:Button ID="btnBack" runat="server" Text="Back" CssClass="btn btn-secondary btn-sm" CausesValidation="False" OnClick="btnBack_Click" />
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <script type="text/javascript" src="Scripts/rm-status-confirm.js?v=<%= DateTime.Now.Ticks %>"></script>
 </asp:Content>

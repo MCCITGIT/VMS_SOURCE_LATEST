@@ -9,6 +9,24 @@
             box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12) !important;
         }
 
+        .rm-module select.form-control.field-invalid + .select2-container .select2-selection--single {
+            border: 1px solid #dc3545 !important;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.12) !important;
+        }
+
+        .dispatch-field-error {
+    display: block;
+    color: #dc3545;
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 0px;
+    line-height: 1;
+        }
+
+            .dispatch-field-error:empty {
+                display: none;
+            }
+
         .fg-vendor-code-row {
             display: flex;
             align-items: center;
@@ -27,6 +45,7 @@
     </style>
     <div class="rm-module">
     <script type="text/javascript" src="Scripts/rm-status-confirm.js?v=<%= DateTime.Now.Ticks %>"></script>
+    <script type="text/javascript" src="Scripts/ValidateFGVendorMstrDtls.js?v=<%= DateTime.Now.Ticks %>"></script>
     <script type="text/javascript">
         document.onkeydown = checkValue;
         function checkValue() {
@@ -143,19 +162,7 @@
                                 <label class="form-control-label">Residential Address 02:</label>
                                 <asp:TextBox CssClass="form-control" ID="txtLine2" ReadOnly="true" runat="server"></asp:TextBox>
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label class="form-control-label">Residential Address 03:</label>
-                                <asp:TextBox CssClass="form-control" ID="txtLine3" ReadOnly="true" runat="server"></asp:TextBox>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label class="form-control-label">Residential Address 04:</label>
-                                <asp:TextBox CssClass="form-control" ID="txtLine4" ReadOnly="true" runat="server"></asp:TextBox>
-                            </div>
-                        </div>                        
+                        </div>                       
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label class="form-control-label">City:</label>
@@ -198,24 +205,17 @@
                     <div class="row">
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label class="form-control-label">Vendor Site Id:</label>
-                                <asp:TextBox CssClass="form-control" ID="txtsiteid" runat="server" ReadOnly="true"></asp:TextBox>
-                                <%--<asp:DropDownList ID="ddlsiteid" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true"></asp:DropDownList>--%>
+                                <label class="form-control-label">Vendor Site Id:<span class="mandatory">*</span></label>
+                                <asp:DropDownList ID="ddlsiteid" ClientIDMode="Static" CssClass="form-control select2" runat="server"></asp:DropDownList>
+                                <asp:Label ID="valSite" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label class="form-control-label">Vendor Site Code:</label>
-                                <asp:TextBox CssClass="form-control" ID="txtsitecode" runat="server" ReadOnly="true"></asp:TextBox>
-                               <%-- <asp:DropDownList ID="ddlsitecode" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true"></asp:DropDownList>--%>
-                            </div>
-                        </div>                       
+                        </div>            
                     </div>
                     <asp:Label ID="lblErrorMessage" CssClass="errormsg" Visible="true" runat="server"></asp:Label>
                     <div id="divErrorMessage"></div>
                     <div class="row mt-3">
                         <div class="col-md-12 text-center">
-                            <asp:LinkButton ID="btnSubmit" TabIndex="31" runat="server" ClientIDMode="Static" CssClass="btn btn-success btn-sm" OnClientClick="return rmConfirmAction(this, 'submit');">Submit</asp:LinkButton>                            
+                            <asp:LinkButton ID="btnSubmit" TabIndex="31" runat="server" ClientIDMode="Static" CssClass="btn btn-success btn-sm" OnClientClick="return validateFGVendorSubmit();">Submit</asp:LinkButton>                            
                             <asp:LinkButton ID="btnReset" TabIndex="33" runat="server" CssClass="btn btn-danger btn-sm">Reset</asp:LinkButton>
                             <asp:LinkButton ID="btnBack" TabIndex="34" runat="server" CssClass="btn btn-secondary btn-sm" CausesValidation="false" OnClick="btnBack_Click">Back</asp:LinkButton>
                         </div>

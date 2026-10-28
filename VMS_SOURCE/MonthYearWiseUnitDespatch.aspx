@@ -24,26 +24,26 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-3">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">Region:</label>
                         <asp:DropDownList ID="ddlRegion" CssClass="form-control" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlRegion_SelectedIndexChanged" />
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">Depot:</label>
                         <asp:DropDownList ID="ddlDepot" CssClass="form-control" runat="server" />
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">Vendor:</label>
                         <asp:DropDownList ID="ddlUnit" CssClass="form-control" runat="server" />
                     </div>
                 </div>
 
                 <div class="col-md-3">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">Year: <strong style="color: red;">*</strong></label>
                         <asp:DropDownList ID="ddlProcessYr" CssClass="form-control" runat="server"></asp:DropDownList>
                         <%--<asp:TextBox ID="txtfromDate" runat="server" class="form-control" MaxLength="10" TextMode="Date"></asp:TextBox>--%>
@@ -51,7 +51,7 @@
                 </div>
 
                 <div class="col-md-3">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">Month: <strong style="color: red;">*</strong></label>
                         <asp:DropDownList ID="ddlProcessMnth" CssClass="form-control" runat="server">
                             <asp:ListItem Value="01">January</asp:ListItem>
@@ -72,13 +72,13 @@
                 </div>
 
                 <div class="col-md-3">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">Product Category:</label>
                         <asp:DropDownList ID="ddlproductcat" CssClass="form-control" runat="server" />
                     </div>
                 </div>
                 <div class="col-md-3" style="display: none;">
-                    <div class="form-group pb-0">
+                    <div class="form-group">
                         <label class="form-control-label">Products:</label>
                         <asp:DropDownList ID="ddlproductcode" CssClass="form-control" runat="server" />
                     </div>

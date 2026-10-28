@@ -17,12 +17,12 @@
         }
 
         .dispatch-field-error {
-            display: block;
-            color: #dc3545;
-            font-size: 12px;
-            font-weight: 500;
-            margin-top: 4px;
-            line-height: 1.35;
+    display: block;
+    color: #dc3545;
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 0px;
+    line-height: 1;
         }
 
             .dispatch-field-error:empty {
@@ -213,7 +213,7 @@
                     <div class="card-body">
                         <div class="rm-add-stats-row">
                             <div class="rm-add-form">
-                                <div class="form-group pb-0 mb-0">
+                                <div class="form-group mb-0">
 
                                     <div class="rm-add-form-controls" style="align-items: flex-end">
                                         <div style="display: flex; flex-direction: column; gap: 2px">

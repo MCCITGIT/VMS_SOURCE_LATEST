@@ -17,12 +17,32 @@ Partial Class FG_VendorMstrList
         CheckLogin()
         If Not IsPostBack Then
             PageSizeDropdown()
+            PopulateVendor()
             LoadSearchCriteria()
             BindGrid()
             ShowSavedMessage()
         End If
     End Sub
 #End Region
+
+    Private Sub PopulateVendor()
+        Dim oVendorFunction As New OPC_VendorClass
+        Dim vendorSet As DataSet = oVendorFunction.VendorList()
+
+        ddlVendor.Items.Clear()
+        If (Not (vendorSet Is Nothing) AndAlso vendorSet.Tables.Count > 0 AndAlso Not (vendorSet.Tables(0) Is Nothing) AndAlso vendorSet.Tables(0).Rows.Count > 0) Then
+            ddlVendor.DataSource = vendorSet.Tables(0)
+            ddlVendor.DataTextField = "unit_name"
+            ddlVendor.DataValueField = "unit_code"
+            ddlVendor.DataBind()
+        End If
+        ddlVendor.Items.Insert(0, New ListItem(Constant.Common.Selec, String.Empty, True))
+    End Sub
+
+    Protected Sub imgbtnSearch_Click(sender As Object, e As EventArgs)
+        gvVendorProfile.PageIndex = 0
+        BindGrid()
+    End Sub
 
     Private Sub ShowSavedMessage()
         Dim saveMessage As String = Convert.ToString(Session("FgVendorSaveMsg"))
@@ -142,7 +162,8 @@ Partial Class FG_VendorMstrList
         Try
             Dim VendorSet As New DataSet
             Dim oVendorFunction As New OPC_VendorClass
-            VendorSet = oVendorFunction.Vendor_List_Get()
+            VendorSet = oVendorFunction.Vendor_List_Get(ddlVendor.SelectedValue.ToString())
+
             If (Not (VendorSet Is Nothing) AndAlso VendorSet.Tables.Count > 0 AndAlso Not (VendorSet.Tables(0) Is Nothing) AndAlso VendorSet.Tables(0).Rows.Count > 0) Then
                 gvVendorProfile.Visible = True
                 gvVendorProfile.DataSource = VendorSet.Tables(0)
