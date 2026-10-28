@@ -186,7 +186,7 @@
                 </div>
             </div>
 
-            <asp:Panel ID="pnlAddPartners" runat="server" CssClass="popupvendor" Width="60%" Style="overflow: auto;" Height="400px" BackColor="#f5f5f5">
+            <asp:Panel ID="pnlAddPartners" runat="server" CssClass="popupvendor" Style="overflow: auto;" BackColor="#f5f5f5">
                 <div class="modal-header" style="padding: 12px;">
                     <asp:Label ID="Label1" runat="server" Text="Vendor Despatch" Style="color: White; font-weight: bold;"></asp:Label>
                 </div>

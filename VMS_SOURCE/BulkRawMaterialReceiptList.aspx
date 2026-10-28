@@ -305,7 +305,7 @@
                 <div class="table-responsive rm-grid-scroll rm-fit-grid">
                     <asp:UpdatePanel ID="UpdatePanelGrid" runat="server">
                         <ContentTemplate>
-                            <asp:GridView BorderWidth="0" CssClass="table table-hover upgradDataGrid rm-fit-grid" CellSpacing="0" CellPadding="0"
+                            <asp:GridView BorderWidth="0" CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0"
                                 ID="gvReceipt" runat="server" ClientIDMode="Static" AutoGenerateColumns="false" AllowPaging="true" PageSize="10" Visible="true"
                                 ShowFooter="false" GridLines="None" EmptyDataText="No records found"
                                 PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"

@@ -304,7 +304,8 @@
                         <img class="userPic" src="images/avatar-no-img.png" alt="Img" />
                         <div class="userNameCatg dropdown-toggle" data-toggle="dropdown">
                             <h3 class="userName">
-                                <asp:Label ID="lblUserName" runat="server"></asp:Label></h3>
+                                <asp:Label ID="lblUserName" runat="server"></asp:Label>
+                            </h3>
                             <p class="userCatg">
                                 <asp:Label ID="lblUserGroup" runat="server"></asp:Label>
                             </p>

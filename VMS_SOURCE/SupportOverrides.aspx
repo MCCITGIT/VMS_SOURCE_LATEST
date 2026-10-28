@@ -11,7 +11,12 @@
         .so-Disabled { background: #dc3545; }
         .so-warn { background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 6px 10px; border-radius: 4px; font-size: 12px; margin-bottom: 8px; }
         .field-invalid { border: 1px solid #dc3545 !important; }
-        .dispatch-field-error { display: block; color: #dc3545; font-size: 12px; font-weight: 500; margin-top: 4px; }
+        .dispatch-field-error {     display: block;
+    color: #dc3545;
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 0px;
+    line-height: 1; }
         .dispatch-field-error:empty { display: none; }
     </style>
 
