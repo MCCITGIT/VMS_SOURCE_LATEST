@@ -12,12 +12,12 @@
         }
 
         .dispatch-field-error {
-            display: block;
-            color: #dc3545;
-            font-size: 12px;
-            font-weight: 500;
-            margin-top: 4px;
-            line-height: 1.35;
+    display: block;
+    color: #dc3545;
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 0px;
+    line-height: 1;
         }
 
             .dispatch-field-error:empty {

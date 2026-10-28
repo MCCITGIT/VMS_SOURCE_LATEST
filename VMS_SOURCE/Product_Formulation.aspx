@@ -87,12 +87,12 @@
         }
 
         .dispatch-field-error {
-            display: block;
-            color: #dc3545;
-            font-size: 11px;
-            font-weight: 500;
-            margin-top: 3px;
-            line-height: 1.35;
+    display: block;
+    color: #dc3545;
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 0px;
+    line-height: 1;
         }
 
             .dispatch-field-error:empty {
@@ -150,11 +150,11 @@
             margin-bottom: 8px;
         }
 
-        /* version/status + remarks row: the status text is long, so it gets the wider column and may wrap */
-        .pf-head-grid.pf-ver-grid {
-            grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-            align-items: start;
-        }
+            /* version/status + remarks row: the status text is long, so it gets the wider column and may wrap */
+            .pf-head-grid.pf-ver-grid {
+                grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+                align-items: start;
+            }
 
         .pf-label {
             display: block;
@@ -351,7 +351,7 @@
             .pf-sku-table .pf-c-sn {
                 width: 40px;
                 text-align: center;
-            } 
+            }
 
             .pf-sku-table .pf-c-brand {
                 width: 12%;
@@ -361,108 +361,197 @@
                 width: 12%;
             }
 
-            /* a vendor (UNIT) login works for its own unit only: the Vendor column is for HO and SYSADMIN */
-            .pf-hide-vendor .pf-c-vendor {
-                display: none;
-            }
+        /* a vendor (UNIT) login works for its own unit only: the Vendor column is for HO and SYSADMIN */
+        .pf-hide-vendor .pf-c-vendor {
+            display: none;
+        }
 
-            .pf-sku-table .pf-c-sku {
-                width: 14%;
-            }
+        .pf-sku-table .pf-c-sku {
+            width: 14%;
+        }
 
-            .pf-sku-table .pf-c-shade {
-                width: 10%;
-            }
+        .pf-sku-table .pf-c-shade {
+            width: 10%;
+        }
 
-            .pf-sku-table .pf-c-supplier {
-                width: 13%;
-            }
+        .pf-sku-table .pf-c-supplier {
+            width: 13%;
+        }
 
-            .pf-sku-table .pf-c-rm {
-                width: auto;
-            }
+        .pf-sku-table .pf-c-rm {
+            width: auto;
+        }
 
-            .pf-sku-table .pf-c-ratio {
-                width: 110px;
-            }
+        .pf-sku-table .pf-c-ratio {
+            width: 110px;
+        }
 
-            .pf-sku-table .pf-c-price {
-                width: 110px;
-            }
+        .pf-sku-table .pf-c-price {
+            width: 110px;
+        }
 
-            .pf-sku-table .pf-c-site,
-            .pf-sku-table .pf-c-mat {
-                width: 105px;
-                background: #fff8e6;
-            }
+        .pf-sku-table .pf-c-site,
+        .pf-sku-table .pf-c-mat {
+            width: 105px;
+            background: #fff8e6;
+        }
 
-            .pf-sku-table th.pf-c-site,
-            .pf-sku-table th.pf-c-mat {
-                background: #8a6d1f;
-            }
+        .pf-sku-table th.pf-c-site,
+        .pf-sku-table th.pf-c-mat {
+            background: #8a6d1f;
+        }
 
-            .pf-pack-table .pf-md { background: #fff8e6; }
-            .pf-pack-table th.pf-md { background: #8a6d1f; }
-            .pf-pack-table .pf-md input { width: 90px; }
+        .pf-pack-table .pf-md {
+            background: #fff8e6;
+        }
 
-            /* HO / Material Dept: two more columns -> give the table room so Raw Material does not collapse */
-            .pf-has-internal .pf-sku-table {
-                min-width: 1500px;
-            }
+        .pf-pack-table th.pf-md {
+            background: #8a6d1f;
+        }
+
+        .pf-pack-table .pf-md input {
+            width: 90px;
+        }
+
+        /* HO / Material Dept: two more columns -> give the table room so Raw Material does not collapse */
+        .pf-has-internal .pf-sku-table {
+            min-width: 1500px;
+        }
 
             /* with the two internal columns the fixed columns shrink a little so Raw Material keeps a readable width */
             .pf-has-internal .pf-sku-table .pf-c-vendor,
-            .pf-has-internal .pf-sku-table .pf-c-brand { width: 10%; }
-            .pf-has-internal .pf-sku-table .pf-c-sku { width: 12%; }
-            .pf-has-internal .pf-sku-table .pf-c-shade { width: 8%; }
-            .pf-has-internal .pf-sku-table .pf-c-supplier { width: 11%; }
+            .pf-has-internal .pf-sku-table .pf-c-brand {
+                width: 10%;
+            }
+
+            .pf-has-internal .pf-sku-table .pf-c-sku {
+                width: 12%;
+            }
+
+            .pf-has-internal .pf-sku-table .pf-c-shade {
+                width: 8%;
+            }
+
+            .pf-has-internal .pf-sku-table .pf-c-supplier {
+                width: 11%;
+            }
 
             .pf-has-internal .pf-sku-table .pf-c-site,
             .pf-has-internal .pf-sku-table .pf-c-mat {
                 width: 150px;
             }
 
-            /* per-factory RM cost list under "Nearest site cost": one line per factory, colour = vendor price vs that site */
-            .pf-sites { margin-top: 4px; font-size: 10.5px; line-height: 1.35; text-align: left; }
-            .pf-site { display: flex; justify-content: space-between; gap: 6px; padding: 1px 4px; border-radius: 3px; margin-bottom: 1px; white-space: nowrap; }
-            .pf-site .pf-site-name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; color: #444; }
-            .pf-site .pf-site-km { color: #888; }
-            .pf-site .pf-site-cost { font-weight: 700; min-width: 48px; text-align: right; }
-            .pf-site.is-low { background: #e9f7ef; }   .pf-site.is-low .pf-site-cost { color: #1e7e34; }    /* site cheaper than the vendor's price */
-            .pf-site.is-high { background: #fdecea; }  .pf-site.is-high .pf-site-cost { color: #c62828; }   /* site costlier than the vendor's price */
-            .pf-site.is-same { background: #f1f3f5; }  .pf-site.is-same .pf-site-cost { color: #495057; }
-            .pf-site.is-na .pf-site-cost { color: #adb5bd; font-weight: 400; }
-            .pf-site.is-nearest .pf-site-name::before { content: "\2605 "; color: #8a6d1f; }
-            .pf-sites details summary { cursor: pointer; color: #1f4e79; font-size: 10.5px; padding: 1px 4px; }
-            .pf-sites details summary::-webkit-details-marker { display: none; }
-            .pf-site-diff { color: #888; font-weight: 400; margin-left: 3px; }
+        /* per-factory RM cost list under "Nearest site cost": one line per factory, colour = vendor price vs that site */
+        .pf-sites {
+            margin-top: 4px;
+            font-size: 10.5px;
+            line-height: 1.35;
+            text-align: left;
+        }
 
-            .pf-sku-table .pf-c-act {
+        .pf-site {
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+            padding: 1px 4px;
+            border-radius: 3px;
+            margin-bottom: 1px;
+            white-space: nowrap;
+        }
 
-                width: 70px;
-            }
-
-            .pf-sku-table tbody tr.tlrowlight td {
+            .pf-site .pf-site-name {
+                flex: 1 1 auto;
                 overflow: hidden;
                 text-overflow: ellipsis;
+                color: #444;
             }
 
-            /* the autocomplete flyouts (SKU, raw material) render inside the entry cells - never clip them.
-               22-10-2026: the wrap itself scrolls horizontally again (the flyouts and select2 lists attach to the page body, not the wrap) */
-            .pf-sku-table,
-            .pf-sku-table .pf-entry-row td {
-                overflow: visible !important;
+            .pf-site .pf-site-km {
+                color: #888;
             }
 
-            .pf-section .pf-table-wrap {
-                overflow-x: auto;
-                padding-bottom: 4px;
+            .pf-site .pf-site-cost {
+                font-weight: 700;
+                min-width: 48px;
+                text-align: right;
             }
 
+            .pf-site.is-low {
+                background: #e9f7ef;
+            }
 
-                .pf-sku-table .select2-container {
-                    width: 100% !important;
+                .pf-site.is-low .pf-site-cost {
+                    color: #1e7e34;
                 }
+            /* site cheaper than the vendor's price */
+            .pf-site.is-high {
+                background: #fdecea;
+            }
+
+                .pf-site.is-high .pf-site-cost {
+                    color: #c62828;
+                }
+            /* site costlier than the vendor's price */
+            .pf-site.is-same {
+                background: #f1f3f5;
+            }
+
+                .pf-site.is-same .pf-site-cost {
+                    color: #495057;
+                }
+
+            .pf-site.is-na .pf-site-cost {
+                color: #adb5bd;
+                font-weight: 400;
+            }
+
+            .pf-site.is-nearest .pf-site-name::before {
+                content: "\2605 ";
+                color: #8a6d1f;
+            }
+
+        .pf-sites details summary {
+            cursor: pointer;
+            color: #1f4e79;
+            font-size: 10.5px;
+            padding: 1px 4px;
+        }
+
+            .pf-sites details summary::-webkit-details-marker {
+                display: none;
+            }
+
+        .pf-site-diff {
+            color: #888;
+            font-weight: 400;
+            margin-left: 3px;
+        }
+
+        .pf-sku-table .pf-c-act {
+            width: 70px;
+        }
+
+        .pf-sku-table tbody tr.tlrowlight td {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* the autocomplete flyouts (SKU, raw material) render inside the entry cells - never clip them.
+               22-10-2026: the wrap itself scrolls horizontally again (the flyouts and select2 lists attach to the page body, not the wrap) */
+        .pf-sku-table,
+        .pf-sku-table .pf-entry-row td {
+            overflow: visible !important;
+        }
+
+        .pf-section .pf-table-wrap {
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+
+        .pf-sku-table .select2-container {
+            width: 100% !important;
+        }
 
         .pf-remove {
             border: none;
@@ -667,9 +756,9 @@
                 grid-template-columns: 1fr;
             }
 
-            .pf-head-grid.pf-ver-grid {
-                grid-template-columns: 1fr;
-            }
+                .pf-head-grid.pf-ver-grid {
+                    grid-template-columns: 1fr;
+                }
 
             .pf-pack-label {
                 grid-template-columns: 1fr auto;
@@ -677,26 +766,28 @@
                 gap: 8px;
             }
         }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            white-space: nowrap;
+        }
     </style>
+    <script type="text/javascript" src="Scripts/rm-status-confirm.js?v=<%= DateTime.Now.Ticks %>"></script>
+    <script type="text/javascript" src="Scripts/FunctionValidator.js"></script>
+    <script type="text/javascript" src="Scripts/ValidateFormulationMstr.js?time=<%= DateTime.Now.ToString("yyyy.MM.dd-HH.mm.ss.fff") %>"></script>
+    <script type="text/javascript">
+        /* ---------- product / raw material autocomplete (same as pre-redesign page) ---------- */
+        function setProductSearchState(isLocked) {
+            var txtProduct = document.getElementById('txtProductSearch');
+            var btnReset = document.getElementById('btnResetProduct');
+            if (btnReset) { btnReset.disabled = !!isLocked; }
+            if (txtProduct && isLocked) { txtProduct.setAttribute('readonly', 'readonly'); }
+        }
 
-    <div class="rm-module">
-        <script type="text/javascript" src="Scripts/rm-status-confirm.js?v=<%= DateTime.Now.Ticks %>"></script>
-        <script type="text/javascript" src="Scripts/FunctionValidator.js"></script>
-        <script type="text/javascript" src="Scripts/ValidateFormulationMstr.js?time=<%= DateTime.Now.ToString("yyyy.MM.dd-HH.mm.ss.fff") %>"></script>
-        <script type="text/javascript">
-            /* ---------- product / raw material autocomplete (same as pre-redesign page) ---------- */
-            function setProductSearchState(isLocked) {
-                var txtProduct = document.getElementById('txtProductSearch');
-                var btnReset = document.getElementById('btnResetProduct');
-                if (btnReset) { btnReset.disabled = !!isLocked; }
-                if (txtProduct && isLocked) { txtProduct.setAttribute('readonly', 'readonly'); }
-            }
-
-            function onProductSelected(sender, e) {
-                var value = e.get_value();
-                var text = e.get_text();
-                var values = value.split('|');            // productCode|sku_code
-                document.getElementById('<%=hdnProductCode.ClientID%>').value = values[0];
+        function onProductSelected(sender, e) {
+            var value = e.get_value();
+            var text = e.get_text();
+            var values = value.split('|');            // productCode|sku_code
+            document.getElementById('<%=hdnProductCode.ClientID%>').value = values[0];
                 document.getElementById('<%=txtProductSearch.ClientID%>').value = text;
                 document.getElementById('<%=hdnProductName.ClientID%>').value = text;
                 document.getElementById('<%=hdnSkucode.ClientID%>').value = values.length > 1 ? values[1] : '';
@@ -1019,8 +1110,9 @@
                 if (window.Sys && Sys.Application) { Sys.Application.add_load(setRawMatContext); }
                 document.querySelectorAll('.pf-pack').forEach(function (p) { var i = p.querySelector('input.pf-proc'); if (i) { pfRecalc(i); } });
             });
-        </script>
+    </script>
 
+    <div class="rm-module rm-compact">
         <%-- quick add of a raw material that is not in the list: saved for the selected vendor only --%>
         <div id="pfRawMatModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); z-index: 2000;">
             <div style="background: #fff; max-width: 440px; margin: 12vh auto 0; padding: 16px 18px; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,.25);">
@@ -1046,7 +1138,7 @@
                     <p class="pageSubTitle">Define the raw material formulation and packaging cost of a product</p>
                 </div>
                 <div style="padding: 6px 10px; background: #4b6a8133; border-radius: 8px; margin-left: auto; cursor: pointer;">
-                    <img src="images/table.png" alt="Alternate Text" style="width: 20px;"/>
+                    <img src="images/table.png" alt="Alternate Text" style="width: 20px;" />
                 </div>
             </div>
             <div class="rightFung"></div>
@@ -1091,19 +1183,22 @@
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Vendor *">
                                     <ItemTemplate>
-                                        <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vendor_name") %>'></asp:Label></ItemTemplate>
+                                        <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vendor_name") %>'></asp:Label>
+                                    </ItemTemplate>
                                     <HeaderStyle CssClass="pf-c-vendor" />
                                     <ItemStyle CssClass="pf-c-vendor" />
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Brand *">
                                     <ItemTemplate>
-                                        <asp:Label ID="lblBrandName" runat="server" Text='<%# Bind("brand_name") %>'></asp:Label></ItemTemplate>
+                                        <asp:Label ID="lblBrandName" runat="server" Text='<%# Bind("brand_name") %>'></asp:Label>
+                                    </ItemTemplate>
                                     <HeaderStyle CssClass="pf-c-brand" />
                                     <ItemStyle CssClass="pf-c-brand" />
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="SKU / Product *">
                                     <ItemTemplate>
-                                        <asp:Label ID="lblProductName" runat="server" Text='<%# Bind("product_name") %>'></asp:Label></ItemTemplate>
+                                        <asp:Label ID="lblProductName" runat="server" Text='<%# Bind("product_name") %>'></asp:Label>
+                                    </ItemTemplate>
                                     <HeaderStyle CssClass="pf-c-sku" />
                                     <ItemStyle CssClass="pf-c-sku" />
                                 </asp:TemplateField>
@@ -1149,9 +1244,9 @@
                                                 onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfLossChanged(this);" onblur="formatRateTwoDecimal(this); pfLossChanged(this);"></asp:TextBox>
                                         </div>
                                     </FooterTemplate>
-                                    <HeaderStyle CssClass="pf-c-ratio pf-center" />
-                                    <ItemStyle CssClass="pf-c-ratio pf-center" />
-                                    <FooterStyle CssClass="pf-c-ratio pf-center" />
+                                    <HeaderStyle CssClass="pf-c-ratio pf-right" />
+                                    <ItemStyle CssClass="pf-c-ratio pf-right" />
+                                    <FooterStyle CssClass="pf-c-ratio pf-right" />
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Price (&#8377;) *">
                                     <ItemTemplate>
@@ -1159,7 +1254,8 @@
                                             onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfGridRecalc();" onblur="formatRateTwoDecimal(this); pfGridRecalc();"></asp:TextBox>
                                     </ItemTemplate>
                                     <FooterTemplate>
-                                        SKU price<br />
+                                        <span style="font-size: 11px; color: #555;">SKU Price</span>
+                                        <br />
                                         &#8377;
                                         <asp:Label ID="lblSkuPrice" runat="server" ClientIDMode="Static" Text="0.00"></asp:Label>
                                     </FooterTemplate>
@@ -1204,12 +1300,13 @@
                         <table class="pf-table pf-sku-table" style="margin-top: -1px; border-top-left-radius: 0; border-top-right-radius: 0;">
                             <tbody>
                                 <tr class="pf-entry-row">
-                                    <td class="pf-c-sn pf-center"><asp:Label ID="lblNextSn" runat="server" Text="1" CssClass="pf-muted"></asp:Label></td>
+                                    <td class="pf-c-sn pf-center">
+                                        <asp:Label ID="lblNextSn" runat="server" Text="1" CssClass="pf-muted"></asp:Label></td>
                                     <td class="pf-c-vendor" id="tdVendorEntry" runat="server">
                                         <asp:Panel ID="pnlVendorDdl" runat="server">
-                                        <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlvendor_SelectedIndexChanged"
-                                            onchange="if(typeof clearVendorValidation==='function')clearVendorValidation();">
-                                        </asp:DropDownList>
+                                            <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlvendor_SelectedIndexChanged"
+                                                onchange="if(typeof clearVendorValidation==='function')clearVendorValidation();">
+                                            </asp:DropDownList>
                                         </asp:Panel>
                                         <asp:Label ID="lblVendorFixed" runat="server" Visible="false" Style="display: block; padding: 6px 4px; font-weight: 600;"></asp:Label>
                                         <asp:Label ID="valVendor" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
@@ -1237,7 +1334,8 @@
                                     </td>
                                     <td class="pf-c-supplier">
                                         <asp:DropDownList ID="ddlSupplier" runat="server" ClientIDMode="Static" CssClass="form-control select2" TabIndex="5"
-                                            onchange="if(typeof clearFieldValidation==='function')clearFieldValidation('ddlSupplier','valSupplier');"></asp:DropDownList>
+                                            onchange="if(typeof clearFieldValidation==='function')clearFieldValidation('ddlSupplier','valSupplier');">
+                                        </asp:DropDownList>
                                         <asp:Label ID="valSupplier" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                                     </td>
                                     <td class="pf-c-rm">
@@ -1283,8 +1381,13 @@
                     <div class="pf-head-grid pf-ver-grid" style="margin-top: 8px;">
                         <div>
                             <label class="pf-label">Version / Status</label>
-                            <div style="min-height: 26px; line-height: 1.4; font-weight: 600; color: var(--pf-theme);"><asp:Label ID="lblVersionInfo" runat="server" Text="New - goes to HO for approval on submit"></asp:Label></div>
-                            <div style="font-size: 11.5px; margin-top: 4px; line-height: 1.5;"><asp:Literal ID="litLinks" runat="server"></asp:Literal> <asp:Label ID="lblReadOnlyNote" runat="server" Style="color: #856404;"></asp:Label></div>
+                            <div style="min-height: 26px; line-height: 1.4; font-weight: 600; color: var(--pf-theme);">
+                                <asp:Label ID="lblVersionInfo" runat="server" Text="New - goes to HO for approval on submit"></asp:Label>
+                            </div>
+                            <div style="font-size: 11.5px; margin-top: 4px; line-height: 1.5;">
+                                <asp:Literal ID="litLinks" runat="server"></asp:Literal>
+                                <asp:Label ID="lblReadOnlyNote" runat="server" Style="color: #856404;"></asp:Label>
+                            </div>
                         </div>
                         <div>
                             <label class="pf-label">Remarks / reason for change</label>
@@ -1313,7 +1416,9 @@
                     <%-- Material Dept: compare with the nearest Berger site rate and suggest a price (internal - never shown to a vendor) --%>
                     <asp:Panel ID="pnlMaterial" runat="server" Visible="false" Style="margin-top: 10px; padding: 10px; border: 1px solid #8a6d1f; background: #fff8e6; border-radius: 6px;">
                         <b>Material Department review.</b> Enter the nearest Berger approved site cost and your suggested price per raw material in the two highlighted columns above, add remarks, then send to HO. The vendor will not see these figures.
-                        <div style="margin-top: 4px;"><asp:Label ID="lblFactories" runat="server" CssClass="pf-muted"></asp:Label></div>
+                        <div style="margin-top: 4px;">
+                            <asp:Label ID="lblFactories" runat="server" CssClass="pf-muted"></asp:Label>
+                        </div>
                         <label class="pf-label" style="margin-top: 6px;">Remarks for HO</label>
                         <asp:TextBox ID="txtMaterialRemarks" runat="server" TextMode="MultiLine" Rows="2" MaxLength="1000" Style="width: 100%;"></asp:TextBox>
                         <asp:Label ID="valMaterial" runat="server" CssClass="dispatch-field-error"></asp:Label>
@@ -1322,7 +1427,8 @@
                         </div>
                     </asp:Panel>
                     <asp:Panel ID="pnlMaterialInfo" runat="server" Visible="false" Style="margin-top: 8px; padding: 8px 10px; border-radius: 6px; font-size: 12px; background: #fff8e6; color: #5c4a12; border: 1px solid #e6d9b0;">
-                        <b><asp:Label ID="lblMaterialInfoTitle" runat="server"></asp:Label></b>
+                        <b>
+                            <asp:Label ID="lblMaterialInfoTitle" runat="server"></asp:Label></b>
                         <asp:Label ID="lblMaterialInfo" runat="server"></asp:Label>
                     </asp:Panel>
 
@@ -1352,141 +1458,141 @@
                         The SKU formulation and all packs are saved together with the Submit button above.
                     </p>
 
-                <asp:Panel ID="pnlPackaging" runat="server">
-                    <asp:Repeater ID="rptPack" runat="server" OnItemDataBound="rptPack_ItemDataBound" OnItemCommand="rptPack_ItemCommand">
-                        <ItemTemplate>
-                            <div class="pf-pack" data-name='<%# Eval("pack_size") %>'>
-                                <asp:HiddenField ID="hdnPackKey" runat="server" Value='<%# Eval("pack_key") %>' />
-                                <asp:HiddenField ID="hdnPchId" runat="server" Value='<%# Eval("pch_id") %>' />
-                                <input type="checkbox" class="pf-toggle" id='pfPack<%# Eval("pack_key") %>' onchange='pfToggle(this, "<%# Eval("pack_key") %>")' <%# If(IsPackOpen(Eval("pack_key")), "checked='checked'", "") %> />
-                                <div class="pf-pack-head">
-                                    <label class="pf-pack-label" for='pfPack<%# Eval("pack_key") %>'>
-                                        <span class="pf-pack-name"><span class="pf-caret"></span><%# Eval("pack_size") %> packaging</span>
-                                        <span class="pf-pack-total">Total &#8377; 0.00</span>
-                                        <span></span>
-                                    </label>
-                                    <div class="pf-pack-actions">
-                                        <asp:LinkButton ID="btnRemovePack" runat="server" CssClass="pf-remove" CommandName="RemovePack" CommandArgument='<%# Eval("pack_key") %>'
-                                            ToolTip="Remove pack" OnClientClick="return rmConfirmAction(this, 'delete');">&times;</asp:LinkButton>
+                    <asp:Panel ID="pnlPackaging" runat="server">
+                        <asp:Repeater ID="rptPack" runat="server" OnItemDataBound="rptPack_ItemDataBound" OnItemCommand="rptPack_ItemCommand">
+                            <ItemTemplate>
+                                <div class="pf-pack" data-name='<%# Eval("pack_size") %>'>
+                                    <asp:HiddenField ID="hdnPackKey" runat="server" Value='<%# Eval("pack_key") %>' />
+                                    <asp:HiddenField ID="hdnPchId" runat="server" Value='<%# Eval("pch_id") %>' />
+                                    <input type="checkbox" class="pf-toggle" id='pfPack<%# Eval("pack_key") %>' onchange='pfToggle(this, "<%# Eval("pack_key") %>")' <%# If(IsPackOpen(Eval("pack_key")), "checked='checked'", "") %> />
+                                    <div class="pf-pack-head">
+                                        <label class="pf-pack-label" for='pfPack<%# Eval("pack_key") %>'>
+                                            <span class="pf-pack-name"><span class="pf-caret"></span><%# Eval("pack_size") %> packaging</span>
+                                            <span class="pf-pack-total">Total &#8377; 0.00</span>
+                                            <span></span>
+                                        </label>
+                                        <div class="pf-pack-actions">
+                                            <asp:LinkButton ID="btnRemovePack" runat="server" CssClass="pf-remove" CommandName="RemovePack" CommandArgument='<%# Eval("pack_key") %>'
+                                                ToolTip="Remove pack" OnClientClick="return rmConfirmAction(this, 'delete');">&times;</asp:LinkButton>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="pf-pack-body">
-                                    <div class="pf-pack-inner">
-                                        <div class="pf-pack-content">
-                                            <div class="pf-table-wrap">
-                                                <table class="pf-table pf-pack-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th class="pf-col-sn">S.No</th>
-                                                            <th>Cost name</th>
-                                                            <th class="pf-col-amt pf-right">Amount (&#8377;)</th>
-                                                            <th class="pf-col-amt pf-right pf-md" runat="server" visible='<%# ShowInternal %>'>Suggested (&#8377;) <span class="pf-muted" style="color: #f5e6c0;">Material Dept</span></th>
-                                                            <th class="pf-col-act">Action</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <asp:Repeater ID="rptLines" runat="server" OnItemCommand="rptLines_ItemCommand">
-                                                            <ItemTemplate>
-                                                                <tr class="pf-line">
-                                                                    <td class="pf-col-sn"><%# Container.ItemIndex + 1 %>
-                                                                        <asp:HiddenField ID="hdnLineKey" runat="server" Value='<%# Eval("line_key") %>' />
-                                                                    </td>
-                                                                    <td>
-                                                                        <asp:TextBox ID="txtCostName" runat="server" CssClass="pf-name" ReadOnly="true" Text='<%# Eval("cost_name") %>' MaxLength="100" Placeholder="e.g. Cap, Bottle, Label" AutoComplete="Off"></asp:TextBox>
-                                                                    </td>
-                                                                    <td class="pf-col-amt">
-                                                                        <asp:TextBox ID="txtAmount" runat="server" CssClass="pf-num pf-amt" Text='<%# Eval("amount") %>' Placeholder="0.00" AutoComplete="Off"
-                                                                            onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
-                                                                    </td>
-                                                                    <td class="pf-col-amt pf-md" runat="server" visible='<%# ShowInternal %>'>
-                                                                        <asp:TextBox ID="txtMdAmount" runat="server" CssClass="pf-num pf-md-in" Text='<%# Eval("md_amount") %>' Placeholder="-" AutoComplete="Off" ReadOnly="true"
-                                                                            onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this);" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
-                                                                    </td>
-                                                                    <td class="pf-col-act">
-                                                                        <asp:LinkButton ID="btnRemoveLine" runat="server" CssClass="pf-remove" CommandName="RemoveLine" CommandArgument='<%# Eval("line_key") %>' ToolTip="Remove">&times;</asp:LinkButton>
-                                                                    </td>
-                                                                </tr>
-                                                            </ItemTemplate>
-                                                        </asp:Repeater>
-                                                        <%-- entry line: type a cost and press Add (same pattern as the SKU grid) --%>
-                                                        <tr class="pf-entry-row pf-line-entry">
-                                                            <td class="pf-col-sn"><i class="fas fa-plus"></i></td>
-                                                            <td>
-                                                                <asp:DropDownList ID="txtNewCostName" runat="server" CssClass="pf-new-name select2" Style="width: 100%;" data-placeholder="Search cost name (cap, bottle, carton ...)" onchange="this.classList.remove('field-invalid');"></asp:DropDownList>
-                                                            </td>
-                                                            <td class="pf-col-amt">
-                                                                <asp:TextBox ID="txtNewAmount" runat="server" CssClass="pf-num pf-new-amt" Placeholder="0.00" AutoComplete="Off"
-                                                                    onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); this.classList.remove('field-invalid');" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
-                                                            </td>
-                                                            <td class="pf-md" runat="server" visible='<%# ShowInternal %>'></td>
-                                                            <td class="pf-col-act">
-                                                                <asp:LinkButton ID="btnAddLine" runat="server" CssClass="pf-btn pf-btn-primary" CommandName="AddLine" CommandArgument='<%# Eval("pack_key") %>' Text="Add"
-                                                                    OnClientClick="return validateNewLine(this);"></asp:LinkButton>
-                                                            </td>
-                                                        </tr>
-                                                        <%-- fixed lines of every pack: processing fee (incl. labour), margin % --%>
-                                                        <tr class="pf-fixed-line">
-                                                            <td class="pf-col-sn"><i class="fas fa-cog" style="color: #888;"></i></td>
-                                                            <td>Processing fee <span class="pf-muted">(incl. labour)</span></td>
-                                                            <td class="pf-col-amt">
-                                                                <asp:TextBox ID="txtProcessing" runat="server" CssClass="pf-num pf-proc" Text='<%# Eval("processing_fee") %>' Placeholder="0.00" AutoComplete="Off"
-                                                                    onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
-                                                            </td>
-                                                            <td class="pf-col-amt pf-md" runat="server" visible='<%# ShowInternal %>'>
-                                                                <asp:TextBox ID="txtMdProcessing" runat="server" CssClass="pf-num pf-md-in" Text='<%# Eval("md_processing") %>' Placeholder="-" AutoComplete="Off" ReadOnly="true"
-                                                                    onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this);" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
-                                                            </td>
-                                                            <td class="pf-col-act"></td>
-                                                        </tr>
-                                                        <%-- Modified-by MUKESH BHAGAT on 19-10-2026 : the separate "Labour charge" line was removed - labour is part of the Processing fee (pch_labour_charge is saved as 0). --%>
-                                                        <tr class="pf-fixed-line">
-                                                            <td class="pf-col-sn"><i class="fas fa-percent" style="color: #888;"></i></td>
-                                                            <td>Margin (%) <span class="pf-muted">on SKU price &#8377; <%# SkuPriceText %> + material + processing</span></td>
-                                                            <td class="pf-col-amt">
-                                                                <asp:TextBox ID="txtMarginPct" runat="server" CssClass="pf-num pf-mar" Text='<%# Eval("margin_pct") %>' Placeholder="0.00 %" AutoComplete="Off"
-                                                                    onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
-                                                            </td>
-                                                            <td class="pf-col-amt pf-md" runat="server" visible='<%# ShowInternal %>'>
-                                                                <asp:TextBox ID="txtMdMargin" runat="server" CssClass="pf-num pf-md-in" Text='<%# Eval("md_margin") %>' Placeholder="- %" AutoComplete="Off" ReadOnly="true"
-                                                                    onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this);" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
-                                                            </td>
-                                                            <td class="pf-col-act"></td>
-                                                        </tr>
-                                                    </tbody>
-                                                    <tfoot>
-                                                        <tr class="pf-sub">
-                                                            <td colspan="2" class="pf-right">SKU price</td>
-                                                            <td class="pf-right">&#8377; <%# SkuPriceText %></td>
-                                                            <td class="pf-md" runat="server" visible='<%# ShowInternal %>'></td>
-                                                            <td></td>
-                                                        </tr>
-                                                        <tr class="pf-sub">
-                                                            <td colspan="2" class="pf-right">Packaging material</td>
-                                                            <td class="pf-right">&#8377; <span class="pf-material-amt">0.00</span></td>
-                                                            <td class="pf-md" runat="server" visible='<%# ShowInternal %>'></td>
-                                                            <td></td>
-                                                        </tr>
-                                                        <tr class="pf-sub">
-                                                            <td colspan="2" class="pf-right">Margin amount</td>
-                                                            <td class="pf-right">&#8377; <span class="pf-margin-amt">0.00</span></td>
-                                                            <td class="pf-md" runat="server" visible='<%# ShowInternal %>'></td>
-                                                            <td></td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td colspan="2" class="pf-right">Total</td>
-                                                            <td class="pf-right">&#8377; <span class="pf-total-amt">0.00</span></td>
-                                                            <td class="pf-md" runat="server" visible='<%# ShowInternal %>'></td>
-                                                            <td></td>
-                                                        </tr>
-                                                    </tfoot>
-                                                </table>
+                                    <div class="pf-pack-body">
+                                        <div class="pf-pack-inner">
+                                            <div class="pf-pack-content">
+                                                <div class="pf-table-wrap">
+                                                    <table class="pf-table pf-pack-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th class="pf-col-sn">S.No</th>
+                                                                <th>Cost name</th>
+                                                                <th class="pf-col-amt pf-right">Amount (&#8377;)</th>
+                                                                <th class="pf-col-amt pf-right pf-md" runat="server" visible='<%# ShowInternal %>'>Suggested (&#8377;) <span class="pf-muted" style="color: #f5e6c0;">Material Dept</span></th>
+                                                                <th class="pf-col-act">Action</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <asp:Repeater ID="rptLines" runat="server" OnItemCommand="rptLines_ItemCommand">
+                                                                <ItemTemplate>
+                                                                    <tr class="pf-line">
+                                                                        <td class="pf-col-sn"><%# Container.ItemIndex + 1 %>
+                                                                            <asp:HiddenField ID="hdnLineKey" runat="server" Value='<%# Eval("line_key") %>' />
+                                                                        </td>
+                                                                        <td>
+                                                                            <asp:TextBox ID="txtCostName" runat="server" CssClass="pf-name" ReadOnly="true" Text='<%# Eval("cost_name") %>' MaxLength="100" Placeholder="e.g. Cap, Bottle, Label" AutoComplete="Off"></asp:TextBox>
+                                                                        </td>
+                                                                        <td class="pf-col-amt">
+                                                                            <asp:TextBox ID="txtAmount" runat="server" CssClass="pf-num pf-amt" Text='<%# Eval("amount") %>' Placeholder="0.00" AutoComplete="Off"
+                                                                                onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
+                                                                        </td>
+                                                                        <td class="pf-col-amt pf-md" runat="server" visible='<%# ShowInternal %>'>
+                                                                            <asp:TextBox ID="txtMdAmount" runat="server" CssClass="pf-num pf-md-in" Text='<%# Eval("md_amount") %>' Placeholder="-" AutoComplete="Off" ReadOnly="true"
+                                                                                onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this);" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
+                                                                        </td>
+                                                                        <td class="pf-col-act">
+                                                                            <asp:LinkButton ID="btnRemoveLine" runat="server" CssClass="pf-remove" CommandName="RemoveLine" CommandArgument='<%# Eval("line_key") %>' ToolTip="Remove">&times;</asp:LinkButton>
+                                                                        </td>
+                                                                    </tr>
+                                                                </ItemTemplate>
+                                                            </asp:Repeater>
+                                                            <%-- entry line: type a cost and press Add (same pattern as the SKU grid) --%>
+                                                            <tr class="pf-entry-row pf-line-entry">
+                                                                <td class="pf-col-sn"><i class="fas fa-plus"></i></td>
+                                                                <td>
+                                                                    <asp:DropDownList ID="txtNewCostName" runat="server" CssClass="pf-new-name select2" Style="width: 100%;" data-placeholder="Search cost name (cap, bottle, carton ...)" onchange="this.classList.remove('field-invalid');"></asp:DropDownList>
+                                                                </td>
+                                                                <td class="pf-col-amt">
+                                                                    <asp:TextBox ID="txtNewAmount" runat="server" CssClass="pf-num pf-new-amt" Placeholder="0.00" AutoComplete="Off"
+                                                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); this.classList.remove('field-invalid');" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
+                                                                </td>
+                                                                <td class="pf-md" runat="server" visible='<%# ShowInternal %>'></td>
+                                                                <td class="pf-col-act">
+                                                                    <asp:LinkButton ID="btnAddLine" runat="server" CssClass="pf-btn pf-btn-primary" CommandName="AddLine" CommandArgument='<%# Eval("pack_key") %>' Text="Add"
+                                                                        OnClientClick="return validateNewLine(this);"></asp:LinkButton>
+                                                                </td>
+                                                            </tr>
+                                                            <%-- fixed lines of every pack: processing fee (incl. labour), margin % --%>
+                                                            <tr class="pf-fixed-line">
+                                                                <td class="pf-col-sn"><i class="fas fa-cog" style="color: #888;"></i></td>
+                                                                <td>Processing fee <span class="pf-muted">(incl. labour)</span></td>
+                                                                <td class="pf-col-amt">
+                                                                    <asp:TextBox ID="txtProcessing" runat="server" CssClass="pf-num pf-proc" Text='<%# Eval("processing_fee") %>' Placeholder="0.00" AutoComplete="Off"
+                                                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
+                                                                </td>
+                                                                <td class="pf-col-amt pf-md" runat="server" visible='<%# ShowInternal %>'>
+                                                                    <asp:TextBox ID="txtMdProcessing" runat="server" CssClass="pf-num pf-md-in" Text='<%# Eval("md_processing") %>' Placeholder="-" AutoComplete="Off" ReadOnly="true"
+                                                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this);" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
+                                                                </td>
+                                                                <td class="pf-col-act"></td>
+                                                            </tr>
+                                                            <%-- Modified-by MUKESH BHAGAT on 19-10-2026 : the separate "Labour charge" line was removed - labour is part of the Processing fee (pch_labour_charge is saved as 0). --%>
+                                                            <tr class="pf-fixed-line">
+                                                                <td class="pf-col-sn"><i class="fas fa-percent" style="color: #888;"></i></td>
+                                                                <td>Margin (%) <span class="pf-muted">on SKU price &#8377; <%# SkuPriceText %> + material + processing</span></td>
+                                                                <td class="pf-col-amt">
+                                                                    <asp:TextBox ID="txtMarginPct" runat="server" CssClass="pf-num pf-mar" Text='<%# Eval("margin_pct") %>' Placeholder="0.00 %" AutoComplete="Off"
+                                                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
+                                                                </td>
+                                                                <td class="pf-col-amt pf-md" runat="server" visible='<%# ShowInternal %>'>
+                                                                    <asp:TextBox ID="txtMdMargin" runat="server" CssClass="pf-num pf-md-in" Text='<%# Eval("md_margin") %>' Placeholder="- %" AutoComplete="Off" ReadOnly="true"
+                                                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this);" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
+                                                                </td>
+                                                                <td class="pf-col-act"></td>
+                                                            </tr>
+                                                        </tbody>
+                                                        <tfoot>
+                                                            <tr class="pf-sub">
+                                                                <td colspan="2" class="pf-right">SKU price</td>
+                                                                <td class="pf-right">&#8377; <%# SkuPriceText %></td>
+                                                                <td class="pf-md" runat="server" visible='<%# ShowInternal %>'></td>
+                                                                <td></td>
+                                                            </tr>
+                                                            <tr class="pf-sub">
+                                                                <td colspan="2" class="pf-right">Packaging material</td>
+                                                                <td class="pf-right">&#8377; <span class="pf-material-amt">0.00</span></td>
+                                                                <td class="pf-md" runat="server" visible='<%# ShowInternal %>'></td>
+                                                                <td></td>
+                                                            </tr>
+                                                            <tr class="pf-sub">
+                                                                <td colspan="2" class="pf-right">Margin amount</td>
+                                                                <td class="pf-right">&#8377; <span class="pf-margin-amt">0.00</span></td>
+                                                                <td class="pf-md" runat="server" visible='<%# ShowInternal %>'></td>
+                                                                <td></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td colspan="2" class="pf-right">Total</td>
+                                                                <td class="pf-right">&#8377; <span class="pf-total-amt">0.00</span></td>
+                                                                <td class="pf-md" runat="server" visible='<%# ShowInternal %>'></td>
+                                                                <td></td>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </ItemTemplate>
-                    </asp:Repeater>
+                            </ItemTemplate>
+                        </asp:Repeater>
 
                         <div class="pf-add-pack">
                             <div>
