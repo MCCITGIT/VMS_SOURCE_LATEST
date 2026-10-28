@@ -51,8 +51,8 @@
                 <a href="Home.aspx" title="Home"><i class="fas fa-home"></i></a>
                 <div class="diveider">/</div>
                 <div class="pageTitleWrap">
-                    <h3 class="pageTitle">Raw Material Vendor Master - Add</h3>
-                    <p class="pageSubTitle">Create and maintain raw material vendor records</p>
+                    <h3 class="pageTitle">Supplier Master - Add</h3>
+                    <p class="pageSubTitle">Create and maintain supplier records</p>
                 </div>
             </div>
             <div class="rightFung"></div>
@@ -63,7 +63,7 @@
                 <div class="mst-panel-header-left">
                     <span class="mst-panel-icon"><i class="fas fa-truck"></i></span>
                     <div>
-                        <h5 class="mst-panel-title">Vendor Details</h5>
+                        <h5 class="mst-panel-title">Supplier Details</h5>
                         <p class="mst-panel-subtitle">Basic identification for the raw material vendor</p>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
                 <div class="row">
                     <div class="col-md-3">
                         <div class="form-group">
-                            <label class="form-control-label">Vendor Code:<span id="lblGroup1" class="mandatory">*</span></label>
+                            <label class="form-control-label">Supplier Code:<span id="lblGroup1" class="mandatory">*</span></label>
                             <div class="dFlexC">
                                 <asp:TextBox CssClass="form-control" ID="txtUnitCode" ClientIDMode="Static" MaxLength="5" ReadOnly="true" runat="server" TabIndex="1"></asp:TextBox>
                             </div>
