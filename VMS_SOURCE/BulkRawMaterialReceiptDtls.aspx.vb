@@ -91,19 +91,19 @@ Partial Class BulkRawMaterialReceiptDtls
                 If ds.Tables(0).Rows(0)("courier_date").Equals(DBNull.Value) Then
                     txtcourierDT.Text = String.Empty
                 Else
-                    txtcourierDT.Text = Convert.ToDateTime(ds.Tables(0).Rows(0)("courier_date")).ToString("dd/MM/yyyy")
+                    txtcourierDT.Text = DateText(ds.Tables(0).Rows(0)("courier_date"))
                 End If
 
                 If ds.Tables(0).Rows(0)("despatch_date").Equals(DBNull.Value) Then
                     txtDOJ.Text = String.Empty
                 Else
-                    txtDOJ.Text = Convert.ToDateTime(ds.Tables(0).Rows(0)("despatch_date")).ToString("dd/MM/yyyy")
+                    txtDOJ.Text = DateText(ds.Tables(0).Rows(0)("despatch_date"))
                 End If
                 txtinvno.Text = ds.Tables(0).Rows(0)("inv_no")
                 If ds.Tables(0).Rows(0)("inv_date").Equals(DBNull.Value) Then
                     txtinvdate.Text = String.Empty
                 Else
-                    txtinvdate.Text = Convert.ToDateTime(ds.Tables(0).Rows(0)("inv_date")).ToString("dd/MM/yyyy")
+                    txtinvdate.Text = DateText(ds.Tables(0).Rows(0)("inv_date"))
                 End If
                 txtTransporterNM.Text = ds.Tables(0).Rows(0)("trans_name")
                 txttransno.Text = ds.Tables(0).Rows(0)("transid")
@@ -112,7 +112,7 @@ Partial Class BulkRawMaterialReceiptDtls
                 If ds.Tables(0).Rows(0)("lrdate").Equals(DBNull.Value) Then
                     txtlrdate.Text = String.Empty
                 Else
-                    txtlrdate.Text = Convert.ToDateTime(ds.Tables(0).Rows(0)("lrdate")).ToString("dd/MM/yyyy")
+                    txtlrdate.Text = DateText(ds.Tables(0).Rows(0)("lrdate"))
                 End If
                 txtVehicleno.Text = ds.Tables(0).Rows(0)("vehicle_no")
                 txtdeliverytype.Text = ds.Tables(0).Rows(0)("del_type")
@@ -176,7 +176,7 @@ Partial Class BulkRawMaterialReceiptDtls
             If ds.Tables(0).Rows(0)("inv_date").Equals(DBNull.Value) Then
                 txtinvdate.Text = String.Empty
             Else
-                txtinvdate.Text = Convert.ToDateTime(ds.Tables(0).Rows(0)("inv_date")).ToString("dd/MM/yyyy")
+                txtinvdate.Text = DateText(ds.Tables(0).Rows(0)("inv_date"))
             End If
             txtTransporterNM.Text = ds.Tables(0).Rows(0)("trans_name")
 
@@ -189,7 +189,7 @@ Partial Class BulkRawMaterialReceiptDtls
             If ds.Tables(0).Rows(0)("lrdate").Equals(DBNull.Value) Then
                 txtlrdate.Text = String.Empty
             Else
-                txtlrdate.Text = Convert.ToDateTime(ds.Tables(0).Rows(0)("lrdate")).ToString("dd/MM/yyyy")
+                txtlrdate.Text = DateText(ds.Tables(0).Rows(0)("lrdate"))
             End If
 
             If ds.Tables(0).Rows(0)("vehicle_no").Equals(DBNull.Value) Then
@@ -206,7 +206,7 @@ Partial Class BulkRawMaterialReceiptDtls
 
 
             If hdr.Table.Columns.Contains("despatch_date") AndAlso Not hdr("despatch_date").Equals(DBNull.Value) Then
-                txtDOJ.Text = Convert.ToDateTime(hdr("despatch_date")).ToString("dd/MM/yyyy")
+                txtDOJ.Text = DateText(hdr("despatch_date"))
             Else
                 txtDOJ.Text = String.Empty
             End If
@@ -953,5 +953,22 @@ Partial Class BulkRawMaterialReceiptDtls
     Protected Sub btnCancel_Click(sender As Object, e As EventArgs)
         Response.Redirect("~/BulkRawMaterialReceiptList.aspx", False)
     End Sub
+
+    ''' <summary>Modified-by MUKESH BHAGAT 28-10-2026: date column -> "dd/MM/yyyy" without depending on the server culture.
+    ''' The SP returns some dates as text ("17/10/2026"); Convert.ToDateTime parsed that on a dd/MM machine but failed on the
+    ''' en-US server ("String was not recognized as a valid DateTime"). Real DateTime values are formatted directly.</summary>
+    Private Shared Function DateText(ByVal value As Object) As String
+        If value Is Nothing OrElse value Is DBNull.Value Then Return String.Empty
+        If TypeOf value Is DateTime Then Return CDate(value).ToString("dd/MM/yyyy")
+        Dim s As String = Convert.ToString(value).Trim()
+        If s = "" Then Return String.Empty
+        Dim d As DateTime
+        Dim formats() As String = {"dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "d-M-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss",
+                                   "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-ddTHH:mm:ss", "dd-MMM-yyyy", "dd MMM yyyy", "MMM dd yyyy h:mmtt"}
+        If DateTime.TryParseExact(s, formats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, d) Then Return d.ToString("dd/MM/yyyy")
+        If DateTime.TryParse(s, System.Globalization.CultureInfo.GetCultureInfo("en-GB"), System.Globalization.DateTimeStyles.None, d) Then Return d.ToString("dd/MM/yyyy")
+        If DateTime.TryParse(s, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, d) Then Return d.ToString("dd/MM/yyyy")
+        Return s      ' unknown shape: show as received rather than fail the page
+    End Function
 
 End Class
