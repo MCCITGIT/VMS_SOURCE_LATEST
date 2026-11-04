@@ -78,9 +78,12 @@
             </div>
         </div>
         <div class="card-body">
+            <asp:HiddenField ID="hdnPoLinkHasData" runat="server" Value="0" />
+            <asp:HiddenField ID="hdnPoLinkPageSize" runat="server" Value="10" />
+            <asp:HiddenField ID="hdnPoLinkAdmin" runat="server" Value="N" />
             <div class="table-responsive">
-                <asp:GridView ID="gvProduct" runat="server" AutoGenerateColumns="false" AllowPaging="true" PageSize="10"
-                    Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="No records found" OnRowCommand="gvProduct_RowCommand" OnPageIndexChanging="gvProduct_PageIndexChanging" OnRowDataBound="gvProduct_RowDataBound">
+                <asp:GridView ID="gvProduct" runat="server" AutoGenerateColumns="false" AllowPaging="false" PageSize="10"
+                    Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="No records found" OnRowCommand="gvProduct_RowCommand" OnRowDataBound="gvProduct_RowDataBound">
                     <RowStyle CssClass="tlrowlight" />
                     <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
                     <HeaderStyle CssClass="headerGrid" />
@@ -170,4 +173,132 @@
             </div>
         </div>
     </div>
+    <script type="text/javascript">
+        (function () {
+            var gridSel = '#<%= gvProduct.ClientID %>';
+            var pageIndex = 0, pageSize = 10, total = 0, loading = false, noMore = false, seq = 0, suppressUntil = 0;
+            var filters = { depot: '', vendor: '', status: '' };
+
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function dataRows() { return $(gridSel + ' tbody tr.tlrowlight').not('.po-skel'); }
+            function scrollBox() { return $(gridSel).closest('.table-responsive'); }
+            function isAdmin() { return $('#<%= hdnPoLinkAdmin.ClientID %>').val() === 'Y'; }
+            function capture() {
+                filters.depot = $('#<%= ddlDepot.ClientID %>').val() || '';
+                filters.vendor = $('#<%= ddlVendor.ClientID %>').val() || '';
+                filters.status = $('#<%= ddlStatus.ClientID %>').val() || '';
+                var size = parseInt($('#<%= hdnPoLinkPageSize.ClientID %>').val(), 10);
+                pageSize = size > 0 ? size : 10;
+                total = 0;
+            }
+            function skel() {
+                var widths = ['24px', '70%', '70%', '40px', '60%', '60%', '70px', '18px', '18px'];
+                var cols = ['5%', '10%', '10%', '5%', '10%', '10%', '10%', '5%', '5%'];
+                var cells = '';
+                for (var i = 0; i < widths.length; i++) {
+                    cells += '<td style="text-align:center;width:' + cols[i] + '"><span class="grid-skel-bar" style="width:' + widths[i] + '"></span></td>';
+                }
+                return '<tr class="tlrowlight po-skel">' + cells + '</tr>';
+            }
+            function place(html) {
+                var $rows = $('<table><tbody>' + html + '</tbody></table>').find('tr');
+                $(gridSel).find('tbody').append($rows);
+            }
+            function loadNext() {
+                if (loading || noMore) return;
+                if ($('#<%= hdnPoLinkHasData.ClientID %>').val() !== '1') return;
+                if (!dataRows().length) return;
+                if (total && (pageIndex + 1) * pageSize >= total) { noMore = true; return; }
+                if (total && dataRows().length >= total) { noMore = true; return; }
+                loading = true;
+                pageIndex++;
+                var token = ++seq;
+                place(skel());
+                var box = scrollBox();
+                if (box.length && box[0].scrollHeight > box[0].clientHeight) {
+                    suppressUntil = Date.now() + 200;
+                    box.scrollTop(box[0].scrollHeight);
+                }
+                PageMethods.GetMorePoLinks(pageIndex, pageSize, filters.depot, filters.vendor, filters.status, function (res) {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.po-skel').remove();
+                    loading = false;
+                    if (!res || !res.rows) { noMore = true; return; }
+                    total = res.total || 0;
+                    if (!res.rows.length || res.rows.length < pageSize || (pageIndex + 1) * pageSize >= total) noMore = true;
+                    var html = '', admin = isAdmin();
+                    for (var i = 0; i < res.rows.length; i++) {
+                        var r = res.rows[i];
+                        var n = pageIndex * pageSize + i + 1;
+                        var mailCell = '', actionCell = '';
+                        if (r.linked === 'Y') {
+                            mailCell = '<span class="text-success"><i class="fa fa-check" aria-hidden="true"></i></span>';
+                        } else if (!r.rejected) {
+                            mailCell = '<a href="javascript:void(0)" class="po-link-mail" title="Send Mail" style="font-size:14px"><i class="fa fa-envelope"></i></a>';
+                        }
+                        if (r.linked !== 'Y' && admin) {
+                            if (r.rejected) actionCell = '<span class="text-secondary">Rejected</span>';
+                            else actionCell = '<a href="javascript:void(0)" class="po-link-reject text-danger" title="Reject" style="font-size:14px"><i class="fa fa-times-circle fa-1x"></i></a>';
+                        }
+                        html += '<tr class="tlrowlight" data-hdr="' + esc(r.hdrId) + '" data-depot="' + esc(r.depotName) + '" data-vendor="' + esc(r.vendorName) + '" data-po="' + esc(r.poNo) + '" data-sku="' + esc(r.sku) + '" data-site="' + esc(r.site) + '" data-vendorcode="' + esc(r.vendor) + '">'
+                            + '<td style="text-align:center;width:5%">' + n + '</td>'
+                            + '<td style="text-align:center;width:10%">' + esc(r.depotName) + '</td>'
+                            + '<td style="text-align:center;width:10%">' + esc(r.vendorName) + '</td>'
+                            + '<td style="text-align:center;width:5%">' + esc(r.poNo) + '</td>'
+                            + '<td style="text-align:center;width:10%">' + esc(r.sku) + '</td>'
+                            + '<td style="text-align:center;width:10%">' + esc(r.site) + '</td>'
+                            + '<td style="text-align:center;width:10%">' + esc(r.reqDate) + '</td>'
+                            + '<td style="text-align:center;width:5%">' + mailCell + '</td>'
+                            + '<td style="text-align:center;width:5%">' + actionCell + '</td></tr>';
+                    }
+                    if (html) place(html);
+                    var live = scrollBox();
+                    if (!noMore && live.length && live[0].scrollHeight <= live[0].clientHeight + 2) loadNext();
+                }, function () {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.po-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                });
+            }
+            function onScroll() {
+                if (Date.now() < suppressUntil) return;
+                var el = this;
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) loadNext();
+            }
+            function bind() {
+                pageIndex = 0; noMore = false; loading = false; seq++;
+                capture();
+                var box = scrollBox();
+                box.off('scroll.poLink').on('scroll.poLink', onScroll);
+                if ($('#<%= hdnPoLinkHasData.ClientID %>').val() === '1' && box.length && box[0].scrollHeight <= box[0].clientHeight + 2) loadNext();
+            }
+            $(document).on('click', '.po-link-mail', function (ev) {
+                ev.preventDefault();
+                var tr = $(this).closest('tr');
+                PageMethods.SendPoLinkMailFromList(tr.attr('data-depot'), tr.attr('data-vendor'), tr.attr('data-po'), tr.attr('data-sku'), tr.attr('data-site'), tr.attr('data-vendorcode'), function (msg) {
+                    if (msg) alert(msg);
+                });
+            });
+            $(document).on('click', '.po-link-reject', function (ev) {
+                ev.preventDefault();
+                if (!confirm('Are you Sure to Reject this PO Linking Request?')) return;
+                var tr = $(this).closest('tr');
+                PageMethods.RejectPoLinkFromList(tr.attr('data-hdr'), function (msg) {
+                    if (msg === 'ok') {
+                        alert('Rejected Successfullty');
+                        tr.find('.po-link-mail').remove();
+                        tr.find('td').eq(8).html('<span class="text-secondary">Rejected</span>');
+                    } else {
+                        alert(msg || 'Error Occured');
+                    }
+                });
+            });
+            $(bind);
+        })();
+    </script>
 </asp:Content>

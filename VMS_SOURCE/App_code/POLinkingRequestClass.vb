@@ -1411,4 +1411,53 @@ Public Class POLinkingRequestClass
         Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[vpr_vendor_cancellation_deactivate]", CommandType.StoredProcedure, sqlParams)
     End Function
 #End Region
+
+#Region "GRN upload (HO)"
+    'Added by MUKESH BHAGAT on 04-11-2026 : HO uploads GRN No / GRN Date (Excel) for despatch releases that have no GRN number yet.
+    'Table: vendor_despatch_release_dtls (vdr_grn_no / vdr_grn_date); every change is logged in vendor_grn_upload_log.
+
+    ''' <summary>[grn_upload_pending_list] rows with no GRN number - the Excel template data. Empty filter = all.</summary>
+    Public Function GetGrnUploadPendingList(ByVal depotCode As String, ByVal vendorCode As String, ByVal fromDate As Object, ByVal toDate As Object) As DataSet
+        Dim p(3) As SqlParameter
+        p(0) = New SqlParameter("@depot_code", SqlDbType.VarChar, 10) With {.Value = If(String.IsNullOrWhiteSpace(depotCode), DBNull.Value, CObj(depotCode.Trim()))}
+        p(1) = New SqlParameter("@vendor_code", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(vendorCode), DBNull.Value, CObj(vendorCode.Trim()))}
+        p(2) = New SqlParameter("@from_date", SqlDbType.Date) With {.Value = If(fromDate, DBNull.Value)}
+        p(3) = New SqlParameter("@to_date", SqlDbType.Date) With {.Value = If(toDate, DBNull.Value)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[grn_upload_pending_list]", CommandType.StoredProcedure, p)
+    End Function
+
+    Public Shared Function NewGrnUploadLineTable() As DataTable
+        Dim t As New DataTable()
+        t.Columns.Add("row_no", GetType(Integer))
+        t.Columns.Add("vdr_id", GetType(Long))
+        t.Columns.Add("grn_no", GetType(String))
+        t.Columns.Add("grn_date", GetType(DateTime))
+        Return t
+    End Function
+
+    ''' <summary>[grn_upload_apply] apply = False only checks; True checks and saves in one transaction (nothing is saved if any line is rejected).
+    ''' Table 0 = summary (total_rows, ok_rows, rejected_rows, applied, batch_id), table 1 = one row per line with its result.</summary>
+    Public Function ApplyGrnUpload(ByVal lines As DataTable, ByVal userId As String, ByVal fileName As String, ByVal apply As Boolean) As DataSet
+        Dim ds As New DataSet()
+        Dim sqlConn As SqlConnection = Nothing
+        Try
+            sqlConn = DBFactory.GetHelper.OpenConnection
+            Dim cmd As New SqlCommand("[dbo].[grn_upload_apply]", sqlConn)
+            cmd.CommandType = CommandType.StoredProcedure
+            cmd.CommandTimeout = 300
+            Dim pLines As SqlParameter = cmd.Parameters.Add("@lines", SqlDbType.Structured)
+            pLines.TypeName = "dbo.tbl_grn_upload_line"
+            pLines.Value = lines
+            cmd.Parameters.Add("@user_id", SqlDbType.VarChar, 50).Value = userId
+            cmd.Parameters.Add("@file_name", SqlDbType.VarChar, 260).Value = If(String.IsNullOrEmpty(fileName), DBNull.Value, CObj(fileName))
+            cmd.Parameters.Add("@apply", SqlDbType.Bit).Value = apply
+            Using da As New SqlDataAdapter(cmd)
+                da.Fill(ds)
+            End Using
+        Finally
+            If sqlConn IsNot Nothing Then sqlConn.Close()
+        End Try
+        Return ds
+    End Function
+#End Region
 End Class

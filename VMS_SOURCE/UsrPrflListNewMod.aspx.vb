@@ -125,31 +125,31 @@ Partial Class UsrPrflListNewMod
                 e.Row.Cells(3).Text = "<a class='gridlink' href='UsrPrfileAddNewMod.aspx?" + Constant.SessionKeys.UserId + "=" + rowView("usp_user_id") + rowView("usp_name") + "</a>"
             End If
         End If
-        If (e.Row.RowType = DataControlRowType.Pager) Then
-            Dim row As TableRow = New TableRow
-            row = e.Row.Controls(0).Controls(0).Controls(0)
-            For Each cell As TableCell In row.Cells
-                Dim lb As Control = cell.Controls(0)
+        'If (e.Row.RowType = DataControlRowType.Pager) Then
+        '    Dim row As TableRow = New TableRow
+        '    row = e.Row.Controls(0).Controls(0).Controls(0)
+        '    For Each cell As TableCell In row.Cells
+        '        Dim lb As Control = cell.Controls(0)
 
 
-                If (TypeOf (lb) Is Label) Then
+        '        If (TypeOf (lb) Is Label) Then
 
-                    'CType(lb, Label).ForeColor = System.Drawing.Color.Red
-                    CType(lb, Label).CssClass = "lblpager"
-                    'CType(lb, Label).Width = 20
-                    'CType(lb, Label).Height = 15
-                    'set current pager
+        '            'CType(lb, Label).ForeColor = System.Drawing.Color.Red
+        '            CType(lb, Label).CssClass = "lblpager"
+        '            'CType(lb, Label).Width = 20
+        '            'CType(lb, Label).Height = 15
+        '            'set current pager
 
-                ElseIf (TypeOf (lb) Is LinkButton) Then
+        '        ElseIf (TypeOf (lb) Is LinkButton) Then
 
-                    CType(lb, LinkButton).CssClass = "lnkpager"
-                    'CType(lb, LinkButton).Width = 20
-                    'CType(lb, LinkButton).Height = 15
-                    'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
-                End If
+        '            CType(lb, LinkButton).CssClass = "lnkpager"
+        '            'CType(lb, LinkButton).Width = 20
+        '            'CType(lb, LinkButton).Height = 15
+        '            'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
+        '        End If
 
-            Next
-        End If
+        '    Next
+        'End If
     End Sub
 
 #Region "Load Search Criteria"
@@ -233,7 +233,7 @@ Partial Class UsrPrflListNewMod
             UserSet = oUserFunction.User_List_Get(userInfo.userCompanyEntity, ddlBranch.SelectedValue, ddlUserGroup.SelectedValue, txtSearchUserName.Text, ddlDepartment.SelectedValue)
             If (Not (UserSet Is Nothing) AndAlso UserSet.Tables.Count > 0 AndAlso Not (UserSet.Tables(0) Is Nothing) AndAlso UserSet.Tables(0).Rows.Count > 0) Then
                 gvUserProfile.Visible = True
-                gvUserProfile.DataSource = UserSet.Tables(0)
+                gvUserProfile.DataSource = FirstUserPage(UserSet.Tables(0))
                 gvUserProfile.DataBind()
                 Div_User_List_Grid.Visible = False
             Else
@@ -271,10 +271,10 @@ Partial Class UsrPrflListNewMod
 
 #Region "Grid Page Index Changed"
     ' Event Handler for Page Changing
-    Protected Sub gvUserProfile_IndexChanging(ByVal sender As Object, ByVal e As GridViewPageEventArgs)
-        gvUserProfile.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub gvUserProfile_IndexChanging(ByVal sender As Object, ByVal e As GridViewPageEventArgs)
+    '    gvUserProfile.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
 #End Region
 
     'Protected Sub ImgbtnPrint_Click(ByVal sender As Object, ByVal e As System.Web.UI.ImageClickEventArgs) Handles ImgbtnPrint.Click
@@ -284,4 +284,58 @@ Partial Class UsrPrflListNewMod
     Protected Sub ImgbtnPrint_Click(sender As Object, e As EventArgs)
         Response.Redirect("~/User_Profile_List_Report.aspx")
     End Sub
+
+    Private Function SelectedPageSize() As Integer
+        Dim pageSize As Integer = 15
+        If ddlPageSize IsNot Nothing Then
+            Integer.TryParse(Convert.ToString(ddlPageSize.SelectedValue), pageSize)
+        End If
+        If pageSize <= 0 Then pageSize = 15
+        Return pageSize
+    End Function
+
+    Private Function FirstUserPage(ByVal dt As DataTable) As DataTable
+        Dim pageDt As DataTable = dt.Clone()
+        Dim take As Integer = Math.Min(SelectedPageSize(), dt.Rows.Count)
+        For i As Integer = 0 To take - 1
+            pageDt.ImportRow(dt.Rows(i))
+        Next
+        Return pageDt
+    End Function
+
+    <System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreUserProfiles(pageIndex As Integer, branch As String, userGroup As String, userName As String, department As String, pageSize As Integer) As Object
+        Dim rows As New List(Of Object)
+        Dim total As Integer = 0
+        If pageSize <= 0 Then pageSize = 15
+
+        Dim company As String = String.Empty
+        Dim sessionUser = System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo)
+        If sessionUser IsNot Nothing Then
+            company = CType(sessionUser, VMSUserEntity).userCompanyEntity
+        End If
+
+        Dim userSet As DataSet = New UserProfile().User_List_Get(company, If(branch, String.Empty), If(userGroup, String.Empty), If(userName, String.Empty), If(department, String.Empty))
+        If userSet IsNot Nothing AndAlso userSet.Tables.Count > 0 AndAlso userSet.Tables(0) IsNot Nothing Then
+            Dim dt As DataTable = userSet.Tables(0)
+            total = dt.Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            For i As Integer = start To last
+                Dim r As DataRow = dt.Rows(i)
+                rows.Add(New With {
+                    .usp_user_id = Convert.ToString(r("usp_user_id")),
+                    .usp_dept = Convert.ToString(r("usp_dept")),
+                    .usp_name = Convert.ToString(r("usp_name")),
+                    .usp_branch = Convert.ToString(r("usp_branch")),
+                    .usp_region = Convert.ToString(r("usp_region")),
+                    .usp_desig = Convert.ToString(r("usp_desig")),
+                    .usp_group_code = Convert.ToString(r("usp_group_code")),
+                    .active = Convert.ToString(r("active"))
+                })
+            Next
+        End If
+
+        Return New With {.rows = rows, .total = total}
+    End Function
 End Class

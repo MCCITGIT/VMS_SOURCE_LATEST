@@ -1,5 +1,6 @@
 ﻿
 Imports System.Data
+Imports System.Collections.Generic
 Imports VMS.Web
 
 Partial Class POLinking_Request_List
@@ -10,6 +11,12 @@ Partial Class POLinking_Request_List
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
         CheckLogin()
         Page.MaintainScrollPositionOnPostBack = True
+
+        If userInfo.userGroupCodeEntity = "SYSADMIN" Then
+            hdnPoLinkAdmin.Value = "Y"
+        Else
+            hdnPoLinkAdmin.Value = "N"
+        End If
 
         If (Not IsPostBack) Then
             PopulateDepotDropdown()
@@ -115,9 +122,17 @@ Partial Class POLinking_Request_List
         Dim ds As DataSet = New DataSet()
         ds = obj.GetPOLinkingReqList(ddlDepot.SelectedValue, ddlVendor.SelectedValue, ddlStatus.SelectedValue)
 
-        If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(0) Is Nothing)) Then
-            gvProduct.DataSource = ds
+        If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
+            gvProduct.DataSource = FirstPoLinkPage(ds.Tables(0))
             gvProduct.DataBind()
+            hdnPoLinkHasData.Value = "1"
+            hdnPoLinkPageSize.Value = gvProduct.PageSize.ToString()
+        Else
+            hdnPoLinkHasData.Value = "0"
+            If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(0) Is Nothing)) Then
+                gvProduct.DataSource = ds
+                gvProduct.DataBind()
+            End If
         End If
     End Sub
 
@@ -125,7 +140,7 @@ Partial Class POLinking_Request_List
         PopulateList()
     End Sub
 
-    Private Sub SendMail(ByVal DepotCode As String, ByVal VendorCode As String, ByVal PONO As String, ByVal SKU As String, ByVal siteID As String, ByVal VendorID As String)
+    Private Shared Function SendPoLinkMail(ByVal DepotCode As String, ByVal VendorCode As String, ByVal PONO As String, ByVal SKU As String, ByVal siteID As String, ByVal VendorID As String) As String
         Dim objemail As EmailSMSsender = New EmailSMSsender()
         Dim mailsubject As String = String.Empty
         Dim mailBody As String = String.Empty
@@ -187,11 +202,11 @@ Partial Class POLinking_Request_List
                     'lblPopMessage.ForeColor = System.Drawing.Color.Green
                 End If
 
-                'ScriptManager.RegisterStartupScript(Me.Page, Me.[GetType](), "ShowPopup", "$('#myModalMsg').modal();", True)
-                ScriptManager.RegisterStartupScript(Me.Page, Me.[GetType](), "ShowAlert", "alert('" & response & "');", True)
+                Return response
             End If
         End If
-    End Sub
+        Return String.Empty
+    End Function
 
     Protected Sub gvProduct_RowCommand(sender As Object, e As GridViewCommandEventArgs)
         Dim gv_row As GridViewRow = Nothing
@@ -206,7 +221,10 @@ Partial Class POLinking_Request_List
             Dim lblSKU As Label = CType(gvProduct.Rows(index).FindControl("lblSKU"), Label)
             Dim lblSiteID As Label = CType(gvProduct.Rows(index).FindControl("lblSiteID"), Label)
             Dim hdnVendorCode As HiddenField = CType(gvProduct.Rows(index).FindControl("hdnVendorCode"), HiddenField)
-            SendMail(lbldepot_name.Text, lblVendor.Text, lblPONumber.Text, lblSKU.Text, lblSiteID.Text, hdnVendorCode.Value)
+            Dim response As String = SendPoLinkMail(lbldepot_name.Text, lblVendor.Text, lblPONumber.Text, lblSKU.Text, lblSiteID.Text, hdnVendorCode.Value)
+            If response <> String.Empty Then
+                ScriptManager.RegisterStartupScript(Me.Page, Me.[GetType](), "ShowAlert", "alert('" & response & "');", True)
+            End If
         End If
 
         If e.CommandName = "Reject" Then
@@ -226,10 +244,10 @@ Partial Class POLinking_Request_List
         End If
     End Sub
 
-    Protected Sub gvProduct_PageIndexChanging(sender As Object, e As GridViewPageEventArgs)
-        gvProduct.PageIndex = e.NewPageIndex
-        PopulateList()
-    End Sub
+    'Protected Sub gvProduct_PageIndexChanging(sender As Object, e As GridViewPageEventArgs)
+    '    gvProduct.PageIndex = e.NewPageIndex
+    '    PopulateList()
+    'End Sub
 
     Protected Sub gvProduct_RowDataBound(sender As Object, e As GridViewRowEventArgs)
         If (e.Row.RowType = DataControlRowType.DataRow) Then
@@ -273,30 +291,112 @@ Partial Class POLinking_Request_List
             End If
         End If
 
-        If (e.Row.RowType = DataControlRowType.Pager) Then
-            Dim row As TableRow = New TableRow
-            row = e.Row.Controls(0).Controls(0).Controls(0)
-            For Each cell As TableCell In row.Cells
-                Dim lb As Control = cell.Controls(0)
+        'If (e.Row.RowType = DataControlRowType.Pager) Then
+        '    Dim row As TableRow = New TableRow
+        '    row = e.Row.Controls(0).Controls(0).Controls(0)
+        '    For Each cell As TableCell In row.Cells
+        '        Dim lb As Control = cell.Controls(0)
 
 
-                If (TypeOf (lb) Is Label) Then
+        '        If (TypeOf (lb) Is Label) Then
 
-                    'CType(lb, Label).ForeColor = System.Drawing.Color.Red
-                    CType(lb, Label).CssClass = "lblpager"
-                    'CType(lb, Label).Width = 20
-                    'CType(lb, Label).Height = 15
-                    'set current pager
+        '            'CType(lb, Label).ForeColor = System.Drawing.Color.Red
+        '            CType(lb, Label).CssClass = "lblpager"
+        '            'CType(lb, Label).Width = 20
+        '            'CType(lb, Label).Height = 15
+        '            'set current pager
 
-                ElseIf (TypeOf (lb) Is LinkButton) Then
+        '        ElseIf (TypeOf (lb) Is LinkButton) Then
 
-                    CType(lb, LinkButton).CssClass = "lnkpager"
-                    'CType(lb, LinkButton).Width = 20
-                    'CType(lb, LinkButton).Height = 15
-                    'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
-                End If
+        '            CType(lb, LinkButton).CssClass = "lnkpager"
+        '            'CType(lb, LinkButton).Width = 20
+        '            'CType(lb, LinkButton).Height = 15
+        '            'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
+        '        End If
 
+        '    Next
+        'End If
+    End Sub
+
+    Private Function FirstPoLinkPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvProduct.PageSize
+        If pageSize <= 0 Then pageSize = 10
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    Private Shared Function CurrentPoLinkUser() As VMSUserEntity
+        Dim sessionUser As Object = System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo)
+        If sessionUser Is Nothing Then Return Nothing
+        Return CType(sessionUser, VMSUserEntity)
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function GetMorePoLinks(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal depotCode As String, ByVal vendorCode As String, ByVal status As String) As Object
+        Dim rows As New List(Of Object)
+        Dim userInfo As VMSUserEntity = CurrentPoLinkUser()
+        If userInfo Is Nothing Then Return New With {.rows = rows, .total = 0}
+        If pageSize <= 0 Then pageSize = 10
+        If pageIndex < 0 Then pageIndex = 0
+        If Not (userInfo.userGroupCodeEntity = Constant.UserFormAccess.SYSADMIN Or userInfo.userGroupCodeEntity = Constant.UserFormAccess.HOMARKETING Or userInfo.userGroupCodeEntity = Constant.UserFormAccess.HOACCOUNTS Or userInfo.userGroupCodeEntity = Constant.UserFormAccess.REGION) Then
+            depotCode = userInfo.userBranchEntity
+        End If
+        Dim vendorSet As DataSet = New QualityControlClass().GetVendor(userInfo.userIDEntity)
+        If vendorSet IsNot Nothing AndAlso vendorSet.Tables.Count > 0 AndAlso vendorSet.Tables(0) IsNot Nothing AndAlso vendorSet.Tables(0).Rows.Count = 1 Then
+            vendorCode = vendorSet.Tables(0).Rows(0)("vendor_code").ToString()
+        End If
+        Dim ds As DataSet = New POLinkingRequestClass().GetPOLinkingReqList(depotCode, vendorCode, status)
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                rows.Add(New With {
+                    .hdrId = dr("airh_hdr_id").ToString(),
+                    .rejected = dr("airh_reject_request").ToString(),
+                    .linked = dr("isLinked").ToString(),
+                    .depotName = dr("depot_name").ToString(),
+                    .depot = dr("airh_depot").ToString(),
+                    .vendorName = dr("vendor_name").ToString(),
+                    .vendor = dr("airh_vendor").ToString(),
+                    .poNo = dr("aird_po_no").ToString(),
+                    .sku = dr("sku_code").ToString(),
+                    .site = dr("site_name").ToString(),
+                    .reqDate = dr("req_date").ToString()
+                })
             Next
         End If
-    End Sub
+        Return New With {.rows = rows, .total = total}
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function SendPoLinkMailFromList(ByVal depotName As String, ByVal vendorName As String, ByVal poNo As String, ByVal sku As String, ByVal siteName As String, ByVal vendorCode As String) As String
+        If CurrentPoLinkUser() Is Nothing Then Return "Please login again."
+        Return SendPoLinkMail(depotName, vendorName, poNo, sku, siteName, vendorCode)
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function RejectPoLinkFromList(ByVal hdrId As String) As String
+        Dim userInfo As VMSUserEntity = CurrentPoLinkUser()
+        If userInfo Is Nothing Then Return "Please login again."
+        If userInfo.userGroupCodeEntity <> "SYSADMIN" Then Return "Error Occured"
+        Try
+            Dim affected As Integer = New POLinkingRequestClass().RejectPOLinking(Convert.ToInt64(hdrId), userInfo.userIDEntity)
+            If affected > 0 Then Return "ok"
+            Return "Error Occured"
+        Catch ex As Exception
+            Return "Error Occured"
+        End Try
+    End Function
 End Class

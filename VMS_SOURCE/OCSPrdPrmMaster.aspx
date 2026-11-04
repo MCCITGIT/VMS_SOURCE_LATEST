@@ -60,8 +60,10 @@
             <div class="table-responsive">
                 <asp:UpdatePanel ID="UpdatePanel1" runat="server">
                     <ContentTemplate>
+                        <asp:HiddenField ID="hdnOcsHasData" runat="server" Value="0" />
+                        <asp:HiddenField ID="hdnOcsPageSize" runat="server" Value="15" />
                         <asp:GridView ID="gvParamsList" runat="server" AutoGenerateColumns="False" EmptyDataText="No record(s) found."
-                            EnableModelValidation="True" ShowFooter="true" AllowPaging="true" PageSize="15" BorderWidth="1" CssClass="table table-hover upgradDataGrid">
+                            EnableModelValidation="True" ShowFooter="true" AllowPaging="false" PageSize="15" BorderWidth="1" CssClass="table table-hover upgradDataGrid">
                             <RowStyle CssClass="tlrowlight" />
                             <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
                             <HeaderStyle CssClass="headerGrid" />
@@ -261,4 +263,183 @@
             <asp:Label ID="lblErrorMessage" CssClass="errormsg" Visible="true" runat="server"></asp:Label>
         </div>
     </div>
+    <script type="text/javascript">
+        (function () {
+            var gridSel = '#<%= gvParamsList.ClientID %>';
+            var pageIndex = 0, pageSize = 15, total = 0, loading = false, noMore = false, seq = 0, suppressUntil = 0;
+            var productCode = '';
+            var products = null, frequencies = null;
+
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function dataRows() { return $(gridSel + ' tbody tr.tlrowlight').not('.ocs-skel'); }
+            function scrollBox() { return $(gridSel).closest('.table-responsive'); }
+            function capture() {
+                productCode = $('#<%= ddlparam.ClientID %>').val() || '';
+                var size = parseInt($('#<%= hdnOcsPageSize.ClientID %>').val(), 10);
+                pageSize = size > 0 ? size : 15;
+                total = 0;
+            }
+            function skel() {
+                var widths = ['70%', '70%', '50%', '36px', '36px', '40px', '40px', '28px', '60%', '18px'];
+                var cells = '';
+                for (var i = 0; i < widths.length; i++) cells += '<td style="text-align:center"><span class="grid-skel-bar" style="width:' + widths[i] + '"></span></td>';
+                return '<tr class="tlrowlight ocs-skel">' + cells + '</tr>';
+            }
+            function place(html) {
+                var $rows = $('<table><tbody>' + html + '</tbody></table>').find('tr');
+                var $footer = $(gridSel).find('tr.footerGrid').first();
+                if ($footer.length) $footer.before($rows);
+                else $(gridSel).find('tbody').append($rows);
+            }
+            function lovSelect(id, list, selected) {
+                var html = '<select id="' + id + '" class="form-control select2">';
+                for (var i = 0; i < list.length; i++) {
+                    html += '<option value="' + esc(list[i].code) + '"' + (list[i].code === selected ? ' selected' : '') + '>' + esc(list[i].name) + '</option>';
+                }
+                return html + '</select>';
+            }
+            function ynSelect(id, selected) {
+                return '<select id="' + id + '" class="form-control select2">'
+                    + '<option value="Y"' + (selected === 'Y' ? ' selected' : '') + '>Yes</option>'
+                    + '<option value="N"' + (selected !== 'Y' ? ' selected' : '') + '>No</option></select>';
+            }
+            function viewRow(r) {
+                return '<tr class="tlrowlight ocs-more" data-id="' + esc(r.id) + '" data-product="' + esc(r.productCode) + '" data-productname="' + esc(r.productName) + '" data-params="' + esc(r.params) + '" data-freq="' + esc(r.frequencyCode) + '" data-freqname="' + esc(r.frequency) + '" data-active="' + esc(r.active) + '" data-numeric="' + esc(r.numericYn) + '" data-min="' + esc(r.minValue) + '" data-max="' + esc(r.maxValue) + '" data-dropdown="' + esc(r.dropdownYn) + '" data-dropparams="' + esc(r.dropParams) + '">'
+                    + '<td style="text-align:center">' + esc(r.productName) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.params) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.frequency) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.active) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.numericYn) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.minValue) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.maxValue) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.dropdownYn) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.dropParams) + '</td>'
+                    + '<td style="text-align:center"><a href="javascript:void(0)" class="ocs-edit" title="Edit"><i class="fa fa-wrench"></i></a></td></tr>';
+            }
+            function showMessage(ok) {
+                var lbl = document.getElementById('<%= lblErrorMessage.ClientID %>');
+                if (!lbl) return;
+                lbl.style.color = ok ? 'green' : 'red';
+                lbl.innerHTML = ok ? 'Updated Successfully.' : 'Some Error Occured.';
+            }
+            function loadNext() {
+                if (loading || noMore) return;
+                if ($('#<%= hdnOcsHasData.ClientID %>').val() !== '1') return;
+                if (!dataRows().length) return;
+                if (total && ((pageIndex + 1) * pageSize >= total || dataRows().length >= total)) { noMore = true; return; }
+                loading = true;
+                pageIndex++;
+                var token = ++seq;
+                place(skel());
+                var box = scrollBox();
+                if (box.length && box[0].scrollHeight > box[0].clientHeight) {
+                    suppressUntil = Date.now() + 200;
+                    box.scrollTop(box[0].scrollHeight);
+                }
+                PageMethods.GetMoreOcsParams(pageIndex, pageSize, productCode, function (res) {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.ocs-skel').remove();
+                    loading = false;
+                    if (!res || !res.rows) { noMore = true; return; }
+                    total = res.total || 0;
+                    if (res.products && res.products.length) products = res.products;
+                    if (res.frequencies && res.frequencies.length) frequencies = res.frequencies;
+                    if (!res.rows.length || res.rows.length < pageSize || (pageIndex + 1) * pageSize >= total) noMore = true;
+                    var html = '';
+                    for (var i = 0; i < res.rows.length; i++) html += viewRow(res.rows[i]);
+                    if (html) place(html);
+                    var live = scrollBox();
+                    if (!noMore && live.length && live[0].scrollHeight <= live[0].clientHeight + 2) loadNext();
+                }, function () {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.ocs-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                });
+            }
+            function onScroll() {
+                if (Date.now() < suppressUntil) return;
+                if (this.scrollTop + this.clientHeight >= this.scrollHeight - 50) loadNext();
+            }
+            function bind() {
+                pageIndex = 0; noMore = false; loading = false; seq++;
+                products = null; frequencies = null;
+                capture();
+                var box = scrollBox();
+                box.off('scroll.ocs').on('scroll.ocs', onScroll);
+                if ($('#<%= hdnOcsHasData.ClientID %>').val() === '1' && box.length && box[0].scrollHeight <= box[0].clientHeight + 2) loadNext();
+            }
+            $(document).on('click', '.ocs-edit', function (ev) {
+                ev.preventDefault();
+                if (!products || !frequencies) return;
+                var tr = $(this).closest('tr');
+                var id = tr.attr('data-id');
+                tr.html(
+                    '<td>' + lovSelect('ocsPrd' + id, products, tr.attr('data-product')) + '</td>'
+                    + '<td><input type="text" id="ocsParam' + id + '" class="form-control" value="' + esc(tr.attr('data-params')) + '" /></td>'
+                    + '<td>' + lovSelect('ocsFreq' + id, frequencies, tr.attr('data-freq')) + '</td>'
+                    + '<td>' + ynSelect('ocsActive' + id, tr.attr('data-active')) + '</td>'
+                    + '<td>' + ynSelect('ocsNum' + id, tr.attr('data-numeric')) + '</td>'
+                    + '<td><input type="text" id="ocsMin' + id + '" class="form-control ocs-decimal" value="' + esc(tr.attr('data-min')) + '" /></td>'
+                    + '<td><input type="text" id="ocsMax' + id + '" class="form-control ocs-decimal" value="' + esc(tr.attr('data-max')) + '" /></td>'
+                    + '<td>' + ynSelect('ocsDrop' + id, tr.attr('data-dropdown')) + '</td>'
+                    + '<td><input type="text" id="ocsDropParam' + id + '" class="form-control" value="' + esc(tr.attr('data-dropparams')) + '" /></td>'
+                    + '<td style="text-align:center"><a href="javascript:void(0)" id="ocsSave' + id + '" class="ocs-save" title="Save"><i class="fa fa-check-circle" style="color:#00ff21"></i></a> <a href="javascript:void(0)" class="ocs-cancel" title="Cancel"><i class="fa fa-times-circle" style="color:#ff6a00;"></i></a></td>'
+                );
+                if (window.jQuery && jQuery.fn.select2) tr.find('select.select2').select2();
+            });
+            $(document).on('click', '.ocs-cancel', function (ev) {
+                ev.preventDefault();
+                var tr = $(this).closest('tr');
+                tr.replaceWith(viewRow({
+                    id: tr.attr('data-id'), productCode: tr.attr('data-product'), productName: tr.attr('data-productname'),
+                    params: tr.attr('data-params'), frequencyCode: tr.attr('data-freq'), frequency: tr.attr('data-freqname'),
+                    active: tr.attr('data-active'), numericYn: tr.attr('data-numeric'), minValue: tr.attr('data-min'),
+                    maxValue: tr.attr('data-max'), dropdownYn: tr.attr('data-dropdown'), dropParams: tr.attr('data-dropparams')
+                }));
+            });
+            $(document).on('keypress', '.ocs-decimal', function (ev) { return isDecimalNumber(this, ev); });
+            $(document).on('click', '.ocs-save', function (ev) {
+                ev.preventDefault();
+                var tr = $(this).closest('tr');
+                var id = tr.attr('data-id');
+                if (!ValidateSubmit('ocsPrd' + id, 'ocsParam' + id, 'ocsFreq' + id, 'ocsNum' + id, 'ocsDrop' + id, 'ocsDropParam' + id, 'ocsMin' + id, 'ocsMax' + id, 'ocsSave' + id, '<%= lblErrorMessage.ClientID %>')) return false;
+                PageMethods.SaveOcsParam(id, $('#ocsPrd' + id).val(), $('#ocsParam' + id).val(), $('#ocsFreq' + id).val(), $('#ocsActive' + id).val(), $('#ocsNum' + id).val(), $('#ocsDrop' + id).val(), $('#ocsDropParam' + id).val(), $('#ocsMin' + id).val(), $('#ocsMax' + id).val(), function (msg) {
+                    if (msg === 'ok') {
+                        showMessage(true);
+                        tr.replaceWith(viewRow({
+                            id: id,
+                            productCode: $('#ocsPrd' + id).val(),
+                            productName: $('#ocsPrd' + id + ' option:selected').text(),
+                            params: $('#ocsParam' + id).val(),
+                            frequencyCode: $('#ocsFreq' + id).val(),
+                            frequency: $('#ocsFreq' + id + ' option:selected').text(),
+                            active: $('#ocsActive' + id).val(),
+                            numericYn: $('#ocsNum' + id).val(),
+                            minValue: $('#ocsMin' + id).val(),
+                            maxValue: $('#ocsMax' + id).val(),
+                            dropdownYn: $('#ocsDrop' + id).val(),
+                            dropParams: $('#ocsDropParam' + id).val()
+                        }));
+                    } else {
+                        showMessage(false);
+                    }
+                }, function () { showMessage(false); });
+                return false;
+            });
+            $(bind);
+            if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function (sender, args) {
+                    var panels = args.get_panelsUpdated();
+                    for (var i = 0; i < panels.length; i++) {
+                        if ($(panels[i]).find(gridSel).length) { bind(); break; }
+                    }
+                });
+            }
+        })();
+    </script>
 </asp:Content>

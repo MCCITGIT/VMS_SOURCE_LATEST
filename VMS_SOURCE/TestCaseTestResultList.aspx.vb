@@ -2,6 +2,7 @@
 Imports System.Data
 Imports System.Data.SqlTypes
 Imports System.Data.SqlClient
+Imports System.Collections.Generic
 Imports VMS.DataAccess
 Imports System.IO
 Imports NPOI.HSSF.UserModel
@@ -162,12 +163,22 @@ Partial Class TestCaseTestResultList
             dsProductSet = obj.GetTestResultList(ddlVendor.SelectedValue, ddlBrand.SelectedValue, ddlProduct.SelectedValue, AsOnDate, AsOnDateto, userInfo.userIDEntity, txtBatchNo.Text)
 
             If (Not (dsProductSet Is Nothing) AndAlso dsProductSet.Tables.Count > 0 AndAlso Not (dsProductSet.Tables(0) Is Nothing) AndAlso dsProductSet.Tables(0).Rows.Count > 0) Then
-                gvTestList.DataSource = dsProductSet.Tables(0)
+                gvTestList.PageIndex = 0
+                gvTestList.DataSource = FirstResultPage(dsProductSet.Tables(0))
                 gvTestList.DataBind()
+                hdnTrHasData.Value = "1"
+                hdnTrPageSize.Value = gvTestList.PageSize.ToString()
             Else
                 gvTestList.DataSource = Nothing
                 gvTestList.DataBind()
+                hdnTrHasData.Value = "0"
             End If
+            hdnTrVendor.Value = ddlVendor.SelectedValue
+            hdnTrBrand.Value = ddlBrand.SelectedValue
+            hdnTrProduct.Value = ddlProduct.SelectedValue
+            hdnTrBatch.Value = txtBatchNo.Text
+            hdnTrFrom.Value = AsOnDate
+            hdnTrTo.Value = AsOnDateto
         Catch ex As Exception
             Dim returnUrl As String = "~/ExceptionPage.aspx"
             Session(Constant.SessionKeys.ErrMessage) = Constant.ErrorMessages.GeneralError
@@ -177,10 +188,10 @@ Partial Class TestCaseTestResultList
     End Sub
 #End Region
 
-    Protected Sub gvProductList_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvTestList.PageIndexChanging
-        gvTestList.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub gvProductList_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvTestList.PageIndexChanging
+    '    gvTestList.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
     Protected Sub gvTokenVendorList_RowCommand(sender As Object, e As GridViewCommandEventArgs) Handles gvTestList.RowCommand
         CheckLogin()
         If (e.CommandName.Equals("EditTest")) Then
@@ -262,7 +273,7 @@ Partial Class TestCaseTestResultList
                 alignLeft.Alignment = 1
                 alignRight.Alignment = 3
                 alignCenter.Alignment = 2
-                bgWhite.FillBackgroundColor = NPOI.HSSF.Util.HSSFColor.WHITE.index
+                bgWhite.FillBackgroundColor = NPOI.HSSF.Util.HSSFColor.White.Index
                 Row = ReportSheet.GetRow(1)
                 Cell = Row.GetCell(0)
                 Cell.SetCellValue("Report As On: " & DateTime.Today.ToString("dd/MM/yyyy"))
@@ -474,84 +485,84 @@ Partial Class TestCaseTestResultList
                             font.FontName = "Calibri"
 
                             Dim font3 As IFont = WorkBook.CreateFont()
-                            font3.Color = HSSFColor.BLACK.index
+                            font3.Color = HSSFColor.Black.Index
                             font3.FontName = "Calibri"
                             font3.FontHeightInPoints = 10
 
 
                             Dim font4 As IFont = WorkBook.CreateFont()
-                            font4.Color = HSSFColor.BLACK.index
+                            font4.Color = HSSFColor.Black.Index
                             font4.FontName = "Calibri"
                             font4.FontHeightInPoints = 11
-                            font4.Boldweight = NPOI.SS.UserModel.FontBoldWeight.BOLD
+                            font4.Boldweight = NPOI.SS.UserModel.FontBoldWeight.Bold
 
                             Dim styleCenter As ICellStyle = WorkBook.CreateCellStyle()
-                            styleCenter.VerticalAlignment = VerticalAlignment.CENTER
-                            styleCenter.Alignment = HorizontalAlignment.CENTER
+                            styleCenter.VerticalAlignment = VerticalAlignment.Center
+                            styleCenter.Alignment = HorizontalAlignment.Center
                             styleCenter.SetFont(font3)
-                            styleCenter.BorderRight = BorderStyle.THIN
-                            styleCenter.BorderBottom = BorderStyle.THIN
-                            styleCenter.BorderTop = BorderStyle.THIN
-                            styleCenter.BorderLeft = BorderStyle.THIN
+                            styleCenter.BorderRight = BorderStyle.Thin
+                            styleCenter.BorderBottom = BorderStyle.Thin
+                            styleCenter.BorderTop = BorderStyle.Thin
+                            styleCenter.BorderLeft = BorderStyle.Thin
 
                             Dim styleLeft As ICellStyle = WorkBook.CreateCellStyle()
-                            styleLeft.VerticalAlignment = VerticalAlignment.CENTER
-                            styleLeft.Alignment = HorizontalAlignment.LEFT
+                            styleLeft.VerticalAlignment = VerticalAlignment.Center
+                            styleLeft.Alignment = HorizontalAlignment.Left
                             styleLeft.SetFont(font3)
-                            styleLeft.BorderRight = BorderStyle.THIN
-                            styleLeft.BorderBottom = BorderStyle.THIN
-                            styleLeft.BorderTop = BorderStyle.THIN
-                            styleLeft.BorderLeft = BorderStyle.THIN
-                            styleLeft.BorderLeft = BorderStyle.THIN
+                            styleLeft.BorderRight = BorderStyle.Thin
+                            styleLeft.BorderBottom = BorderStyle.Thin
+                            styleLeft.BorderTop = BorderStyle.Thin
+                            styleLeft.BorderLeft = BorderStyle.Thin
+                            styleLeft.BorderLeft = BorderStyle.Thin
 
                             Dim styleRight As ICellStyle = WorkBook.CreateCellStyle()
-                            styleRight.VerticalAlignment = VerticalAlignment.CENTER
-                            styleRight.Alignment = HorizontalAlignment.RIGHT
+                            styleRight.VerticalAlignment = VerticalAlignment.Center
+                            styleRight.Alignment = HorizontalAlignment.Right
                             styleRight.SetFont(font3)
-                            styleRight.BorderRight = BorderStyle.THIN
-                            styleRight.BorderBottom = BorderStyle.THIN
-                            styleRight.BorderTop = BorderStyle.THIN
-                            styleRight.BorderLeft = BorderStyle.THIN
+                            styleRight.BorderRight = BorderStyle.Thin
+                            styleRight.BorderBottom = BorderStyle.Thin
+                            styleRight.BorderTop = BorderStyle.Thin
+                            styleRight.BorderLeft = BorderStyle.Thin
 
                             Dim styleHeader2 As ICellStyle = WorkBook.CreateCellStyle()
-                            styleHeader2.Alignment = HorizontalAlignment.CENTER
-                            styleHeader2.VerticalAlignment = VerticalAlignment.CENTER
-                            styleHeader2.FillForegroundColor = NPOI.HSSF.Util.HSSFColor.AQUA.Index
+                            styleHeader2.Alignment = HorizontalAlignment.Center
+                            styleHeader2.VerticalAlignment = VerticalAlignment.Center
+                            styleHeader2.FillForegroundColor = NPOI.HSSF.Util.HSSFColor.Aqua.Index
                             styleHeader2.FillPattern = FillPattern.SolidForeground
                             styleHeader2.SetFont(font4)
-                            styleHeader2.BorderRight = BorderStyle.THIN
-                            styleHeader2.BorderBottom = BorderStyle.THIN
-                            styleHeader2.BorderTop = BorderStyle.THIN
-                            styleHeader2.BorderLeft = BorderStyle.THIN
+                            styleHeader2.BorderRight = BorderStyle.Thin
+                            styleHeader2.BorderBottom = BorderStyle.Thin
+                            styleHeader2.BorderTop = BorderStyle.Thin
+                            styleHeader2.BorderLeft = BorderStyle.Thin
 
                             Dim styleHeader As ICellStyle = WorkBook.CreateCellStyle()
-                            styleHeader.Alignment = HorizontalAlignment.CENTER
-                            styleHeader.VerticalAlignment = VerticalAlignment.CENTER
-                            styleHeader.FillForegroundColor = NPOI.HSSF.Util.HSSFColor.ORANGE.Index
+                            styleHeader.Alignment = HorizontalAlignment.Center
+                            styleHeader.VerticalAlignment = VerticalAlignment.Center
+                            styleHeader.FillForegroundColor = NPOI.HSSF.Util.HSSFColor.Orange.Index
                             styleHeader.FillPattern = FillPattern.SolidForeground
                             styleHeader.SetFont(font4)
-                            styleHeader.BorderRight = BorderStyle.THIN
-                            styleHeader.BorderBottom = BorderStyle.THIN
-                            styleHeader.BorderTop = BorderStyle.THIN
-                            styleHeader.BorderLeft = BorderStyle.THIN
+                            styleHeader.BorderRight = BorderStyle.Thin
+                            styleHeader.BorderBottom = BorderStyle.Thin
+                            styleHeader.BorderTop = BorderStyle.Thin
+                            styleHeader.BorderLeft = BorderStyle.Thin
 
                             Dim styleHeader1 As ICellStyle = WorkBook.CreateCellStyle()
-                            styleHeader1.Alignment = HorizontalAlignment.CENTER
-                            styleHeader1.VerticalAlignment = VerticalAlignment.CENTER
-                            styleHeader1.FillForegroundColor = NPOI.HSSF.Util.HSSFColor.YELLOW.Index
+                            styleHeader1.Alignment = HorizontalAlignment.Center
+                            styleHeader1.VerticalAlignment = VerticalAlignment.Center
+                            styleHeader1.FillForegroundColor = NPOI.HSSF.Util.HSSFColor.Yellow.Index
                             styleHeader1.FillPattern = FillPattern.SolidForeground
                             styleHeader1.WrapText = True
 
                             styleHeader1.SetFont(font4)
-                            styleHeader1.BorderRight = BorderStyle.THIN
-                            styleHeader1.BorderBottom = BorderStyle.THIN
-                            styleHeader1.BorderTop = BorderStyle.THIN
-                            styleHeader1.BorderLeft = BorderStyle.THIN
+                            styleHeader1.BorderRight = BorderStyle.Thin
+                            styleHeader1.BorderBottom = BorderStyle.Thin
+                            styleHeader1.BorderTop = BorderStyle.Thin
+                            styleHeader1.BorderLeft = BorderStyle.Thin
 
 
                             Dim styleDate As ICellStyle = WorkBook.CreateCellStyle()
-                            styleDate.VerticalAlignment = VerticalAlignment.CENTER
-                            styleDate.Alignment = HorizontalAlignment.CENTER
+                            styleDate.VerticalAlignment = VerticalAlignment.Center
+                            styleDate.Alignment = HorizontalAlignment.Center
                             Dim formatIdDate = HSSFDataFormat.GetBuiltinFormat("dd/mm/yyyy h:mm AM/PM")
                             If formatIdDate = -1 Then
                                 Dim newDataFormat = WorkBook.CreateDataFormat()
@@ -703,4 +714,49 @@ Partial Class TestCaseTestResultList
 
     End Sub
 
+    Private Function FirstResultPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvTestList.PageSize
+        If pageSize <= 0 Then pageSize = 20
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreTestResults(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal vendor As String, ByVal brand As String, ByVal product As String, ByVal fromDate As String, ByVal toDate As String, ByVal batchNo As String) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        Dim userInfo As VMSUserEntity = CType(System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
+        If pageSize <= 0 Then pageSize = 20
+        If pageIndex < 0 Then pageIndex = 0
+        Dim fromValue As String = String.Format("{0:yyyy-MM-dd}", If(fromDate, String.Empty))
+        Dim toValue As String = String.Format("{0:yyyy-MM-dd}", If(toDate, String.Empty))
+        Dim ds As DataSet = New QualityControlClass().GetTestResultList(If(vendor, String.Empty), If(brand, String.Empty), If(product, String.Empty), fromValue, toValue, userInfo.userIDEntity, If(batchNo, String.Empty))
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                rows.Add(New With {
+                    .id = dr("result_id").ToString(),
+                    .vendor = dr("vendor_name").ToString(),
+                    .brand = dr("brand_name").ToString(),
+                    .product = dr("prd_desc").ToString(),
+                    .shade = dr("shade").ToString(),
+                    .batchNo = dr("batch_no").ToString(),
+                    .batchDate = dr("batch_date").ToString(),
+                    .editable = dr("editable_yn").ToString()
+                })
+            Next
+        End If
+        Return New With {.rows = rows, .total = total}
+    End Function
 End Class

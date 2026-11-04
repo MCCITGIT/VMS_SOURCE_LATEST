@@ -98,7 +98,7 @@
             </div>
             <div class="card" id="td_gvitem_mid" runat="server">
                 <div class="card-body">
-                    <div class="form-group row ddlPageSize">
+                    <div class="form-group row ddlPageSize" style="display:none;">
                         <label for="ddlPageSize" class="col-auto form-control-label">
                             <asp:Label ID="lblResultspPage" runat="server" Text="Results Per Page:"></asp:Label>
                         </label>
@@ -106,8 +106,16 @@
                             <asp:DropDownList ID="ddlPageSize" runat="server" CssClass="form-control select2" AutoPostBack="true"></asp:DropDownList>
                         </div>
                     </div>
-                    <div class="table-responsive">
-                        <asp:GridView ID="gvDsptchdStat" runat="server" AutoGenerateColumns="false" AllowPaging="true"
+                    <asp:HiddenField ID="hdnEdsHasData" runat="server" Value="0" />
+                    <asp:HiddenField ID="hdnEdsPageSize" runat="server" Value="15" />
+                    <asp:HiddenField ID="hdnEdsRegion" runat="server" />
+                    <asp:HiddenField ID="hdnEdsDepot" runat="server" />
+                    <asp:HiddenField ID="hdnEdsUnit" runat="server" />
+                    <asp:HiddenField ID="hdnEdsSku" runat="server" />
+                    <asp:HiddenField ID="hdnEdsYear" runat="server" />
+                    <asp:HiddenField ID="hdnEdsMonth" runat="server" />
+                    <div class="table-responsive eds-grid-scroll">
+                        <asp:GridView ID="gvDsptchdStat" runat="server" AutoGenerateColumns="false" AllowPaging="false"
                             Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid">
                             <RowStyle CssClass="tlrowlight" />
                             <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
@@ -212,7 +220,127 @@
             <asp:PostBackTrigger ControlID="btnSubmit" />
         </Triggers>
     </asp:UpdatePanel>
+    <style type="text/css">
+        .eds-grid-scroll,
+        .eds-grid-scroll table,
+        .eds-grid-scroll tr,
+        .eds-grid-scroll td {
+            overflow-anchor: none;
+        }
+        .eds-grid-scroll {
+            max-height: 440px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+    </style>
+    <script type="text/javascript">
+        (function () {
+            var gridSel = '#<%= gvDsptchdStat.ClientID %>';
+            var pageIndex = 0, pageSize = 15, total = 0, loading = false, noMore = false, seq = 0;
+            var filters = { region: '', depot: '', unit: '', sku: '', year: '', month: '' };
+            var align = ['center', 'center', 'center', 'center', 'center', 'center', 'center', 'center', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right'];
 
-
-
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function dataRows() { return $(gridSel + ' tr.tlrowlight').not('.eds-skel'); }
+            function scrollBox() { return $(gridSel).closest('.eds-grid-scroll'); }
+            function capture() {
+                filters.region = $('#<%= hdnEdsRegion.ClientID %>').val() || '';
+                filters.depot = $('#<%= hdnEdsDepot.ClientID %>').val() || '';
+                filters.unit = $('#<%= hdnEdsUnit.ClientID %>').val() || '';
+                filters.sku = $('#<%= hdnEdsSku.ClientID %>').val() || '';
+                filters.year = $('#<%= hdnEdsYear.ClientID %>').val() || '';
+                filters.month = $('#<%= hdnEdsMonth.ClientID %>').val() || '';
+                var size = parseInt($('#<%= hdnEdsPageSize.ClientID %>').val(), 10);
+                pageSize = size > 0 ? size : 15;
+                total = 0;
+            }
+            function skel() {
+                var widths = ['24px', '36px', '70%', '80%', '40px', '40px', '28px', '36px', '40px', '40px', '40px', '72px', '40px', '40px', '72px', '40px', '40px', '40px'];
+                var cells = '';
+                for (var i = 0; i < widths.length; i++) cells += '<td style="text-align:' + align[i] + '"><span class="grid-skel-bar" style="width:' + widths[i] + '"></span></td>';
+                return '<tr class="tlrowlight eds-skel">' + cells + '</tr>';
+            }
+            function place(html) {
+                var $rows = $('<table><tbody>' + html + '</tbody></table>').find('tr');
+                var $grid = $(gridSel);
+                var $body = $grid.children('tbody');
+                if (!$body.length) $body = $grid.find('tbody').first();
+                if ($body.length) $body.append($rows);
+                else $grid.append($rows);
+            }
+            function loadNext() {
+                if (loading || noMore) return;
+                if ($('#<%= hdnEdsHasData.ClientID %>').val() !== '1') return;
+                if (!dataRows().length) return;
+                if (total && ((pageIndex + 1) * pageSize >= total || dataRows().length >= total)) { noMore = true; return; }
+                loading = true;
+                pageIndex++;
+                var token = ++seq;
+                place(skel());
+                if (!window.PageMethods || typeof PageMethods.GetMoreDespatchStatus !== 'function') {
+                    $(gridSel + ' tr.eds-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                    return;
+                }
+                PageMethods.GetMoreDespatchStatus(pageIndex, pageSize, filters.region, filters.depot, filters.unit, filters.sku, filters.year, filters.month, function (res) {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.eds-skel').remove();
+                    loading = false;
+                    if (!res || !res.rows) { noMore = true; return; }
+                    total = res.total || 0;
+                    if (!res.rows.length || res.rows.length < pageSize || (pageIndex + 1) * pageSize >= total) noMore = true;
+                    var html = '';
+                    for (var i = 0; i < res.rows.length; i++) {
+                        var r = res.rows[i];
+                        var vals = [r.serial, r.region, r.depot, r.sku, r.average, r.estimate, r.tslFactor, r.tsl, r.stock, r.autoIndent, r.branchIndent, r.despDate, r.intransit, r.received, r.lastDesp, r.pendingAuto, r.pendingManual, r.currentDespatch];
+                        html += '<tr class="tlrowlight">';
+                        for (var c = 0; c < vals.length; c++) {
+                            var text = c === 0 ? '<b>' + esc(vals[c]) + '</b>' : esc(vals[c]);
+                            html += '<td style="text-align:' + align[c] + '">' + text + '</td>';
+                        }
+                        html += '</tr>';
+                    }
+                    if (html) place(html);
+                    if (!noMore && scrolledNear()) loadNext();
+                }, function () {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.eds-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                });
+            }
+            function scrolledNear() {
+                var box = scrollBox()[0];
+                if (!box) return false;
+                if (box.scrollHeight > box.clientHeight + 2) return box.scrollTop + box.clientHeight >= box.scrollHeight - 50;
+                var rect = box.getBoundingClientRect();
+                return rect.bottom <= window.innerHeight + 50;
+            }
+            function bind() {
+                pageIndex = 0; noMore = false; loading = false; seq++;
+                $(gridSel + ' tr.eds-skel').remove();
+                capture();
+                setTimeout(function () { if (scrolledNear()) loadNext(); }, 0);
+            }
+            if (!window.__edsScroll) {
+                window.__edsScroll = true;
+                document.addEventListener('scroll', function (e) {
+                    var box = scrollBox()[0];
+                    if (!box) return;
+                    var t = e.target;
+                    if (t !== box && t !== document && t !== document.documentElement && t !== document.body && !(t.contains && (t.contains(box) || box.contains(t)))) return;
+                    if (scrolledNear()) loadNext();
+                }, true);
+            }
+            if (window.Sys && Sys.Application) Sys.Application.add_load(bind);
+            else $(bind);
+        })();
+    </script>
 </asp:Content>

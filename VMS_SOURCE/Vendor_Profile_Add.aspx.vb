@@ -98,7 +98,7 @@ Partial Class Vendor_Profile_Add
     Protected Sub btnSubmit_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnSubmit.Click
         Dim RowsAffected As Integer = InsertVendorProfile()
         If RowsAffected = 1 Then
-            Response.Redirect("~/Vendor_Profile_List.aspx")
+            Response.Redirect("~/FG_VendorMstrList.aspx")
         End If
     End Sub
     Public Function InsertVendorProfile() As Integer
@@ -129,6 +129,7 @@ Partial Class Vendor_Profile_Add
         oVendEntity.VendCenVatRegNo = txtCENVATRegNo.Text
         oVendEntity.VendCenVatRegDate = txtbxdate.Text
         oVendEntity.ActiveStatus = Constant.Common.ActiveStatus
+        oVendEntity.FreightYn = If(chkAllowFreight.Checked, Constant.Common.ActiveStatus, Constant.Common.InActiveStatus)
 
         Dim RowsAffected As Integer
 
@@ -194,6 +195,12 @@ Partial Class Vendor_Profile_Add
                 rbtnActiveY.Checked = True
                 rbtnActiveN.Checked = False
             End If
+            Dim freightYn As String = "N"
+            If PopulateVendorset.Tables(0).Columns.Contains("unit_freight_yn") AndAlso
+               Not PopulateVendorset.Tables(0).Rows(0)("unit_freight_yn").Equals(DBNull.Value) Then
+                freightYn = PopulateVendorset.Tables(0).Rows(0)("unit_freight_yn").ToString().Trim()
+            End If
+            chkAllowFreight.Checked = String.Equals(freightYn, Constant.Common.ActiveStatus, StringComparison.OrdinalIgnoreCase)
         End If
     End Sub
     Public Sub Clear()
@@ -238,7 +245,7 @@ Partial Class Vendor_Profile_Add
         End If
     End Sub
     Protected Sub btnCancel_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnCancel.Click
-        Response.Redirect("~/vendor_Profile_List.aspx")
+        Response.Redirect("~/FG_VendorMstrList.aspx")
     End Sub
 #Region "Date Format"
     Public Function FormatDate(ByVal stringdate As String) As SqlDateTime

@@ -18,6 +18,7 @@ Imports System.IO
 Imports VMS.DataAccess
 Imports System.Data.SqlClient
 Imports System.IO.Path
+Imports System.Collections.Generic
 
 Partial Class Doc_Upload
     Inherits System.Web.UI.Page
@@ -198,11 +199,15 @@ Partial Class Doc_Upload
             If (Not (GridSet Is Nothing) AndAlso GridSet.Tables.Count > 0 AndAlso Not (GridSet.Tables(0) Is Nothing) AndAlso GridSet.Tables(0).Rows.Count > 0) Then
                 gvMasterLinkDocList.Visible = True
                 Div_MasterLinkDocs_Grid.Visible = False
-                gvMasterLinkDocList.DataSource = GridSet.Tables(0)
+                gvMasterLinkDocList.PageIndex = 0
+                gvMasterLinkDocList.DataSource = FirstDocPage(GridSet.Tables(0))
                 gvMasterLinkDocList.DataBind()
+                hdnDocHasData.Value = "1"
+                hdnDocPageSize.Value = gvMasterLinkDocList.PageSize.ToString()
             Else
                 gvMasterLinkDocList.Visible = False
                 Div_MasterLinkDocs_Grid.Visible = True
+                hdnDocHasData.Value = "0"
             End If
         Catch ex As Exception
             Dim returnUrl As String = "~/ExceptionPage.aspx"
@@ -313,10 +318,10 @@ Partial Class Doc_Upload
 #End Region
 
 #Region "gvMasterLinkDocList Event Handeling"
-    Protected Sub gvMasterLinkDocList_PageIndexChanging(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewPageEventArgs) Handles gvMasterLinkDocList.PageIndexChanging
-        gvMasterLinkDocList.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub gvMasterLinkDocList_PageIndexChanging(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewPageEventArgs) Handles gvMasterLinkDocList.PageIndexChanging
+    '    gvMasterLinkDocList.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
 
     Protected Sub gvMasterLinkDocList_RowCommand(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewCommandEventArgs) Handles gvMasterLinkDocList.RowCommand
 
@@ -324,35 +329,7 @@ Partial Class Doc_Upload
             Dim sItem As GridViewRow = CType(CType(e.CommandSource, LinkButton).NamingContainer, GridViewRow)
             Dim index As Integer = sItem.RowIndex
             Dim hdnGenId As HiddenField = CType(gvMasterLinkDocList.Rows(index).FindControl("hdnGenId"), HiddenField)
-
-
-            Dim DocGenId As Integer = CType(hdnGenId.Value, Integer)
-
-            'divF7.Visible = True
-            divDetailsSection.Visible = True
-            
-            hdnDocGenId.Value = DocGenId
-            PopulateEditMode(DocGenId)
-            'btnSubmit.Visible = True
-            If hdnFrmDepot.Value = userInfo.userBranchEntity Then
-                btnSubmit.Visible = True
-                btnSubmit.CommandName = Constant.GeneralMessages.btnUpdate
-                btnSubmit.Enabled = True
-                btnDelete.Visible = True
-                btnDelete.Enabled = True
-                sch_fld.Enabled = True
-            Else
-                btnSubmit.Visible = True
-                btnSubmit.CommandName = Constant.GeneralMessages.btnUpdate
-                btnSubmit.Enabled = False
-                btnDelete.Visible = True
-                btnDelete.Enabled = False
-                sch_fld.Enabled = False
-            End If
-
-            btnCancel.Visible = True
-            'btnSubmit.CommandName = Constant.GeneralMessages.btnUpdate
-            btnSubmit.Attributes.Add("onClick", "return ValidateDocUpld('" + btnSubmit.Text + "');")
+            OpenMasterDoc(CType(hdnGenId.Value, Integer))
         End If
     End Sub
 
@@ -410,31 +387,31 @@ Partial Class Doc_Upload
                 img_new.Visible = False
             End If
         End If
-        If (e.Row.RowType = DataControlRowType.Pager) Then
-            Dim row As TableRow = New TableRow
-            row = e.Row.Controls(0).Controls(0).Controls(0)
-            For Each cell As TableCell In row.Cells
-                Dim lb As Control = cell.Controls(0)
+        'If (e.Row.RowType = DataControlRowType.Pager) Then
+        '    Dim row As TableRow = New TableRow
+        '    row = e.Row.Controls(0).Controls(0).Controls(0)
+        '    For Each cell As TableCell In row.Cells
+        '        Dim lb As Control = cell.Controls(0)
 
 
-                If (TypeOf (lb) Is Label) Then
+        '        If (TypeOf (lb) Is Label) Then
 
-                    'CType(lb, Label).ForeColor = System.Drawing.Color.Red
-                    CType(lb, Label).CssClass = "lblpager"
-                    'CType(lb, Label).Width = 20
-                    'CType(lb, Label).Height = 15
-                    'set current pager
+        '            'CType(lb, Label).ForeColor = System.Drawing.Color.Red
+        '            CType(lb, Label).CssClass = "lblpager"
+        '            'CType(lb, Label).Width = 20
+        '            'CType(lb, Label).Height = 15
+        '            'set current pager
 
-                ElseIf (TypeOf (lb) Is LinkButton) Then
+        '        ElseIf (TypeOf (lb) Is LinkButton) Then
 
-                    CType(lb, LinkButton).CssClass = "lnkpager"
-                    'CType(lb, LinkButton).Width = 20
-                    'CType(lb, LinkButton).Height = 15
-                    'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
-                End If
+        '            CType(lb, LinkButton).CssClass = "lnkpager"
+        '            'CType(lb, LinkButton).Width = 20
+        '            'CType(lb, LinkButton).Height = 15
+        '            'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
+        '        End If
 
-            Next
-        End If
+        '    Next
+        'End If
     End Sub
 #End Region
 
@@ -769,4 +746,85 @@ Partial Class Doc_Upload
     End Sub
 #End Region
 
+    Private Sub OpenMasterDoc(ByVal docGenId As Integer)
+        divDetailsSection.Visible = True
+        hdnDocGenId.Value = docGenId.ToString()
+        PopulateEditMode(docGenId)
+        If hdnFrmDepot.Value = userInfo.userBranchEntity Then
+            btnSubmit.Visible = True
+            btnSubmit.CommandName = Constant.GeneralMessages.btnUpdate
+            btnSubmit.Enabled = True
+            btnDelete.Visible = True
+            btnDelete.Enabled = True
+            sch_fld.Enabled = True
+        Else
+            btnSubmit.Visible = True
+            btnSubmit.CommandName = Constant.GeneralMessages.btnUpdate
+            btnSubmit.Enabled = False
+            btnDelete.Visible = True
+            btnDelete.Enabled = False
+            sch_fld.Enabled = False
+        End If
+        btnCancel.Visible = True
+        btnSubmit.Attributes.Add("onClick", "return ValidateDocUpld('" + btnSubmit.Text + "');")
+    End Sub
+
+    Private Function FirstDocPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvMasterLinkDocList.PageSize
+        If pageSize <= 0 Then pageSize = 15
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    Protected Sub btnDocOpen_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnDocOpen.Click
+        Dim docGenId As Integer
+        If Integer.TryParse(hdnDocOpenId.Value, docGenId) Then OpenMasterDoc(docGenId)
+    End Sub
+
+    <System.Web.Script.Services.ScriptMethod()>
+    <System.Web.Services.WebMethod(EnableSession:=True)>
+    Public Shared Function GetMoreMasterDocs(ByVal pageIndex As Integer, ByVal pageSize As Integer) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        Dim userInfo As VMSUserEntity = CType(System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
+        If pageSize <= 0 Then pageSize = 15
+        If pageIndex < 0 Then pageIndex = 0
+        Dim ds As DataSet = New Doc_Upload_App().GridListGetDetails(userInfo.userDepartmentEntity, userInfo.userBranchEntity, Constant.Common.ActiveStatus)
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim folder As String = ConfigurationManager.AppSettings.Get("UPLOAD_DOCS_FOLDER_REL_PATH") & userInfo.userCompanyEntity & "/" & "Vms Docs" & "/" & "Document_Repository"
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                Dim toDepot As String = Convert.ToString(dr("sdocs_to_depot"))
+                If String.IsNullOrEmpty(toDepot) Then toDepot = "All Depot"
+                Dim days As Integer
+                Dim isNew As Boolean = dr.Table.Columns.Contains("no_of_days") AndAlso Integer.TryParse(Convert.ToString(dr("no_of_days")), days) AndAlso days < 16
+                Dim fileName As String = Convert.ToString(dr("sdocs_file_name"))
+                rows.Add(New With {
+                    .serial = (i + 1).ToString(),
+                    .fromDepot = Convert.ToString(dr("sdocs_from_depot")),
+                    .genId = Convert.ToString(dr("sdocs_gen_id")),
+                    .toDepot = toDepot,
+                    .year = Convert.ToString(dr("sdocs_fin_year")),
+                    .docType = Convert.ToString(dr("sdocs_doc_catg")),
+                    .title = Convert.ToString(dr("sdocs_doc_title")),
+                    .docNo = Convert.ToString(dr("sdocs_doc_no")),
+                    .docDate = Convert.ToString(dr("sdocs_doc_date")),
+                    .remarks = Convert.ToString(dr("sdocs_remarks")),
+                    .fileUrl = folder & "/" & fileName,
+                    .isNew = isNew
+                })
+            Next
+        End If
+        Return New With {.rows = rows, .total = total}
+    End Function
 End Class

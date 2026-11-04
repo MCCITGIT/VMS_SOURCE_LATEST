@@ -68,7 +68,7 @@
 
     <div class="card">
         <div class="card-body">
-            <div class="form-group row ddlPageSize">
+            <div class="form-group row ddlPageSize" style="display:none;">
                 <label for="ddlPageSize" class="col-auto form-control-label">
                     <asp:Label ID="Label4" runat="server" Text="Results Per Page:"></asp:Label>
                 </label>
@@ -76,9 +76,11 @@
                     <asp:DropDownList ID="ddlPageSize" runat="server" CssClass="form-control select2" AutoPostBack="true"></asp:DropDownList>
                 </div>
             </div>
-            <div class="table-responsive">
-                <asp:GridView ID="gvLoadDrop" runat="server" AutoGenerateColumns="false" AllowPaging="True"
-                    Visible="true" OnRowDataBound="gvLoadDrop_RowDataBound" BorderWidth="1" CssClass="table table-hover upgradDataGrid" OnPageIndexChanging="gvLoadDrop_IndexChanging">
+            <asp:HiddenField ID="hdnLoadDropHasData" runat="server" Value="0" />
+            <asp:HiddenField ID="hdnLoadDropPageSize" runat="server" Value="15" />
+            <div class="table-responsive ld-grid-scroll">
+                <asp:GridView ID="gvLoadDrop" runat="server" AutoGenerateColumns="false" AllowPaging="false"
+                    Visible="true" OnRowDataBound="gvLoadDrop_RowDataBound" BorderWidth="1" CssClass="table table-hover upgradDataGrid">
                     <RowStyle CssClass="tlrowlight" />
                     <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
                     <HeaderStyle CssClass="headerGrid" />
@@ -108,4 +110,97 @@
             </div>
         </div>
     </div>
+    <style type="text/css">
+        .ld-grid-scroll,
+        .ld-grid-scroll table,
+        .ld-grid-scroll tr,
+        .ld-grid-scroll td {
+            overflow-anchor: none;
+        }
+        .ld-grid-scroll {
+            overscroll-behavior: contain;
+        }
+    </style>
+    <script type="text/javascript">
+        (function () {
+            var gridSel = '#<%= gvLoadDrop.ClientID %>';
+            var pageIndex = 0, pageSize = 15, total = 0, loading = false, noMore = false, seq = 0;
+            var filters = { depot: '', sku: '', vendor: '' };
+
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function dataRows() { return $(gridSel + ' tbody tr.tlrowlight').not('.ld-skel'); }
+            function scrollBox() { return $(gridSel).closest('.ld-grid-scroll'); }
+            function capture() {
+                filters.depot = $('#<%= ddlBranch.ClientID %>').val() || '';
+                filters.sku = $('#<%= txtSearchUserName.ClientID %>').val() || '';
+                filters.vendor = $('#<%= ddlVendor.ClientID %>').val() || '';
+                var size = parseInt($('#<%= hdnLoadDropPageSize.ClientID %>').val(), 10);
+                pageSize = size > 0 ? size : 15;
+                total = 0;
+            }
+            function skel() {
+                var widths = ['24px', '70%', '70%', '60px', '80%'];
+                var align = ['left', 'center', 'center', 'center', 'center'];
+                var cells = '';
+                for (var i = 0; i < widths.length; i++) cells += '<td style="text-align:' + align[i] + '"><span class="grid-skel-bar" style="width:' + widths[i] + '"></span></td>';
+                return '<tr class="tlrowlight ld-skel">' + cells + '</tr>';
+            }
+            function place(html) {
+                var $rows = $('<table><tbody>' + html + '</tbody></table>').find('tr');
+                $(gridSel).find('tbody').append($rows);
+            }
+            function loadNext() {
+                if (loading || noMore) return;
+                if ($('#<%= hdnLoadDropHasData.ClientID %>').val() !== '1') return;
+                if (!dataRows().length) return;
+                if (total && ((pageIndex + 1) * pageSize >= total || dataRows().length >= total)) { noMore = true; return; }
+                loading = true;
+                pageIndex++;
+                var token = ++seq;
+                place(skel());
+                PageMethods.GetMoreLoadDrops(pageIndex, pageSize, filters.depot, filters.sku, filters.vendor, function (res) {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.ld-skel').remove();
+                    loading = false;
+                    if (!res || !res.rows) { noMore = true; return; }
+                    total = res.total || 0;
+                    if (!res.rows.length || res.rows.length < pageSize || (pageIndex + 1) * pageSize >= total) noMore = true;
+                    var html = '';
+                    for (var i = 0; i < res.rows.length; i++) {
+                        var r = res.rows[i];
+                        var n = pageIndex * pageSize + i + 1;
+                        html += '<tr class="tlrowlight">'
+                            + '<td style="text-align:left">' + n + '</td>'
+                            + '<td style="text-align:center">' + esc(r.vendorName) + '</td>'
+                            + '<td style="text-align:center"><a href="' + esc(r.depotHref) + '" class="gridlink">' + esc(r.depotName) + '</a></td>'
+                            + '<td style="text-align:center">' + esc(r.sku) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.skuDesc) + '</td></tr>';
+                    }
+                    if (html) place(html);
+                    var live = scrollBox();
+                    if (!noMore && live.length && live[0].scrollHeight <= live[0].clientHeight + 2) loadNext();
+                }, function () {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.ld-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                });
+            }
+            function onScroll() {
+                if (this.scrollTop + this.clientHeight >= this.scrollHeight - 50) loadNext();
+            }
+            function bind() {
+                pageIndex = 0; noMore = false; loading = false; seq++;
+                capture();
+                var box = scrollBox();
+                box.off('scroll.ld').on('scroll.ld', onScroll);
+                if ($('#<%= hdnLoadDropHasData.ClientID %>').val() === '1' && box.length && box[0].scrollHeight <= box[0].clientHeight + 2) loadNext();
+            }
+            $(bind);
+        })();
+    </script>
 </asp:Content>

@@ -19,6 +19,10 @@
     background: #ced6dd;
 }
 
+html, body {
+    overflow-anchor: none;
+}
+
 body {
     margin: 0px;
     padding: 0px;
@@ -380,6 +384,14 @@ body {
     background: #ffffff;
 }
 /* Start Grid */
+.table-responsive {
+    /*max-height: 440px;
+    overflow: auto !important;*/
+    overscroll-behavior: none;
+    overflow-anchor: none;
+    transform: translateZ(0);
+}
+
 .upgradDataGrid {
     width: 100% !important;
     border: 0 !important;
@@ -530,9 +542,11 @@ body {
         transition: background-color 0.18s ease;
         /*text-align: center;*/
     }
-    .upgradDataGrid td span {
-        font-weight:normal;
-    }
+
+        .upgradDataGrid td span {
+            font-weight: normal;
+        }
+
     .upgradDataGrid tr td:last-child {
         border-right: 1px;
     }
@@ -600,7 +614,7 @@ body {
         border-bottom: 0 !important;
     }
 
-    .upgradDataGrid .grid-skel-bar {
+.grid-skel-bar {
         display: inline-block;
         height: 12px;
         max-width: 100%;
@@ -4161,11 +4175,11 @@ body:has(.rm-module) .bootstrapModal .modal-title {
     transition: opacity 0.24s ease, visibility 0.24s ease;
 }
 
-.rm-confirm-overlay.is-open {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-}
+    .rm-confirm-overlay.is-open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
 
 .rm-confirm-dialog {
     width: 100%;
@@ -4256,12 +4270,14 @@ body:has(.rm-module) .bootstrapModal .modal-title {
     gap: 10px;
 }
 
-.rm-confirm-actions .btn {
-    min-width: 110px;
-}
+    .rm-confirm-actions .btn {
+        min-width: 110px;
+    }
+
 .customCalender {
-    position:relative;
+    position: relative;
 }
+
 @media (prefers-reduced-motion: reduce) {
     .rm-module,
     .rm-module *,

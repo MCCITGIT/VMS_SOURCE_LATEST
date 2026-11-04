@@ -67,9 +67,14 @@
 
             <div class="card">
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <asp:GridView ID="gvVendorStockDetails" runat="server" AutoGenerateColumns="false" AllowPaging="true" PageSize="20"
-                            Visible="true" ShowFooter="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid">
+                    <asp:HiddenField ID="hdnVstHasData" runat="server" Value="0" />
+                    <asp:HiddenField ID="hdnVstPageSize" runat="server" Value="20" />
+                    <asp:HiddenField ID="hdnVstVendor" runat="server" />
+                    <asp:HiddenField ID="hdnVstFrom" runat="server" />
+                    <asp:HiddenField ID="hdnVstTo" runat="server" />
+                    <div class="table-responsive vst-grid-scroll">
+                        <asp:GridView ID="gvVendorStockDetails" runat="server" AutoGenerateColumns="false" AllowPaging="false" PageSize="20"
+                            Visible="true" ShowFooter="false" BorderWidth="1" CssClass="table table-hover upgradDataGrid">
                             <RowStyle CssClass="tlrowlight" />
                             <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
                             <HeaderStyle CssClass="headerGrid" />
@@ -142,4 +147,123 @@
             </div>
         </ContentTemplate>
     </asp:UpdatePanel>
+    <style type="text/css">
+        .vst-grid-scroll,
+        .vst-grid-scroll table,
+        .vst-grid-scroll tr,
+        .vst-grid-scroll td {
+            overflow-anchor: none;
+        }
+        .vst-grid-scroll {
+            max-height: 440px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+    </style>
+    <script type="text/javascript">
+        (function () {
+            var gridSel = '#<%= gvVendorStockDetails.ClientID %>';
+            var pageIndex = 0, pageSize = 20, total = 0, loading = false, noMore = false, seq = 0;
+            var filters = { vendor: '', from: '', to: '' };
+
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function dataRows() { return $(gridSel + ' tr.tlrowlight').not('.vst-skel'); }
+            function scrollBox() { return $(gridSel).closest('.vst-grid-scroll'); }
+            function capture() {
+                filters.vendor = $('#<%= hdnVstVendor.ClientID %>').val() || '';
+                filters.from = $('#<%= hdnVstFrom.ClientID %>').val() || '';
+                filters.to = $('#<%= hdnVstTo.ClientID %>').val() || '';
+                var size = parseInt($('#<%= hdnVstPageSize.ClientID %>').val(), 10);
+                pageSize = size > 0 ? size : 20;
+                total = 0;
+            }
+            function skel() {
+                var widths = ['24px', '70%', '80px', '50px'];
+                var cells = '';
+                for (var i = 0; i < widths.length; i++) cells += '<td style="text-align:center"><span class="grid-skel-bar" style="width:' + widths[i] + '"></span></td>';
+                return '<tr class="tlrowlight vst-skel">' + cells + '</tr>';
+            }
+            function place(html) {
+                var $rows = $('<table><tbody>' + html + '</tbody></table>').find('tr');
+                var $grid = $(gridSel);
+                var $body = $grid.children('tbody');
+                if (!$body.length) $body = $grid.find('tbody').first();
+                if ($body.length) $body.append($rows);
+                else $grid.append($rows);
+            }
+            function loadNext() {
+                if (loading || noMore) return;
+                if ($('#<%= hdnVstHasData.ClientID %>').val() !== '1') return;
+                if (!dataRows().length) return;
+                if (total && ((pageIndex + 1) * pageSize >= total || dataRows().length >= total)) { noMore = true; return; }
+                loading = true;
+                pageIndex++;
+                var token = ++seq;
+                place(skel());
+                if (!window.PageMethods || typeof PageMethods.GetMoreVendorStock !== 'function') {
+                    $(gridSel + ' tr.vst-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                    return;
+                }
+                PageMethods.GetMoreVendorStock(pageIndex, pageSize, filters.vendor, filters.from, filters.to, function (res) {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.vst-skel').remove();
+                    loading = false;
+                    if (!res || !res.rows) { noMore = true; return; }
+                    total = res.total || 0;
+                    if (!res.rows.length || res.rows.length < pageSize || (pageIndex + 1) * pageSize >= total) noMore = true;
+                    var html = '';
+                    for (var i = 0; i < res.rows.length; i++) {
+                        var r = res.rows[i];
+                        html += '<tr class="tlrowlight">'
+                            + '<td style="text-align:center">' + esc(r.serial) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.vendor) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.asOnDate) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.volume) + '</td></tr>';
+                    }
+                    if (html) place(html);
+                    if (!noMore && scrolledNear()) loadNext();
+                }, function () {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.vst-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                });
+            }
+            function scrolledNear() {
+                var box = scrollBox()[0];
+                if (!box) return false;
+                if (box.scrollHeight > box.clientHeight + 2) return box.scrollTop + box.clientHeight >= box.scrollHeight - 50;
+                var rect = box.getBoundingClientRect();
+                return rect.bottom <= window.innerHeight + 50;
+            }
+            function bind() {
+                pageIndex = 0; noMore = false; loading = false; seq++;
+                $(gridSel + ' tr.vst-skel').remove();
+                capture();
+                setTimeout(function () {
+                    if (scrolledNear()) loadNext();
+                }, 0);
+            }
+            if (!window.__vstStockScroll) {
+                window.__vstStockScroll = true;
+                document.addEventListener('scroll', function (e) {
+                    var box = scrollBox()[0];
+                    if (!box) return;
+                    var t = e.target;
+                    if (t !== box && t !== document && t !== document.documentElement && t !== document.body && !(t.contains && (t.contains(box) || box.contains(t)))) return;
+                    if (scrolledNear()) loadNext();
+                }, true);
+            }
+            if (window.Sys && Sys.Application) Sys.Application.add_load(bind);
+            else $(bind);
+        })();
+    </script>
 </asp:Content>

@@ -165,8 +165,8 @@
                         </div>
                         <div class="col-md-2">
                             <div class="form-group">
-                                        <label class="form-control-label">Depot:</label>
-                                        <asp:DropDownList ID="ddlDepot" ClientIDMode="Static" CssClass="form-control select2" TabIndex="3" AutoPostBack="true" runat="server"></asp:DropDownList>
+                                <label class="form-control-label">Depot:</label>
+                                <asp:DropDownList ID="ddlDepot" ClientIDMode="Static" CssClass="form-control select2" TabIndex="3" AutoPostBack="true" runat="server"></asp:DropDownList>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -189,7 +189,7 @@
                             <div class="form-group">
                                 <%--<asp:ImageButton ID="imgbtnSearch" CssClass="btn btn-primary btn-sm" runat="server" ImageUrl="~/images/ic_search.gif" />--%>
 
-                                <asp:LinkButton ID="imgbtnSearch" ClientIDMode="Static" CssClass="btn btn-primary btn-sm" runat="server" >Search</asp:LinkButton>
+                                <asp:LinkButton ID="imgbtnSearch" ClientIDMode="Static" CssClass="btn btn-primary btn-sm" runat="server">Search</asp:LinkButton>
                             </div>
                         </div>
 
@@ -200,9 +200,20 @@
 
             <asp:HiddenField ID="hdnSKUCode" runat="server" />
             <asp:HiddenField ID="hdnNewVendorName" runat="server" />
+            <asp:HiddenField ID="hdnSkuLinkHasData" runat="server" Value="0" />
+            <asp:HiddenField ID="hdnSkuLinkPageSize" runat="server" Value="15" />
             <div class="card">
+                <div class="mst-panel-header">
+                    <div class="mst-panel-header-left">
+                        <span class="mst-panel-icon"><i class="fas fa-list"></i></span>
+                        <div>
+                            <h5 class="mst-panel-title">Linking List</h5>
+                            <p class="mst-panel-subtitle">All brands with submitted product linkings</p>
+                        </div>
+                    </div>
+                </div>
                 <div class="card-body">
-                    <div class="form-group row ddlPageSize">
+                    <div class="form-group row ddlPageSize" style="display: none;">
                         <label for="ddlPageSize" class="col-auto form-control-label">
                             <asp:Label ID="lblResultspPage" runat="server" Text="Results Per Page:"></asp:Label>
                         </label>
@@ -211,7 +222,7 @@
                         </div>
                     </div>
                     <div class="table-responsive">
-                        <asp:GridView ID="gvVendorSKUList" runat="server" AutoGenerateColumns="false" AllowPaging="true"
+                        <asp:GridView ID="gvVendorSKUList" runat="server" AutoGenerateColumns="false" AllowPaging="false"
                             Visible="true" ShowFooter="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="There are No Data..."
                             OnRowCancelingEdit="gvVendorSKUList_RowCancelingEdit" OnRowEditing="gvVendorSKUList_RowEditing">
                             <RowStyle CssClass="tlrowlight" />
@@ -433,9 +444,153 @@
             </div>
             <asp:Label ID="lblErrorMessage" ClientIDMode="Static" CssClass="errormsg" runat="server" Font-Size="10px" Font-Bold="true"></asp:Label>
         </ContentTemplate>
-<%--        <Triggers>
+        <%--        <Triggers>
             <asp:AsyncPostBackTrigger ControlID="imgbtnSearch" EventName="Click" />
             <asp:AsyncPostBackTrigger ControlID="ddlPageSize" EventName="SelectedIndexChanged" />
         </Triggers>--%>
     </asp:UpdatePanel>
+    <script type="text/javascript">
+        (function () {
+            var gridSel = '#<%= gvVendorSKUList.ClientID %>';
+            var pageIndex = 0, pageSize = 15, total = 0, loading = false, noMore = false, seq = 0, suppressUntil = 0;
+            var filters = { vendor: '', depot: '', sku: '', region: '' };
+            var vendors = null;
+
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function dataRows() { return $(gridSel + ' tbody tr.tlrowlight').not('.link-skel'); }
+            function scrollBox() { return $(gridSel).closest('.table-responsive'); }
+            function capture() {
+                filters.vendor = $('#ddlVendor').val() || '';
+                filters.depot = $('#ddlDepot').val() || '';
+                filters.sku = $('#<%= hdnskucode1.ClientID %>').val() || '';
+                filters.region = $('#ddlRegion').val() || '';
+                var size = parseInt($('#<%= hdnSkuLinkPageSize.ClientID %>').val(), 10);
+                pageSize = size > 0 ? size : 15;
+                total = 0;
+            }
+            function skel() {
+                var widths = ['24px', '70%', '50px', '28px', '40px', '24px', '70%', '70%', '80%', '22px'];
+                var cells = '';
+                for (var i = 0; i < widths.length; i++) {
+                    cells += '<td style="text-align:center;width:' + ['4%', '21%', '11%', '6%', '8%', '4%', '14%', '15%', '18%', '10%'][i] + '"><span class="grid-skel-bar" style="width:' + widths[i] + '"></span></td>';
+                }
+                return '<tr class="tlrowlight link-skel">' + cells + '</tr>';
+            }
+            function place(html) {
+                var $rows = $('<table><tbody>' + html + '</tbody></table>').find('tr');
+                var $footer = $(gridSel).find('tr.footerGrid').first();
+                if ($footer.length) $footer.before($rows);
+                else $(gridSel).find('tbody').append($rows);
+            }
+            function vendorSelect(id, selected) {
+                var html = '<select id="' + id + '" class="form-control select2 sku-link-vendor">';
+                for (var i = 0; i < vendors.length; i++) {
+                    var v = vendors[i];
+                    html += '<option value="' + esc(v.code) + '"' + (v.code === selected ? ' selected' : '') + '>' + esc(v.name) + '</option>';
+                }
+                return html + '</select>';
+            }
+            function loadNext() {
+                if (loading || noMore) return;
+                if ($('#<%= hdnSkuLinkHasData.ClientID %>').val() !== '1') return;
+                if (!dataRows().length) return;
+                if (total && (pageIndex + 1) * pageSize >= total) { noMore = true; return; }
+                if (total && dataRows().length >= total) { noMore = true; return; }
+                loading = true;
+                pageIndex++;
+                var token = ++seq;
+                place(skel());
+                var box = scrollBox();
+                if (box.length && box[0].scrollHeight > box[0].clientHeight) {
+                    suppressUntil = Date.now() + 200;
+                    box.scrollTop(box[0].scrollHeight);
+                }
+                PageMethods.GetMoreVendorSkuLinks(pageIndex, pageSize, filters.vendor, filters.depot, filters.sku, filters.region, function (res) {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.link-skel').remove();
+                    loading = false;
+                    if (!res || !res.rows) { noMore = true; return; }
+                    total = res.total || 0;
+                    if (res.vendors && res.vendors.length) vendors = res.vendors;
+                    if (!res.rows.length || res.rows.length < pageSize || (pageIndex + 1) * pageSize >= total) noMore = true;
+                    var html = '';
+                    for (var i = 0; i < res.rows.length; i++) {
+                        var r = res.rows[i];
+                        var n = pageIndex * pageSize + i + 1;
+                        var vendorCell = '';
+                        var actionCell = '';
+                        if (r.vendor) {
+                            var selId = 'skuLinkVendor' + n;
+                            vendorCell = vendorSelect(selId, r.vendor)
+                                + '<input type="hidden" class="js-sku" id="skuLinkSku' + n + '" value="' + esc(r.sku) + '" />'
+                                + '<input type="hidden" class="js-depotname" id="skuLinkDepot' + n + '" value="' + esc(r.depotName) + '" />'
+                                + '<input type="hidden" class="js-vendorname" id="skuLinkVendorName' + n + '" value="' + esc(r.vendorName) + '" />';
+                            actionCell = '<img id="skuLinkSave' + n + '" class="sku-link-save" title="Save" alt="Save" src="Images/p-save.png" style="cursor:pointer" />';
+                        }
+                        html += '<tr class="tlrowlight" data-depot="' + esc(r.depot) + '" data-sku="' + esc(r.sku) + '" data-tsl="' + esc(r.tsl) + '" data-ps="' + esc(r.ps) + '">'
+                            + '<td style="text-align:center">' + n + '</td>'
+                            + '<td style="text-align:center">' + esc(r.skuDesc) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.sku) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.tsl) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.ps) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.region) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.depotName) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.vendorName) + '</td>'
+                            + '<td style="text-align:center">' + vendorCell + '</td>'
+                            + '<td style="text-align:center">' + actionCell + '</td></tr>';
+                    }
+                    if (html) {
+                        place(html);
+                        if (window.jQuery && jQuery.fn.select2) $(gridSel + ' select.sku-link-vendor').not('.select2-hidden-accessible').select2();
+                    }
+                    var live = scrollBox();
+                    if (!noMore && live.length && live[0].scrollHeight <= live[0].clientHeight + 2) loadNext();
+                }, function () {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.link-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                });
+            }
+            function onScroll() {
+                if (Date.now() < suppressUntil) return;
+                var el = this;
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) loadNext();
+            }
+            function bind() {
+                pageIndex = 0; noMore = false; loading = false; seq++; vendors = null;
+                capture();
+                var box = scrollBox();
+                box.off('scroll.skuLink').on('scroll.skuLink', onScroll);
+                if ($('#<%= hdnSkuLinkHasData.ClientID %>').val() === '1' && box.length && box[0].scrollHeight <= box[0].clientHeight + 2) loadNext();
+            }
+            $(document).on('click', '.sku-link-save', function (ev) {
+                ev.preventDefault();
+                var tr = $(this).closest('tr');
+                var sel = tr.find('select.sku-link-vendor')[0];
+                var nameBox = document.getElementById('<%= hdnNewVendorName.ClientID %>');
+                if (!sel) return false;
+                if (nameBox && sel.selectedIndex >= 0) nameBox.value = sel.options[sel.selectedIndex].text;
+                if (!ValidateUpdate(sel.id, tr.find('.js-sku').attr('id'), tr.find('.js-depotname').attr('id'), tr.find('.js-vendorname').attr('id'), '<%= hdnNewVendorName.ClientID %>', 'lblErrorMessage', this.id)) return false;
+                PageMethods.SaveVendorSkuLink(tr.attr('data-depot'), sel.value, tr.attr('data-sku'), tr.attr('data-tsl'), tr.attr('data-ps'), function (msg) {
+                    if (msg === 'ok') {
+                        alert('Data updated successfully');
+                        var search = document.getElementById('imgbtnSearch');
+                        if (search) search.click();
+                    } else if (msg) {
+                        alert(msg);
+                    }
+                });
+                return false;
+            });
+            $(bind);
+            if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(bind);
+            }
+        })();
+    </script>
 </asp:Content>

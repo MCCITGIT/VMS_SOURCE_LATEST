@@ -6,6 +6,54 @@
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
     
 
+    <style type="text/css">
+        .vms-yn-toggle {
+            display: inline-flex;
+            align-items: center;
+            min-height: 32px;
+            padding-top: 6px;
+        }
+
+            .vms-yn-toggle label {
+                display: none;
+            }
+
+            .vms-yn-toggle input[type="checkbox"] {
+                appearance: none;
+                -webkit-appearance: none;
+                width: 44px;
+                height: 24px;
+                margin: 0;
+                background: #cbd5e1;
+                border-radius: 24px;
+                position: relative;
+                cursor: pointer;
+                outline: none;
+                vertical-align: middle;
+                transition: background 0.2s ease;
+            }
+
+                .vms-yn-toggle input[type="checkbox"]::after {
+                    content: "";
+                    position: absolute;
+                    width: 18px;
+                    height: 18px;
+                    background: #fff;
+                    border-radius: 50%;
+                    top: 3px;
+                    left: 3px;
+                    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+                    transition: transform 0.2s ease;
+                }
+
+                .vms-yn-toggle input[type="checkbox"]:checked {
+                    background: #22a35a;
+                }
+
+                    .vms-yn-toggle input[type="checkbox"]:checked::after {
+                        transform: translateX(20px);
+                    }
+    </style>
     <script src="Scripts/ValidateVendorUnitMaster.js" type="text/javascript"></script>
     <script type="text/javascript">
         document.onkeydown = checkValue;
@@ -144,6 +192,14 @@
                                   <%--  <a class="formCalndIcon" href="javascript:cal1.select(document.forms[0].txtbxdate,'txtbxdate','dd/MM/yyyy');">
                                         <img id="scheme_effective_date0" alt="Calender" src="images/date_icon.gif" style="border: 0" />
                                     </a>--%>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-control-label">Allow Freight Cost:</label>
+                                <div class="vms-yn-toggle">
+                                    <asp:CheckBox ID="chkAllowFreight" runat="server" />
                                 </div>
                             </div>
                         </div>

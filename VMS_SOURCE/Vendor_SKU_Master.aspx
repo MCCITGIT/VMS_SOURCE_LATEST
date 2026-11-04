@@ -69,7 +69,7 @@
                     </div>
                 </div>
             </div>
-            <div class="form-group ddlPageSize" style="display: flex; align-items: center;">
+            <div class="form-group ddlPageSize" style="align-items: center; display:none;">
                 <label for="ddlPageSize" class="col-auto form-control-label">
                     <asp:Label ID="lblResultspPage" runat="server" Text="Results Per Page:"></asp:Label>
                 </label>
@@ -82,7 +82,7 @@
             <div class="table-responsive">
                 <asp:UpdatePanel ID="UpdatePanel1" runat="server">
                     <ContentTemplate>
-                        <asp:GridView ID="gvVendorSKUList" runat="server" AutoGenerateColumns="False" BorderWidth="1" CssClass="table table-hover upgradDataGrid" AllowPaging="True" EmptyDataText="No Record Found." DataKeyNames="v_sku_code">
+                        <asp:GridView ID="gvVendorSKUList" runat="server" AutoGenerateColumns="False" BorderWidth="1" CssClass="table table-hover upgradDataGrid" AllowPaging="false" EmptyDataText="No Record Found." DataKeyNames="v_sku_code">
                             <RowStyle CssClass="tlrowlight" />
                             <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
                             <HeaderStyle CssClass="headerGrid" />
@@ -129,4 +129,121 @@
             <asp:Label ID="lblErrorMessage" CssClass="errormsg" runat="server" Font-Size="10px" Font-Bold="true"></asp:Label>
         </div>
     </div>
+    <script type="text/javascript">
+        $(function () {
+            var pageIndex = 0;
+            var loading = false;
+            var noMoreData = false;
+            var suppressScrollUntil = 0;
+            var gridSel = '#<%= gvVendorSKUList.ClientID %>';
+            var filters = { vendor: '', sku: '', pageSize: 15 };
+
+            function captureFilters() {
+                filters.vendor = $('#<%= ddlVendor.ClientID %>').val() || '';
+                filters.sku = $('#<%= txtSkuCode.ClientID %>').val() || '';
+                filters.pageSize = parseInt($('#<%= ddlPageSize.ClientID %>').val(), 10) || 15;
+            }
+
+            function dataRows() {
+                return $(gridSel + ' tbody tr').not('.sku-skel').not('.headerGrid').not('.PagerGrid').filter(function () {
+                    return $(this).children('td[colspan]').length === 0;
+                });
+            }
+
+            function loadNext($el) {
+                if (loading || noMoreData || dataRows().length === 0) return;
+                loading = true;
+                pageIndex++;
+                showSkuSkeleton($el);
+
+                PageMethods.GetMoreVendorSkus(pageIndex, filters.pageSize, filters.vendor, filters.sku,
+                    function (result) {
+                        hideSkuSkeleton();
+                        if (!result || !result.rows || result.rows.length === 0) {
+                            noMoreData = true;
+                            loading = false;
+                            return;
+                        }
+                        var $tbody = $(gridSel + ' tbody');
+                        $.each(result.rows, function (i, r) {
+                            appendSkuRow($tbody, r, pageIndex * filters.pageSize + i + 1);
+                        });
+                        if (dataRows().length >= result.total || result.rows.length < filters.pageSize) noMoreData = true;
+                        loading = false;
+                        var $scroll = $(gridSel).closest('.table-responsive');
+                        if (!noMoreData && $scroll.length && $scroll[0].scrollHeight <= $scroll.innerHeight() + 1) loadNext($scroll);
+                    },
+                    function () {
+                        hideSkuSkeleton();
+                        pageIndex--;
+                        loading = false;
+                    }
+                );
+            }
+
+            function showSkuSkeleton($scroll) {
+                var $tbody = $(gridSel + ' tbody');
+                if (!$tbody.length || $tbody.find('tr.sku-skel').length) return;
+                var widths = [
+                    ['16px', '55%', '74%', '68%'],
+                    ['16px', '48%', '66%', '60%'],
+                    ['16px', '62%', '80%', '54%']
+                ];
+                var colWidths = ['5%', '10%', '20%', '20%'];
+                var html = '';
+                for (var r = 0; r < 3; r++) {
+                    html += '<tr class="tlrowlight sku-skel">';
+                    for (var c = 0; c < colWidths.length; c++) {
+                        html += '<td align="center" style="width:' + colWidths[c] + ';"><span class="grid-skel-bar" style="width:' + widths[r][c] + ';"></span></td>';
+                    }
+                    html += '</tr>';
+                }
+                $tbody.append(html);
+                suppressScrollUntil = Date.now() + 200;
+                if ($scroll && $scroll.length) $scroll.scrollTop($scroll[0].scrollHeight);
+            }
+
+            function hideSkuSkeleton() {
+                var $rows = $(gridSel + ' tbody tr.sku-skel');
+                if (!$rows.length) return;
+                suppressScrollUntil = Date.now() + 200;
+                $rows.remove();
+            }
+
+            function appendSkuRow($tbody, r, slNo) {
+                var descLink = '<a href="Vendor_SKU_AddUpdate.aspx?SKUCode=' + encodeURIComponent(r.v_sku_code || '') + '&Unit=' + encodeURIComponent(r.v_vendor_unit || '') + '" class="gridlink">' + esc(r.SkuDescription) + '</a>';
+                $tbody.append(
+                    '<tr class="tlrowlight">' +
+                    '<td align="center" style="width:5%;">' + slNo + '</td>' +
+                    '<td align="center" style="width:10%;">' + esc(r.v_sku_code) + '</td>' +
+                    '<td align="center" style="width:20%;">' + descLink + '</td>' +
+                    '<td align="center" style="width:20%;">' + esc(r.ApplicableDepot) + '</td>' +
+                    '</tr>'
+                );
+            }
+
+            function esc(v) {
+                return $('<div>').text(v == null ? '' : v).html();
+            }
+
+            function bindSkuScroll() {
+                pageIndex = 0;
+                noMoreData = false;
+                loading = false;
+                captureFilters();
+                var $scroll = $(gridSel).closest('.table-responsive');
+                $scroll.off('scroll.skuskel').on('scroll.skuskel', function () {
+                    if (Date.now() < suppressScrollUntil) return;
+                    if ($scroll.scrollTop() + $scroll.innerHeight() < $scroll[0].scrollHeight - 50) return;
+                    loadNext($scroll);
+                });
+                if ($scroll.length && dataRows().length > 0 && $scroll[0].scrollHeight <= $scroll.innerHeight() + 1) loadNext($scroll);
+            }
+
+            bindSkuScroll();
+            if (typeof Sys !== 'undefined' && Sys.WebForms) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(bindSkuScroll);
+            }
+        });
+    </script>
 </asp:Content>

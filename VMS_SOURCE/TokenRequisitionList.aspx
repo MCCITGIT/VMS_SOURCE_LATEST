@@ -79,10 +79,12 @@
 
     <div class="card">
         <div class="card-body">
-            <div class="table-responsive">
+            <div class="table-responsive trq-grid-scroll">
                 <asp:UpdatePanel ID="UpdatePanel1" runat="server">
                     <ContentTemplate>
-                        <asp:GridView ID="gvRequistionList" runat="server" AutoGenerateColumns="False" EmptyDataText="No records found" BorderStyle="None" AllowPaging="true" PageSize="20" BorderWidth="1" CssClass="table table-hover upgradDataGrid">
+                        <asp:HiddenField ID="hdnTokenReqHasData" runat="server" Value="0" />
+                        <asp:HiddenField ID="hdnTokenReqPageSize" runat="server" Value="20" />
+                        <asp:GridView ID="gvRequistionList" runat="server" AutoGenerateColumns="False" EmptyDataText="No records found" BorderStyle="None" AllowPaging="false" PageSize="20" BorderWidth="1" CssClass="table table-hover upgradDataGrid">
                             <RowStyle CssClass="tlrowlight" />
                             <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
                             <HeaderStyle CssClass="headerGrid" />
@@ -197,4 +199,132 @@
             </div>
         </div>
     </div>
+    <script type="text/javascript">
+        (function () {
+            var gridSel = '#<%= gvRequistionList.ClientID %>';
+            var pageIndex = 0, pageSize = 20, total = 0, loading = false, noMore = false, seq = 0;
+            var filters = { unit: '', vendor: '', req: '', status: '' };
+
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function dataRows() { return $(gridSel + ' tbody tr.tlrowlight').not('.trq-skel'); }
+            function scrollBox() { return $(gridSel).closest('.trq-grid-scroll'); }
+            function capture() {
+                filters.unit = $('#<%= ddlVendorUnit.ClientID %>').val() || '';
+                filters.vendor = $('#<%= ddlTokenVendor.ClientID %>').val() || '';
+                filters.req = $('#<%= ddlVendorRequisition.ClientID %>').val() || '';
+                filters.status = $('#<%= ddlStatus.ClientID %>').val() || '';
+                var size = parseInt($('#<%= hdnTokenReqPageSize.ClientID %>').val(), 10);
+                pageSize = size > 0 ? size : 20;
+                total = 0;
+            }
+            function skel() {
+                var widths = ['40px', '70%', '70%', '75%', '80%', '36px', '40px', '50px', '18px', '18px'];
+                var cells = '';
+                for (var i = 0; i < widths.length; i++) cells += '<td style="text-align:center"><span class="grid-skel-bar" style="width:' + widths[i] + '"></span></td>';
+                return '<tr class="tlrowlight trq-skel">' + cells + '</tr>';
+            }
+            function place(html) {
+                var $rows = $('<table><tbody>' + html + '</tbody></table>').find('tr');
+                $(gridSel).find('tbody').append($rows);
+            }
+            function rowHtml(r) {
+                var bg = r.status === 'Rejected' ? ' style="background-color:#F08080"' : '';
+                var reject = r.status === 'New'
+                    ? '<a href="javascript:void(0)" class="trq-reject" data-id="' + esc(r.id) + '" title="Reject"><i class="fa fa-times-circle" style="color:#FF0000;"></i></a>'
+                    : '';
+                return '<tr class="tlrowlight"' + bg + '>'
+                    + '<td style="text-align:center">' + esc(r.id) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.unit) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.vendor) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.site) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.desc) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.items) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.qty) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.status) + '</td>'
+                    + '<td style="text-align:center"><a href="TokenVendorRequisitionAddUpdate.aspx?id=' + esc(r.id) + '" title="View"><i class="fa fa-eye"></i></a></td>'
+                    + '<td style="text-align:center">' + reject + '</td></tr>';
+            }
+            function loadNext() {
+                if (loading || noMore) return;
+                if ($('#<%= hdnTokenReqHasData.ClientID %>').val() !== '1') return;
+                if (!dataRows().length) return;
+                if (total && ((pageIndex + 1) * pageSize >= total || dataRows().length >= total)) { noMore = true; return; }
+                loading = true;
+                pageIndex++;
+                var token = ++seq;
+                place(skel());
+                if (!window.PageMethods || typeof PageMethods.GetMoreTokenRequisitions !== 'function') {
+                    $(gridSel + ' tr.trq-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                    return;
+                }
+                PageMethods.GetMoreTokenRequisitions(pageIndex, pageSize, filters.unit, filters.vendor, filters.req, filters.status, function (res) {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.trq-skel').remove();
+                    loading = false;
+                    if (!res || !res.rows) { noMore = true; return; }
+                    total = res.total || 0;
+                    if (!res.rows.length || res.rows.length < pageSize || (pageIndex + 1) * pageSize >= total) noMore = true;
+                    var html = '';
+                    for (var i = 0; i < res.rows.length; i++) html += rowHtml(res.rows[i]);
+                    if (html) place(html);
+                    var live = scrollBox();
+                    if (!noMore && live.length && live[0].scrollHeight <= live[0].clientHeight + 2) loadNext();
+                }, function () {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.trq-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                });
+            }
+            function onScroll() {
+                if (this.scrollTop + this.clientHeight >= this.scrollHeight - 50) loadNext();
+            }
+            function bind() {
+                pageIndex = 0; noMore = false; loading = false; seq++;
+                $(gridSel + ' tr.trq-skel').remove();
+                capture();
+                var box = scrollBox();
+                box.off('scroll.trq').on('scroll.trq', onScroll);
+                setTimeout(function () {
+                    var live = scrollBox();
+                    if ($('#<%= hdnTokenReqHasData.ClientID %>').val() === '1' && live.length && live[0].scrollHeight <= live[0].clientHeight + 2) loadNext();
+                }, 0);
+            }
+            $(document).on('click', gridSel + ' a.trq-reject', function (e) {
+                e.preventDefault();
+                if (!confirm('Are you sure to reject this?')) return false;
+                var $link = $(this);
+                var id = parseInt($link.attr('data-id'), 10);
+                if (!id) return false;
+                PageMethods.RejectTokenRequisition(id, function (res) {
+                    if (res !== 'ok') return;
+                    var $tr = $link.closest('tr');
+                    $tr.css('background-color', '#F08080');
+                    $tr.children('td').eq(7).text('Rejected');
+                    $link.remove();
+                });
+                return false;
+            });
+            $(bind);
+            if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function (sender, args) {
+                    try {
+                        if (args.get_error && args.get_error()) return;
+                        var updated = args.get_panelsUpdated() || [];
+                        for (var i = 0; i < updated.length; i++) {
+                            if ($(updated[i]).find(gridSel).length) { bind(); break; }
+                        }
+                    } catch (e) { }
+                });
+            }
+        })();
+    </script>
 </asp:Content>

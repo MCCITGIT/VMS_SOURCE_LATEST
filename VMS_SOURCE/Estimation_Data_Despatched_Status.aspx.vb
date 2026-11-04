@@ -15,6 +15,7 @@ Imports System.Data
 Imports VMS.Web
 Imports System.Data.SqlClient
 Imports System.Data.SqlTypes
+Imports System.Collections.Generic
 Partial Class Estimation_Data_Despatched_Status
     Inherits System.Web.UI.Page
     Dim userInfo As VMSUserEntity = New VMSUserEntity()
@@ -240,13 +241,23 @@ Partial Class Estimation_Data_Despatched_Status
             If (Not (DetailSet Is Nothing) AndAlso DetailSet.Tables.Count > 0 AndAlso Not (DetailSet.Tables(0) Is Nothing) AndAlso DetailSet.Tables(0).Rows.Count > 0) Then
                 gvDsptchdStat.Visible = True
                 lblNoRecrds.Visible = False
-                gvDsptchdStat.DataSource = DetailSet.Tables(0)
+                gvDsptchdStat.PageIndex = 0
+                gvDsptchdStat.DataSource = FirstDespatchPage(DetailSet.Tables(0))
                 gvDsptchdStat.DataBind()
+                hdnEdsHasData.Value = "1"
+                hdnEdsPageSize.Value = gvDsptchdStat.PageSize.ToString()
             Else
                 gvDsptchdStat.Visible = False
                 lblNoRecrds.Visible = True
                 lblNoRecrds.Text = "No Records Found!!!"
+                hdnEdsHasData.Value = "0"
             End If
+            hdnEdsRegion.Value = ddlRegion.SelectedValue
+            hdnEdsDepot.Value = ddlLocation.SelectedValue
+            hdnEdsUnit.Value = ddlDsptchdUnit.SelectedValue
+            hdnEdsSku.Value = ddlProduct.SelectedValue
+            hdnEdsYear.Value = txtFinYear.Text.Trim
+            hdnEdsMonth.Value = txtMonth.Text.Trim
         Catch ex As Exception
             Dim returnUrl As String = "~/ExceptionPage.aspx"
             Session(Constant.SessionKeys.ErrMessage) = Constant.ErrorMessages.ErrorBindingGrid
@@ -257,10 +268,10 @@ Partial Class Estimation_Data_Despatched_Status
 
 #Region "gvDsptchdStat_RowDataBound"
 
-    Protected Sub gvDsptchdStat_PageIndexChanging(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewPageEventArgs) Handles gvDsptchdStat.PageIndexChanging
-        gvDsptchdStat.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub gvDsptchdStat_PageIndexChanging(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewPageEventArgs) Handles gvDsptchdStat.PageIndexChanging
+    '    gvDsptchdStat.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
     Protected Sub gvDsptchdStat_RowDataBound(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewRowEventArgs) Handles gvDsptchdStat.RowDataBound
         If (e.Row.RowType = DataControlRowType.DataRow) Then
             'e.Row.Cells(0).Text = e.Row.RowIndex + 1
@@ -440,4 +451,58 @@ Partial Class Estimation_Data_Despatched_Status
         End If
     End Sub
 
+    Private Function FirstDespatchPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvDsptchdStat.PageSize
+        If pageSize <= 0 Then pageSize = 15
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod()>
+    <System.Web.Services.WebMethod(EnableSession:=True)>
+    Public Shared Function GetMoreDespatchStatus(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal region As String, ByVal depot As String, ByVal unit As String, ByVal sku As String, ByVal finYear As String, ByVal month As String) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        Dim userInfo As VMSUserEntity = CType(System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
+        If pageSize <= 0 Then pageSize = 15
+        If pageIndex < 0 Then pageIndex = 0
+        If userInfo.userGroupCodeEntity = "UNIT" Then unit = userInfo.userBranchEntity
+        Dim ds As DataSet = New EstimationDataDespatchedStatus_App().GetDetailsGvDsptchdStat(If(region, String.Empty), If(depot, String.Empty), If(unit, String.Empty), If(sku, String.Empty), If(finYear, String.Empty), If(month, String.Empty), Constant.Common.ActiveStatus)
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                rows.Add(New With {
+                    .serial = (i + 1).ToString(),
+                    .region = Convert.ToString(dr("region")),
+                    .depot = Convert.ToString(dr("load_depot")),
+                    .sku = Convert.ToString(dr("load_sku_code")),
+                    .average = Convert.ToString(dr("load_average")),
+                    .estimate = Convert.ToString(dr("load_estimate_nop")),
+                    .tslFactor = Convert.ToString(dr("load_tsl_factor")),
+                    .tsl = Convert.ToString(dr("load_tsl_nop")),
+                    .stock = Convert.ToString(dr("load_stock")),
+                    .autoIndent = Convert.ToString(dr("load_auto_indent")),
+                    .branchIndent = Convert.ToString(dr("load_depot_indent_nop")),
+                    .despDate = Convert.ToString(dr("Desp_date")),
+                    .intransit = Convert.ToString(dr("INTRANSIT")),
+                    .received = Convert.ToString(dr("RECEIVED at Depot")),
+                    .lastDesp = Convert.ToString(dr("Last_Desp_date")),
+                    .pendingAuto = Convert.ToString(dr("pending_auto_indent")),
+                    .pendingManual = Convert.ToString(dr("pending_manual_indent")),
+                    .currentDespatch = Convert.ToString(dr("current_despatch"))
+                })
+            Next
+        End If
+        Return New With {.rows = rows, .total = total}
+    End Function
 End Class

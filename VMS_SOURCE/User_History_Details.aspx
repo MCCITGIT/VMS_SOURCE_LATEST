@@ -110,7 +110,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="form-group ddlPageSize" style="display: flex; align-items: center; padding: 0 15px;">
+                    <div class="form-group ddlPageSize" style="display: flex; align-items: center; padding: 0 15px; display:none;">
                         <label for="ddlPageSize" class="col-auto form-control-label">
                             <asp:Label ID="Label4" runat="server" Text="Results Per Page:"></asp:Label>
                         </label>
@@ -121,8 +121,11 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <asp:GridView ID="gvUserHistory" runat="server" AutoGenerateColumns="false" AllowPaging="True"
-                            Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" style="margin-bottom: 0" OnPageIndexChanging="gvUserProfile_PageIndexChanging">
+                        <asp:HiddenField ID="hdnHistoryMode" runat="server" ClientIDMode="Static" />
+                        <asp:HiddenField ID="hdnHistoryPage" runat="server" ClientIDMode="Static" />
+                        <asp:HiddenField ID="hdnHistoryPageSize" runat="server" ClientIDMode="Static" />
+                        <asp:GridView ID="gvUserHistory" runat="server" AutoGenerateColumns="false" AllowPaging="false"
+                            Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" style="margin-bottom: 0">
                             <RowStyle CssClass="tlrowlight" />
                             <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
                             <HeaderStyle CssClass="headerGrid" />
@@ -165,4 +168,137 @@
             </div>
         </ContentTemplate>
     </asp:UpdatePanel>
+    <script type="text/javascript">
+        $(function () {
+            var pageIndex = parseInt($('#hdnHistoryPage').val(), 10) || 0;
+            var loading = false;
+            var noMoreData = false;
+            var suppressScrollUntil = 0;
+            var filters = {};
+
+            function captureFilters() {
+                filters.userGroup = $('#<%= ddlUserGroup.ClientID %>').val() || '';
+                filters.userId = $('#<%= hdnUserId.ClientID %>').val() || '';
+                filters.fromDate = $('#<%= txtFromDate.ClientID %>').val() || '';
+                filters.toDate = $('#<%= txtToDate.ClientID %>').val() || '';
+                filters.searchType = $('#hdnHistoryMode').val() || $('#<%= ddlSearchFor.ClientID %>').val() || 'Detail';
+                filters.pageSize = parseInt($('#hdnHistoryPageSize').val(), 10) || 15;
+                pageIndex = parseInt($('#hdnHistoryPage').val(), 10) || 0;
+            }
+
+            function gridSel() {
+                return filters.searchType === 'Summary'
+                    ? '#<%= gvUserHistoryCount.ClientID %>'
+                    : '#<%= gvUserHistory.ClientID %>';
+            }
+
+            function dataRows() {
+                return $(gridSel() + ' tbody tr').not('.hist-skel').not('.headerGrid').not('.PagerGrid').filter(function () {
+                    return $(this).children('td[colspan]').length === 0;
+                });
+            }
+
+            function placeRows(html) {
+                var $pager = $(gridSel()).find('tr.PagerGrid').first();
+                if ($pager.length) $pager.before(html);
+                else $(gridSel()).find('tbody').append(html);
+            }
+
+            function loadNext($el) {
+                if (!$('#hdnHistoryMode').val() || loading || noMoreData || dataRows().length === 0) return;
+                loading = true;
+                pageIndex++;
+                showHistorySkeleton($el);
+
+                PageMethods.GetMoreUserHistory(pageIndex, filters.pageSize, filters.userGroup, filters.userId, filters.fromDate, filters.toDate, filters.searchType,
+                    function (result) {
+                        hideHistorySkeleton();
+                        if (!result || !result.rows || result.rows.length === 0) {
+                            noMoreData = true;
+                            loading = false;
+                            return;
+                        }
+                        $.each(result.rows, function (i, r) {
+                            appendHistoryRow(r);
+                        });
+                        if ((pageIndex + 1) * filters.pageSize >= result.total || result.rows.length < filters.pageSize) noMoreData = true;
+                        loading = false;
+                        var $scroll = $(gridSel()).closest('.table-responsive');
+                        if (!noMoreData && $scroll.length && $scroll[0].scrollHeight <= $scroll.innerHeight() + 1) loadNext($scroll);
+                    },
+                    function () {
+                        hideHistorySkeleton();
+                        pageIndex--;
+                        loading = false;
+                    }
+                );
+            }
+
+            function showHistorySkeleton($scroll) {
+                if ($(gridSel()).find('tr.hist-skel').length) return;
+                var widths = ['62%', '70%', '58%', '48%'];
+                var html = '';
+                for (var r = 0; r < 3; r++) {
+                    html += '<tr class="tlrowlight hist-skel">';
+                    for (var c = 0; c < 4; c++) {
+                        html += '<td align="center"><span class="grid-skel-bar" style="width:' + widths[(c + r) % 4] + ';"></span></td>';
+                    }
+                    html += '</tr>';
+                }
+                placeRows(html);
+                suppressScrollUntil = Date.now() + 200;
+                if ($scroll && $scroll.length) $scroll.scrollTop($scroll[0].scrollHeight);
+            }
+
+            function hideHistorySkeleton() {
+                var $rows = $(gridSel()).find('tr.hist-skel');
+                if (!$rows.length) return;
+                suppressScrollUntil = Date.now() + 200;
+                $rows.remove();
+            }
+
+            function appendHistoryRow(r) {
+                var html;
+                if (filters.searchType === 'Summary') {
+                    html = '<tr class="tlrowlight">' +
+                        '<td align="center">' + esc(r.uh_userid) + '</td>' +
+                        '<td align="center">' + esc(r.fromDate) + '</td>' +
+                        '<td align="center">' + esc(r.toDate) + '</td>' +
+                        '<td align="center">' + esc(r.totalCount) + '</td>' +
+                        '</tr>';
+                } else {
+                    html = '<tr class="tlrowlight">' +
+                        '<td align="center">' + esc(r.uh_userid) + '</td>' +
+                        '<td align="center">' + esc(r.uh_user_group) + '</td>' +
+                        '<td align="center">' + esc(r.logdate) + '</td>' +
+                        '<td align="center">' + esc(r.logtime) + '</td>' +
+                        '</tr>';
+                }
+                placeRows(html);
+            }
+
+            function esc(v) {
+                return $('<div>').text(v == null ? '' : v).html();
+            }
+
+            function bindHistoryScroll() {
+                captureFilters();
+                noMoreData = false;
+                loading = false;
+                var $scroll = $('.table-responsive').has(gridSel()).first();
+                if (!$scroll.length) $scroll = $('.table-responsive').first();
+                $scroll.off('scroll.histskel').on('scroll.histskel', function () {
+                    if (Date.now() < suppressScrollUntil) return;
+                    if ($scroll.scrollTop() + $scroll.innerHeight() < $scroll[0].scrollHeight - 50) return;
+                    loadNext($scroll);
+                });
+                if ($('#hdnHistoryMode').val() && dataRows().length > 0 && $scroll.length && $scroll[0].scrollHeight <= $scroll.innerHeight() + 1) loadNext($scroll);
+            }
+
+            bindHistoryScroll();
+            if (typeof Sys !== 'undefined' && Sys.WebForms) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(bindHistoryScroll);
+            }
+        });
+    </script>
 </asp:Content>

@@ -175,7 +175,7 @@
                                                 <ItemTemplate>
                                                     <asp:TextBox ID="txtReqDate" runat="server" CssClass="form-control form-control-sm" TextMode="Date" AutoComplete="Off"
                                                         oninput="clearRequisitionGridFieldValidation(this);"
-                                                        onchange="clearRequisitionGridFieldValidation(this);"></asp:TextBox>
+                                                        onchange="clearRequisitionGridFieldValidation(this); rejectBackDeliveryDate(this);"></asp:TextBox>
                                                 </ItemTemplate>
                                                 <HeaderStyle HorizontalAlign="Center" />
                                                 <ItemStyle HorizontalAlign="Center" Width="12%" />

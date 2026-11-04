@@ -3,6 +3,7 @@ Imports VMS.Web
 Imports System.Data
 Imports System.Data.SqlTypes
 Imports System.Data.SqlClient
+Imports System.Collections.Generic
 Imports VMS.DataAccess
 Imports System.IO
 Imports NPOI.HSSF.UserModel
@@ -165,12 +166,19 @@ Partial Class UnitRequisitionReport
             Dim dsProductSet As New DataSet
             dsProductSet = obj.GetRequisitionreport(ddlVendorUnit.SelectedValue, ddlVendorProduct.SelectedValue, ddlPackSize.SelectedValue)
             If (Not (dsProductSet Is Nothing) AndAlso dsProductSet.Tables.Count > 0 AndAlso Not (dsProductSet.Tables(0) Is Nothing) AndAlso dsProductSet.Tables(0).Rows.Count > 0) Then
-                gvRequistionList.DataSource = dsProductSet.Tables(0)
+                gvRequistionList.PageIndex = 0
+                gvRequistionList.DataSource = FirstReportPage(dsProductSet.Tables(0))
                 gvRequistionList.DataBind()
+                hdnUnitReqHasData.Value = "1"
+                hdnUnitReqPageSize.Value = gvRequistionList.PageSize.ToString()
             Else
                 gvRequistionList.DataSource = Nothing
                 gvRequistionList.DataBind()
+                hdnUnitReqHasData.Value = "0"
             End If
+            hdnUnitReqUnit.Value = ddlVendorUnit.SelectedValue
+            hdnUnitReqProduct.Value = ddlVendorProduct.SelectedValue
+            hdnUnitReqPack.Value = ddlPackSize.SelectedValue
         Catch ex As Exception
             Dim returnUrl As String = "~/ExceptionPage.aspx"
             Session(Constant.SessionKeys.ErrMessage) = Constant.ErrorMessages.GeneralError
@@ -247,10 +255,10 @@ Partial Class UnitRequisitionReport
     '    End Sub
     '#End Region
 
-    Protected Sub gvProductList_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvRequistionList.PageIndexChanging
-        gvRequistionList.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub gvProductList_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvRequistionList.PageIndexChanging
+    '    gvRequistionList.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
 
     Protected Sub gvProductList_RowDataBound(sender As Object, e As GridViewRowEventArgs) Handles gvRequistionList.RowDataBound
         If (e.Row.RowType = DataControlRowType.DataRow) Then
@@ -444,4 +452,49 @@ Partial Class UnitRequisitionReport
         ddlPackSize.Items.Clear()
         PopulatePackSize()
     End Sub
+
+    Private Function FirstReportPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvRequistionList.PageSize
+        If pageSize <= 0 Then pageSize = 20
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreUnitReqReport(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal unit As String, ByVal product As String, ByVal packSize As String) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        Dim userInfo As VMSUserEntity = CType(System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
+        If pageSize <= 0 Then pageSize = 20
+        If pageIndex < 0 Then pageIndex = 0
+        Dim unitValue As String = If(unit, String.Empty)
+        If userInfo.userGroupCodeEntity.Equals("UNIT") Then unitValue = userInfo.userIDEntity
+        Dim ds As DataSet = New UnitRequisitionReportClass().GetRequisitionreport(unitValue, If(product, String.Empty), If(packSize, String.Empty))
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                rows.Add(New With {
+                    .unit = dr("unit_name").ToString(),
+                    .product = dr("requisition_prd_desc").ToString(),
+                    .pack = dr("requisition_pack_size").ToString(),
+                    .opening = dr("tsm_opening_stock").ToString(),
+                    .stockIn = dr("tsm_stock_in").ToString(),
+                    .stockOut = dr("tsm_stock_out").ToString(),
+                    .closing = dr("close_qty").ToString()
+                })
+            Next
+        End If
+        Return New With {.rows = rows, .total = total}
+    End Function
 End Class

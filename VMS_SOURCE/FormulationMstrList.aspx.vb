@@ -12,12 +12,62 @@ Partial Class FormulationMstrList
 
         If Not IsPostBack Then
             BindDropdown()
+            ' 28-10-2026: the "Material Dept Rate Review" menu opens this list as ?view=MATERIAL = formulations awaiting the comparison
+            If String.Equals(Request.QueryString("view"), "MATERIAL", StringComparison.OrdinalIgnoreCase) Then
+                If ddlView.Items.FindByValue(MaterialView) Is Nothing Then ddlView.Items.Insert(0, New ListItem("Awaiting Material Dept comparison", MaterialView))
+                ddlView.SelectedValue = MaterialView
+            End If
             Binddata()
         End If
     End Sub
-    Private Function IsUnitUser() As Boolean
+
+    Private Const MaterialView As String = "MATERIAL"
+
+    ''' <summary>List rows for a view mode. MATERIAL is not a mode of the SP: it is the ALL list reduced to status PENDING_MATERIAL.</summary>
+    Private Shared Function ListForView(ByVal obj As OPC_VendorClass, ByVal brand As String, ByVal vendor As String, ByVal product As String, ByVal viewMode As String) As DataTable
+        Dim material As Boolean = String.Equals(viewMode, MaterialView, StringComparison.OrdinalIgnoreCase)
+        Dim ds As DataSet = obj.ListSkuFormulation(brand, vendor, product, "N", If(material, "ALL", viewMode))
+        Dim table As DataTable = RmGridHelper.GetTable(ds)
+        If material AndAlso table IsNot Nothing AndAlso table.Columns.Contains("sf_status") Then
+            Dim rows() As DataRow = table.Select("sf_status = 'PENDING_MATERIAL'")
+            table = If(rows.Length > 0, rows.CopyToDataTable(), table.Clone())
+        End If
+        Return table
+    End Function
+    Protected Function IsUnitUser() As Boolean
         Return userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT
     End Function
+
+    Private Const StandardView As String = "STANDARD"
+
+    ''' <summary>"Vendors priced" cell of the Standard view: HO sees how many vendors already have a formulation of it; a vendor sees whether it has one.</summary>
+    Protected Function StandardUsageText(ByVal vendorsUsed As Object, ByVal vendorHas As Object) As String
+        If IsUnitUser() Then Return If(Convert.ToString(vendorHas) = "Y", "You have one", "Not yet priced")
+        Return Convert.ToString(vendorsUsed)
+    End Function
+
+    ''' <summary>The "Standard formulations (HO)" view: one row per active standard. A vendor sees only the standards inside its Vendor Scope.</summary>
+    Private Sub BindStandard()
+        tr1.Visible = False : trStd.Visible = True
+        Dim vendorCode As String = If(IsUnitUser(), Convert.ToString(userInfo.userBranchEntity).Trim(), "")
+        Dim ds As DataSet = New OPC_VendorClass().ListStdFormulations(ddlBrand.SelectedValue, hdnProductCode.Value, vendorCode)
+        RmGridHelper.BindPaged(gvStandardList, ds)
+        lblStdSub.Text = If(IsUnitUser(), "Standards inside your Vendor Scope. Click 'Enter rates': the raw materials and percentages arrive locked, you enter your prices and packaging.",
+                                          "The raw materials and percentages HO defined, one row per brand / product / shade. Open one to change it - saving creates a new version.")
+    End Sub
+
+    Protected Sub gvStandardList_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvStandardList.PageIndexChanging
+        gvStandardList.PageIndex = e.NewPageIndex
+        BindStandard()
+    End Sub
+
+    Protected Sub gvStandardList_RowCommand(sender As Object, e As GridViewCommandEventArgs) Handles gvStandardList.RowCommand
+        If e.CommandName <> "OpenStd" Then Exit Sub
+        Dim id As Integer = 0
+        If Not Integer.TryParse(Convert.ToString(e.CommandArgument), id) OrElse id <= 0 Then Exit Sub
+        Response.Redirect("Product_Formulation.aspx?std=" & id, False)        ' HO: standard entry mode with this standard loaded; vendor: a new formulation preselected on it
+        Context.ApplicationInstance.CompleteRequest()
+    End Sub
 
     Private Sub CheckLogin()
         If (Not (Session(Constant.SessionKeys.UserInfo) Is Nothing)) Then
@@ -99,13 +149,13 @@ Partial Class FormulationMstrList
         End If
     End Sub
     Private Sub Binddata()
+        If String.Equals(ddlView.SelectedValue, StandardView, StringComparison.OrdinalIgnoreCase) Then BindStandard() : Exit Sub
+        tr1.Visible = True : trStd.Visible = False
         Dim ds As DataSet
         Dim obj As New OPC_VendorClass()
         ' V2 (MUKESH BHAGAT 09-Oct-2026): versioned SKU formulation list - current versions only; columns aliased for the existing grid
         Dim vendorFilter As String = If(IsUnitUser(), Convert.ToString(userInfo.userBranchEntity).Trim(), ddlvendor.SelectedValue)   ' a vendor user is always limited to its own unit
-        ds = obj.ListSkuFormulation(ddlBrand.SelectedValue, vendorFilter, hdnProductCode.Value, "N", ddlView.SelectedValue)
-
-        Dim table As DataTable = RmGridHelper.GetTable(ds)
+        Dim table As DataTable = ListForView(obj, ddlBrand.SelectedValue, vendorFilter, hdnProductCode.Value, ddlView.SelectedValue)
         If table IsNot Nothing Then
             Dim map As New Dictionary(Of String, String) From {{"sf_id", "fh_id"}, {"brand_name", "Brand_Name"}, {"sf_brand_code", "Brand_Code"}, {"sf_vendor_code", "vendor_code"}, {"sf_product_code", "Sku_Code"}, {"product_name", "Sku_Desc"}}
             For Each kv In map
@@ -202,6 +252,7 @@ Partial Class FormulationMstrList
     End Sub
     Protected Sub imgbtnSearch_Click(sender As Object, e As EventArgs) Handles imgbtnSearch.Click
         gvFormulationList.PageIndex = 0
+        gvStandardList.PageIndex = 0
         Binddata()
     End Sub
     Protected Sub gvFormulationList_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvFormulationList.PageIndexChanging
@@ -221,8 +272,7 @@ Partial Class FormulationMstrList
         End If
 
         Dim obj As New OPC_VendorClass()
-        Dim ds As DataSet = obj.ListSkuFormulation(If(brand, String.Empty), vendorFilter, If(productCode, String.Empty), "N", If(String.IsNullOrEmpty(viewMode), "ALL", viewMode))     ' 28-10-2026: default = Everything
-        Dim table As DataTable = RmGridHelper.GetTable(ds)
+        Dim table As DataTable = ListForView(obj, If(brand, String.Empty), vendorFilter, If(productCode, String.Empty), If(String.IsNullOrEmpty(viewMode), "ALL", viewMode))     ' 28-10-2026: default = Everything
         If table IsNot Nothing Then
             Dim map As New Dictionary(Of String, String) From {{"sf_id", "fh_id"}, {"brand_name", "Brand_Name"}, {"sf_brand_code", "Brand_Code"}, {"sf_vendor_code", "vendor_code"}, {"sf_product_code", "Sku_Code"}, {"product_name", "Sku_Desc"}}
             For Each kv In map

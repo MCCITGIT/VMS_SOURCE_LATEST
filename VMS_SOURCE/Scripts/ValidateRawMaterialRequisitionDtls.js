@@ -61,6 +61,84 @@ function formatRateTwoDecimal(control) {
     control.value = numValue.toFixed(2);
 }
 
+function allowIntegerOnly(evt) {
+    var key = evt.key || "";
+
+    if (key === "." || key === "," || key === "Decimal") {
+        if (evt.preventDefault) {
+            evt.preventDefault();
+        }
+        return false;
+    }
+
+    if (key === "Backspace" || key === "Tab" || key === "Enter" || key === "Delete" || key === "ArrowLeft" || key === "ArrowRight" || key === "Home" || key === "End") {
+        return true;
+    }
+
+    if (evt.ctrlKey || evt.metaKey) {
+        return true;
+    }
+
+    if (/^\d$/.test(key)) {
+        return true;
+    }
+
+    if (key.length === 1) {
+        if (evt.preventDefault) {
+            evt.preventDefault();
+        }
+        return false;
+    }
+
+    return true;
+}
+
+function sanitizeInteger(control) {
+    if (!control) {
+        return;
+    }
+
+    var value = String(control.value || "");
+    var dotIndex = value.indexOf(".");
+    var commaIndex = value.indexOf(",");
+    var cutIndex = -1;
+    if (dotIndex !== -1) {
+        cutIndex = dotIndex;
+    }
+    if (commaIndex !== -1 && (cutIndex === -1 || commaIndex < cutIndex)) {
+        cutIndex = commaIndex;
+    }
+    if (cutIndex !== -1) {
+        value = value.substring(0, cutIndex);
+    }
+
+    control.value = value.replace(/\D/g, "");
+}
+
+function bindIntegerQuantityInputs() {
+    var inputs = document.querySelectorAll("input[id$='txtQuantity']");
+    for (var i = 0; i < inputs.length; i++) {
+        var input = inputs[i];
+        if (input.getAttribute("data-int-only") === "1") {
+            sanitizeInteger(input);
+            continue;
+        }
+        input.setAttribute("data-int-only", "1");
+        input.addEventListener("keydown", allowIntegerOnly);
+        input.addEventListener("keypress", allowIntegerOnly);
+        input.addEventListener("input", function () {
+            sanitizeInteger(this);
+        });
+        input.addEventListener("paste", function () {
+            var el = this;
+            window.setTimeout(function () {
+                sanitizeInteger(el);
+            }, 0);
+        });
+        sanitizeInteger(input);
+    }
+}
+
 function getRmControl(controlId) {
     return document.getElementById(controlId) || document.querySelector("[id$='" + controlId + "']");
 }
@@ -222,6 +300,68 @@ function validateRawMaterialRequisitionSearch() {
     return true;
 }
 
+function todayIsoDate() {
+    var now = new Date();
+    var month = String(now.getMonth() + 1);
+    var day = String(now.getDate());
+    if (month.length < 2) {
+        month = "0" + month;
+    }
+    if (day.length < 2) {
+        day = "0" + day;
+    }
+    return now.getFullYear() + "-" + month + "-" + day;
+}
+
+function savedDeliveryDate(control) {
+    return control ? (control.getAttribute("data-saved-date") || "").trim() : "";
+}
+
+function isSavedDeliveryDate(control, value) {
+    var savedDate = savedDeliveryDate(control);
+    return savedDate !== "" && value === savedDate;
+}
+
+function rejectBackDeliveryDate(control) {
+    if (!control) {
+        return false;
+    }
+
+    var minDate = todayIsoDate();
+    var savedDate = savedDeliveryDate(control);
+    var allowedMin = minDate;
+    if (savedDate !== "" && savedDate < allowedMin) {
+        allowedMin = savedDate;
+    }
+    control.setAttribute("min", allowedMin);
+
+    var value = (control.value || "").trim();
+    if (value !== "" && value < minDate && !isSavedDeliveryDate(control, value)) {
+        control.value = "";
+        control.classList.add("field-invalid");
+        var valGrid = getRmControl("valGrid");
+        if (valGrid) {
+            valGrid.innerHTML = "Required Delivery Date cannot be a back date.";
+        }
+        return true;
+    }
+
+    return false;
+}
+
+function bindDeliveryDateMin() {
+    var inputs = document.querySelectorAll("input[id$='txtReqDate']");
+    var minDate = todayIsoDate();
+    for (var i = 0; i < inputs.length; i++) {
+        var savedDate = savedDeliveryDate(inputs[i]);
+        var allowedMin = minDate;
+        if (savedDate !== "" && savedDate < allowedMin) {
+            allowedMin = savedDate;
+        }
+        inputs[i].setAttribute("min", allowedMin);
+    }
+}
+
 function validateRawMaterialRequisitionSubmit() {
     var hasError = false;
     var hasValidRow = false;
@@ -229,6 +369,7 @@ function validateRawMaterialRequisitionSubmit() {
     var hasMissingDateError = false;
     var hasMissingQtyError = false;
     var hasPendingQtyError = false;
+    var hasBackDateError = false;
     var grid = getRmControl("gvVendorRawMat");
     var valGrid = getRmControl("valGrid");
 
@@ -258,13 +399,20 @@ function validateRawMaterialRequisitionSubmit() {
                 continue;
             }
 
-            formatRateTwoDecimal(qtyControl);
+            sanitizeInteger(qtyControl);
 
             var qtyValue = (qtyControl.value || "").trim();
             var dateValue = (dateControl.value || "").trim();
-            var qtyNumber = parseFloat(qtyValue);
+            var qtyNumber = parseInt(qtyValue, 10);
             var hasQty = qtyValue !== "" && !isNaN(qtyNumber) && qtyNumber > 0;
             var hasDate = dateValue !== "";
+
+            if (hasDate && dateValue < todayIsoDate() && !isSavedDeliveryDate(dateControl, dateValue)) {
+                dateControl.classList.add("field-invalid");
+                hasBackDateError = true;
+                hasError = true;
+                hasDate = false;
+            }
 
             if (!hasQty && !hasDate) {
                 continue;
@@ -298,7 +446,12 @@ function validateRawMaterialRequisitionSubmit() {
             }
         }
 
-        if (hasPendingQtyError) {
+        if (hasBackDateError) {
+            if (valGrid) {
+                valGrid.innerHTML = "Required Delivery Date cannot be a back date.";
+            }
+            hasError = true;
+        } else if (hasPendingQtyError) {
             if (valGrid) {
                 valGrid.innerHTML = "Quantity Required cannot be greater than Pending Quantity.";
             }
@@ -367,4 +520,15 @@ function validateRawMaterialRequisitionApprove() {
     } catch (ex) {
         return rmConfirmPostback("btnApprove", "approve");
     }
+}
+
+function bindRequisitionGridInputs() {
+    bindIntegerQuantityInputs();
+    bindDeliveryDateMin();
+}
+
+if (window.Sys && Sys.Application) {
+    Sys.Application.add_load(bindRequisitionGridInputs);
+} else {
+    document.addEventListener("DOMContentLoaded", bindRequisitionGridInputs);
 }

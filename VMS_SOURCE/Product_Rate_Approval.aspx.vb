@@ -206,7 +206,7 @@ Partial Class Product_Rate_Approval
 
         ' --- packaging rows ---
         If packOrder.Count > 0 Then
-            sb.Append("<tr class='pra-section'><td class='pra-rowhead'>Packaging (total per pack)</td><td colspan='" & cols.Count & "'>material + processing + labour, margin % applied on SKU price + those</td></tr>")
+            sb.Append("<tr class='pra-section'><td class='pra-rowhead'>Packaging (total per pack)</td><td colspan='" & cols.Count & "'>material + processing + labour, margin % applied on SKU price + those, then freight (rate per kg / litre x pack content)</td></tr>")
             For Each ps As String In packOrder
                 sb.Append("<tr><td class='pra-rowhead'>" & Server.HtmlEncode(ps) & " packaging</td>")
                 Dim prevTot As Decimal? = Nothing, prevExists As Boolean = False
@@ -219,7 +219,8 @@ Partial Class Product_Rate_Approval
                     Else
                         Dim tot As Decimal = Convert.ToDecimal(p(0)("pch_total"))
                         Dim tip As String = "material " & Convert.ToDecimal(p(0)("pch_material_amt")).ToString("0.00") & ", processing " & Convert.ToDecimal(p(0)("pch_processing_fee")).ToString("0.00") &
-                                            ", labour " & Convert.ToDecimal(p(0)("pch_labour_charge")).ToString("0.00") & ", margin " & Convert.ToDecimal(p(0)("pch_margin_pct")).ToString("0.##") & "% = " & Convert.ToDecimal(p(0)("pch_margin_amt")).ToString("0.00")
+                                            ", labour " & Convert.ToDecimal(p(0)("pch_labour_charge")).ToString("0.00") & ", margin " & Convert.ToDecimal(p(0)("pch_margin_pct")).ToString("0.##") & "% = " & Convert.ToDecimal(p(0)("pch_margin_amt")).ToString("0.00") &
+                                            If(p(0).Table.Columns.Contains("pch_freight_amt") AndAlso Not IsDBNull(p(0)("pch_freight_amt")), ", freight " & Convert.ToDecimal(p(0)("pch_freight_amt")).ToString("0.00"), "")      ' freight added after margin (02-11-2026)
                         Dim cls As String = "pra-val"
                         Dim badge As String = ""
                         If Not prevExists Then

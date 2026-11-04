@@ -12,6 +12,7 @@
 Imports VMS.Web
 Imports System.Data
 Imports System.Data.SqlTypes
+Imports System.Collections.Generic
 
 Partial Class Vendor_SKU_Master
     Inherits System.Web.UI.Page
@@ -162,7 +163,11 @@ Partial Class Vendor_SKU_Master
         VendorUnit = Trim(ddlVendor.SelectedValue)
         SKUCode = Trim(txtSkuCode.Text)
         VendorListset = Vendor_mstr.GetVendorList(VendorUnit, SKUCode)
-        gvVendorSKUList.DataSource = VendorListset.Tables(0)
+        If VendorListset IsNot Nothing AndAlso VendorListset.Tables.Count > 0 AndAlso VendorListset.Tables(0) IsNot Nothing Then
+            gvVendorSKUList.DataSource = FirstSkuPage(VendorListset.Tables(0))
+        Else
+            gvVendorSKUList.DataSource = Nothing
+        End If
         gvVendorSKUList.DataBind()
     End Sub
 #End Region
@@ -192,39 +197,39 @@ Partial Class Vendor_SKU_Master
 
 
 
-        If (e.Row.RowType = DataControlRowType.Pager) Then
-            Dim row As TableRow = New TableRow
-            row = e.Row.Controls(0).Controls(0).Controls(0)
-            For Each cell As TableCell In row.Cells
-                Dim lb As Control = cell.Controls(0)
+        'If (e.Row.RowType = DataControlRowType.Pager) Then
+        '    Dim row As TableRow = New TableRow
+        '    row = e.Row.Controls(0).Controls(0).Controls(0)
+        '    For Each cell As TableCell In row.Cells
+        '        Dim lb As Control = cell.Controls(0)
 
 
-                If (TypeOf (lb) Is Label) Then
+        '        If (TypeOf (lb) Is Label) Then
 
-                    CType(lb, Label).CssClass = "lblpager"
-                    'CType(lb, Label).Width = 20
-                    'CType(lb, Label).Height = 15
+        '            CType(lb, Label).CssClass = "lblpager"
+        '            'CType(lb, Label).Width = 20
+        '            'CType(lb, Label).Height = 15
 
-                ElseIf (TypeOf (lb) Is LinkButton) Then
+        '        ElseIf (TypeOf (lb) Is LinkButton) Then
 
-                    CType(lb, LinkButton).CssClass = "lnkpager"
-                    'CType(lb, LinkButton).Width = 20
-                    'CType(lb, LinkButton).Height = 15
-                    'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
-                End If
+        '            CType(lb, LinkButton).CssClass = "lnkpager"
+        '            'CType(lb, LinkButton).Width = 20
+        '            'CType(lb, LinkButton).Height = 15
+        '            'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
+        '        End If
 
-            Next
-        ElseIf (e.Row.RowType = DataControlRowType.DataRow) Then
-            Dim rowView As DataRowView = CType(e.Row.DataItem, DataRowView)
+        '    Next
+        'ElseIf (e.Row.RowType = DataControlRowType.DataRow) Then
+        '    Dim rowView As DataRowView = CType(e.Row.DataItem, DataRowView)
 
-            'If (rowView("eng_left_yn").ToString.ToLower() = Constant.Common.ActiveStatus.ToLower()) Then
-            '    e.Row.BackColor = Drawing.Color.Red
-            '    e.Row.ForeColor = Drawing.Color.White
-            '    e.Row.Cells(5).Text = "Yes"
-            'Else
-            '    e.Row.Cells(5).Text = "No"
-            'End If
-        End If
+        '    'If (rowView("eng_left_yn").ToString.ToLower() = Constant.Common.ActiveStatus.ToLower()) Then
+        '    '    e.Row.BackColor = Drawing.Color.Red
+        '    '    e.Row.ForeColor = Drawing.Color.White
+        '    '    e.Row.Cells(5).Text = "Yes"
+        '    'Else
+        '    '    e.Row.Cells(5).Text = "No"
+        '    'End If
+        'End If
     End Sub
 
 #End Region
@@ -265,9 +270,59 @@ Partial Class Vendor_SKU_Master
         Response.Redirect("~/Vendor_SKU_AddUpdate.aspx")
     End Sub
 
-    Protected Sub ddlPageSize_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles ddlPageSize.SelectedIndexChanged
-        gvVendorSKUList.PageSize = Convert.ToInt16(ddlPageSize.SelectedValue)
-        populateVendorSKUList()
-    End Sub
+    Private Function SelectedPageSize() As Integer
+        Dim pageSize As Integer = 15
+        Integer.TryParse(Convert.ToString(ddlPageSize.SelectedValue), pageSize)
+        If pageSize <= 0 Then pageSize = 15
+        Return pageSize
+    End Function
+
+    Private Function FirstSkuPage(ByVal dt As DataTable) As DataTable
+        Dim pageDt As DataTable = dt.Clone()
+        Dim take As Integer = Math.Min(SelectedPageSize(), dt.Rows.Count)
+        For i As Integer = 0 To take - 1
+            pageDt.ImportRow(dt.Rows(i))
+        Next
+        Return pageDt
+    End Function
+
+    <System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreVendorSkus(pageIndex As Integer, pageSize As Integer, vendorUnit As String, skuCode As String) As Object
+        Dim rows As New List(Of Object)
+        Dim total As Integer = 0
+        If pageSize <= 0 Then pageSize = 15
+
+        Dim sessionUser = System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo)
+        If sessionUser IsNot Nothing Then
+            Dim info As VMSUserEntity = CType(sessionUser, VMSUserEntity)
+            If Not (info.userGroupCodeEntity = Constant.UserFormAccess.SYSADMIN Or info.userGroupCodeEntity = Constant.UserFormAccess.HOMARKETING Or info.userGroupCodeEntity = Constant.UserFormAccess.HOACCOUNTS Or info.userGroupCodeEntity = Constant.UserFormAccess.DEPOT) Then
+                vendorUnit = info.userUnitEntity
+            End If
+        End If
+
+        Dim vendorList As DataSet = New VendorMaster().GetVendorList(If(vendorUnit, String.Empty).Trim(), If(skuCode, String.Empty).Trim())
+        If vendorList IsNot Nothing AndAlso vendorList.Tables.Count > 0 AndAlso vendorList.Tables(0) IsNot Nothing Then
+            Dim dt As DataTable = vendorList.Tables(0)
+            total = dt.Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            For i As Integer = start To last
+                Dim r As DataRow = dt.Rows(i)
+                rows.Add(New With {
+                    .v_sku_code = Convert.ToString(r("v_sku_code")),
+                    .v_vendor_unit = Convert.ToString(r("v_vendor_unit")),
+                    .SkuDescription = Convert.ToString(r("SkuDescription")),
+                    .ApplicableDepot = Convert.ToString(r("ApplicableDepot"))
+                })
+            Next
+        End If
+
+        Return New With {.rows = rows, .total = total}
+    End Function
+
+    'Protected Sub ddlPageSize_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles ddlPageSize.SelectedIndexChanged
+    '    gvVendorSKUList.PageSize = Convert.ToInt16(ddlPageSize.SelectedValue)
+    '    populateVendorSKUList()
+    'End Sub
 
 End Class

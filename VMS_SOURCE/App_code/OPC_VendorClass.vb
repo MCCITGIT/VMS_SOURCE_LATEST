@@ -172,9 +172,10 @@ Public Class OPC_VendorClass
         DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[GetRawmaterialDataList]", Data.CommandType.StoredProcedure)
         Return DS
     End Function
-    Public Function GetRawmaterialBergerCodeLinking(ByVal rmName As String, ByVal bergerCode As String, ByVal status As String) As DataSet
+    Public Function GetRawmaterialBergerCodeLinking(ByVal rmName As String, ByVal bergerCode As String, ByVal status As String, Optional ByVal itemType As String = "") As DataSet
         Dim ds As DataSet
-        Dim sqlParams(2) As SqlParameter
+        Dim sqlParams(3) As SqlParameter
+        sqlParams(3) = ScopeParam("@item_type", itemType, 3)          ' 02-11-2026: 'RM' / 'PKG' / empty = both
 
         sqlParams(0) = New SqlParameter()
         sqlParams(0).ParameterName = "@rm_name"
@@ -201,6 +202,25 @@ Public Class OPC_VendorClass
         Dim ds As DataSet
         ds = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_prd_code_list]", CommandType.StoredProcedure)
         Return ds
+    End Function
+    ''' <summary>[opc_rm_berger_item_list] Berger Code dropdown of RawMaterialCodeLinking.aspx: active raw material items of
+    ''' RFQDB.MSTR.item_mstr (po_item_category 'RM'), columns prd_code / prd_name. Author: MUKESH BHAGAT 30-10-2026.</summary>
+    Public Function GetRmBergerItemList() As DataSet
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_rm_berger_item_list]", CommandType.StoredProcedure)
+    End Function
+    ''' <summary>[opc_rm_berger_item_search] one page of RM items matching searchKey (code or description); total_rows for paging.
+    ''' Lazy-loading Berger Code dropdown of RawMaterialCodeLinking.aspx. Author: MUKESH BHAGAT 30-10-2026.</summary>
+    Public Function SearchRmBergerItems(ByVal searchKey As String, ByVal pageIndex As Integer, ByVal pageSize As Integer, Optional ByVal itemType As String = "RM") As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@search_key", searchKey, 100),
+                                   New SqlParameter("@page_index", SqlDbType.Int) With {.Value = pageIndex},
+                                   New SqlParameter("@page_size", SqlDbType.Int) With {.Value = pageSize},
+                                   New SqlParameter("@item_type", SqlDbType.VarChar, 3) With {.Value = If(String.Equals(itemType, "PKG", StringComparison.OrdinalIgnoreCase), "PKG", "RM")}}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_rm_berger_item_search]", CommandType.StoredProcedure, p)
+    End Function
+    ''' <summary>[opc_rm_berger_item_search @codes] labels of the given item codes (comma separated), for the rows already linked.</summary>
+    Public Function GetRmBergerItemNames(ByVal codesCsv As String) As DataSet
+        Dim p() As SqlParameter = {New SqlParameter("@codes", SqlDbType.VarChar, -1) With {.Value = If(String.IsNullOrWhiteSpace(codesCsv), CObj(DBNull.Value), codesCsv)}}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_rm_berger_item_search]", CommandType.StoredProcedure, p)
     End Function
     Function InsertUpdateRawmaterialBergerCodeLinking(ByVal userId As String, ByVal tbl As DataTable) As Integer
         Dim sqlConn As SqlConnection = Nothing
@@ -1039,6 +1059,158 @@ Public Class OPC_VendorClass
         Return PrjectList
 
     End Function
+
+    Public Function GetFormulationList(ByVal fh_unit As String) As DataSet
+        Dim PrjectList As DataSet
+
+        Dim sqlParams(0) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@vendor_code"
+        sqlParams(0).DbType = DbType.String
+        sqlParams(0).Direction = Data.ParameterDirection.Input
+        sqlParams(0).Value = fh_unit
+
+        PrjectList = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_sku_list]", Data.CommandType.StoredProcedure, sqlParams)
+        Return PrjectList
+
+    End Function
+
+    Public Function GetFormulationRawmatList(ByVal sf_id As Integer) As DataSet
+        Dim PrjectList As DataSet
+
+        Dim sqlParams(0) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@sf_id"
+        sqlParams(0).DbType = DbType.Int32
+        sqlParams(0).Direction = Data.ParameterDirection.Input
+        sqlParams(0).Value = sf_id
+
+        PrjectList = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_rawmat_list]", Data.CommandType.StoredProcedure, sqlParams)
+        Return PrjectList
+
+    End Function
+
+    Public Function GetFormulationPackagingList(ByVal sf_id As Integer) As DataSet
+        Dim PrjectList As DataSet
+
+        Dim sqlParams(0) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@sf_id"
+        sqlParams(0).DbType = DbType.Int32
+        sqlParams(0).Direction = Data.ParameterDirection.Input
+        sqlParams(0).Value = sf_id
+
+        PrjectList = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_packaging_list]", Data.CommandType.StoredProcedure, sqlParams)
+        Return PrjectList
+
+    End Function
+
+    Public Function GetFormulationRateRevisionList(ByVal vendor_code As String) As DataSet
+        Dim PrjectList As DataSet
+
+        Dim sqlParams(0) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@vendor_code"
+        sqlParams(0).DbType = DbType.String
+        sqlParams(0).Direction = Data.ParameterDirection.Input
+        sqlParams(0).Value = If(Not String.IsNullOrWhiteSpace(vendor_code), CObj(vendor_code.Trim()), DBNull.Value)
+
+        PrjectList = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_rate_revision_list]", Data.CommandType.StoredProcedure, sqlParams)
+        Return PrjectList
+
+    End Function
+
+    Function ApproveFormulationRawmatRevision(ByVal sf_id As Integer, ByVal rawmat As DataTable, Optional ByVal userId As String = "") As Integer
+        Dim sqlConn As SqlConnection = Nothing
+        Dim outputCode As Integer = 0
+        Dim sqlParams(2) As SqlParameter
+        sqlParams(2) = New SqlParameter("@user_id", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(userId), CObj(DBNull.Value), userId.Trim())}      ' who opened the rates (04-Nov-2026)
+
+        Try
+            If rawmat Is Nothing OrElse rawmat.Rows.Count = 0 Then
+                Return 0
+            End If
+
+            sqlConn = DBFactory.GetHelper.OpenConnection()
+
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@sf_id"
+            sqlParams(0).SqlDbType = SqlDbType.Int
+            sqlParams(0).Direction = Data.ParameterDirection.Input
+            sqlParams(0).Value = sf_id
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@rawmat"
+            sqlParams(1).SqlDbType = SqlDbType.Structured
+            sqlParams(1).Direction = Data.ParameterDirection.Input
+            sqlParams(1).TypeName = "dbo.tbl_opc_rate_revision_rawmat"
+            sqlParams(1).Value = rawmat
+
+            Dim sqlCmd As New SqlCommand()
+            sqlCmd.Connection = sqlConn
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.CommandText = "[dbo].[opc_sku_formulation_rawmat_rate_revision]"
+            sqlCmd.Parameters.AddRange(sqlParams)
+            outputCode = sqlCmd.ExecuteNonQuery()
+        Catch ex As Exception
+            Throw ex
+        Finally
+            If (sqlConn IsNot Nothing) Then
+                sqlConn.Close()
+            End If
+        End Try
+
+        Return outputCode
+    End Function
+
+    ''' <summary>04-Nov-2026: packs = packaging cost LINES (column pcd_id), one specific packaging material each - type dbo.tbl_opc_rate_revision_pcd.</summary>
+    Function ApproveFormulationPackagingRevision(ByVal sf_id As Integer, ByVal packs As DataTable, Optional ByVal userId As String = "") As Integer
+        Dim sqlConn As SqlConnection = Nothing
+        Dim outputCode As Integer = 0
+        Dim sqlParams(2) As SqlParameter
+        sqlParams(2) = New SqlParameter("@user_id", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(userId), CObj(DBNull.Value), userId.Trim())}
+
+        Try
+            If packs Is Nothing OrElse packs.Rows.Count = 0 Then
+                Return 0
+            End If
+
+            sqlConn = DBFactory.GetHelper.OpenConnection()
+
+            sqlParams(0) = New SqlParameter()
+            sqlParams(0).ParameterName = "@sf_id"
+            sqlParams(0).SqlDbType = SqlDbType.Int
+            sqlParams(0).Direction = Data.ParameterDirection.Input
+            sqlParams(0).Value = sf_id
+
+            sqlParams(1) = New SqlParameter()
+            sqlParams(1).ParameterName = "@packs"
+            sqlParams(1).SqlDbType = SqlDbType.Structured
+            sqlParams(1).Direction = Data.ParameterDirection.Input
+            sqlParams(1).TypeName = "dbo.tbl_opc_rate_revision_pcd"
+            sqlParams(1).Value = packs
+
+            Dim sqlCmd As New SqlCommand()
+            sqlCmd.Connection = sqlConn
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.CommandText = "[dbo].[opc_sku_formulation_packaging_rate_revision]"
+            sqlCmd.Parameters.AddRange(sqlParams)
+            outputCode = sqlCmd.ExecuteNonQuery()
+        Catch ex As Exception
+            Throw ex
+        Finally
+            If (sqlConn IsNot Nothing) Then
+                sqlConn.Close()
+            End If
+        End Try
+
+        Return outputCode
+    End Function
+
     'Function GetRawMaterial_Requesteditt(ByVal vendor_id As String, ByVal rawmat_vendorcode As String) As DataSet
     '    Dim DS As System.Data.DataSet
     '    Dim sqlParams(1) As SqlParameter
@@ -1273,13 +1445,21 @@ Public Class OPC_VendorClass
         t.Columns.Add("srl", GetType(Integer))
         t.Columns.Add("cost_name", GetType(String))
         t.Columns.Add("amount", GetType(Decimal))
+        t.Columns.Add("item_code", GetType(String))       ' 02-11-2026: dbo.tbl_opc_packaging_line_v2 - the vendor's packaging item (empty = old line by name)
         Return t
+    End Function
+
+    ''' <summary>[opc_vendor_pkg_item_list] the active packaging items (type PKG) of a vendor unit: item_code, item_name (cost-name dropdown of a pack).</summary>
+    Function GetVendorPkgItems(ByVal unitCode As String) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@unit_code", unitCode, 20)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_pkg_item_list]", CommandType.StoredProcedure, p)
     End Function
 
     ''' <summary>[opc_sku_formulation_save] - new version of brand+vendor+product with raw materials and packaging in one transaction.</summary>
     Function SaveSkuFormulation(ByVal brandCode As String, ByVal vendorCode As String, ByVal productCode As String, ByVal remarks As String,
                                 ByVal dtl As DataTable, ByVal packs As DataTable, ByVal lines As DataTable, ByVal userId As String,
-                                Optional ByVal role As String = "VENDOR", Optional ByVal hoRemarks As String = "", Optional ByVal lossPct As Decimal = 0D, Optional ByVal supplierCode As String = "") As SkuFormulationSaveResult
+                                Optional ByVal role As String = "VENDOR", Optional ByVal hoRemarks As String = "", Optional ByVal lossPct As Decimal = 0D, Optional ByVal supplierCode As String = "",
+                                Optional ByVal freightRate As Decimal = 0D) As SkuFormulationSaveResult
         Dim result As New SkuFormulationSaveResult()
         Dim sqlConn As SqlConnection = Nothing
         Try
@@ -1292,12 +1472,13 @@ Public Class OPC_VendorClass
             sqlCmd.Parameters.Add("@remarks", SqlDbType.VarChar, 500).Value = If(String.IsNullOrWhiteSpace(remarks), CObj(DBNull.Value), remarks.Trim())
             Dim pDtl As SqlParameter = sqlCmd.Parameters.Add("@dtl", SqlDbType.Structured) : pDtl.TypeName = "dbo.tbl_opc_sku_formulation_dtl" : pDtl.Value = dtl
             Dim pPack As SqlParameter = sqlCmd.Parameters.Add("@packs", SqlDbType.Structured) : pPack.TypeName = "dbo.tbl_opc_packaging_pack" : pPack.Value = packs
-            Dim pLine As SqlParameter = sqlCmd.Parameters.Add("@lines", SqlDbType.Structured) : pLine.TypeName = "dbo.tbl_opc_packaging_line" : pLine.Value = lines
+            Dim pLine As SqlParameter = sqlCmd.Parameters.Add("@lines", SqlDbType.Structured) : pLine.TypeName = "dbo.tbl_opc_packaging_line_v2" : pLine.Value = lines
             sqlCmd.Parameters.Add("@user_id", SqlDbType.VarChar, 50).Value = userId
             sqlCmd.Parameters.Add("@role", SqlDbType.VarChar, 10).Value = If(role = "HO", "HO", "VENDOR")
             sqlCmd.Parameters.Add("@ho_remarks", SqlDbType.VarChar, 1000).Value = If(String.IsNullOrWhiteSpace(hoRemarks), CObj(DBNull.Value), hoRemarks.Trim())
             sqlCmd.Parameters.Add("@loss_pct", SqlDbType.Decimal).Value = lossPct      ' process loss %, added to the SKU price (19-Oct-2026)
             sqlCmd.Parameters.Add("@supplier_code", SqlDbType.VarChar, 50).Value = If(String.IsNullOrWhiteSpace(supplierCode), CObj(DBNull.Value), supplierCode.Trim())      ' raw-material supplier (19-Oct-2026)
+            Dim pFreight As SqlParameter = sqlCmd.Parameters.Add("@freight_rate", SqlDbType.Decimal) : pFreight.Precision = 18 : pFreight.Scale = 4 : pFreight.Value = freightRate      ' Rs per kg / litre, common to every pack (02-Nov-2026)
             Using dr As SqlDataReader = sqlCmd.ExecuteReader()
                 If dr.Read() Then
                     result.Status = If(IsDBNull(dr("Status")), 0, Convert.ToInt32(dr("Status")))
@@ -1316,6 +1497,87 @@ Public Class OPC_VendorClass
             If sqlConn IsNot Nothing Then sqlConn.Close()
         End Try
         Return result
+    End Function
+
+    ' ---- Standard (universal) formulation entered by HO (Author: MUKESH BHAGAT 02-Nov-2026) ----
+    ''' <summary>Empty TVP table with the layout of dbo.tbl_opc_std_formulation_line.</summary>
+    Public Shared Function NewStdFormulationLineTable() As DataTable
+        Dim t As New DataTable()
+        t.Columns.Add("srl", GetType(Integer))
+        t.Columns.Add("rawmat_code", GetType(String))
+        t.Columns.Add("ratio_pct", GetType(Decimal))
+        Return t
+    End Function
+
+    ''' <summary>[opc_sku_std_formulation_get] - table 0 = active header (no row when HO has not defined it), table 1 = raw materials (rawmat_code, rawmat_name, ratio_pct).</summary>
+    Function GetStdFormulation(ByVal brandCode As String, ByVal productCode As String, ByVal shadeCode As String) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@brand_code", brandCode), ScopeParam("@product_code", productCode), New SqlParameter("@shade_code", SqlDbType.VarChar, 50) With {.Value = If(shadeCode, "").Trim()}}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_std_formulation_get]", CommandType.StoredProcedure, p)
+    End Function
+
+    ''' <summary>[opc_sku_std_formulation_save] - HO saves a new version of the standard formulation. Status 1 saved, 2 no change, 0 error (Message).</summary>
+    Function SaveStdFormulation(ByVal brandCode As String, ByVal productCode As String, ByVal shadeCode As String, ByVal lines As DataTable, ByVal userId As String) As SkuFormulationSaveResult
+        Dim result As New SkuFormulationSaveResult()
+        Dim sqlConn As SqlConnection = Nothing
+        Try
+            sqlConn = DBFactory.GetHelper.OpenConnection
+            Dim sqlCmd As New SqlCommand("[dbo].[opc_sku_std_formulation_save]", sqlConn)
+            sqlCmd.CommandType = CommandType.StoredProcedure
+            sqlCmd.Parameters.Add("@brand_code", SqlDbType.VarChar, 50).Value = brandCode
+            sqlCmd.Parameters.Add("@product_code", SqlDbType.VarChar, 50).Value = productCode
+            sqlCmd.Parameters.Add("@shade_code", SqlDbType.VarChar, 50).Value = If(shadeCode, "").Trim()
+            Dim pLines As SqlParameter = sqlCmd.Parameters.Add("@lines", SqlDbType.Structured) : pLines.TypeName = "dbo.tbl_opc_std_formulation_line" : pLines.Value = lines
+            sqlCmd.Parameters.Add("@user_id", SqlDbType.VarChar, 50).Value = userId
+            Using dr As SqlDataReader = sqlCmd.ExecuteReader()
+                If dr.Read() Then
+                    result.Status = If(IsDBNull(dr("Status")), 0, Convert.ToInt32(dr("Status")))
+                    result.Message = If(IsDBNull(dr("Message")), "", Convert.ToString(dr("Message")))
+                    result.HeaderId = If(IsDBNull(dr("HeaderID")), 0, Convert.ToInt32(dr("HeaderID")))
+                    result.Version = If(IsDBNull(dr("Version")), 0, Convert.ToInt32(dr("Version")))
+                End If
+            End Using
+        Finally
+            If sqlConn IsNot Nothing Then sqlConn.Close()
+        End Try
+        Return result
+    End Function
+
+    ''' <summary>[opc_vendor_freight_allowed] True when the vendor unit was onboarded with freight = Y (vendor_mstr.unit_freight_yn); empty / N = False.</summary>
+    Function IsVendorFreightAllowed(ByVal vendorCode As String) As Boolean
+        If String.IsNullOrWhiteSpace(vendorCode) Then Return False
+        Dim p() As SqlParameter = {ScopeParam("@vendor_code", vendorCode)}
+        Dim ds As DataSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_freight_allowed]", CommandType.StoredProcedure, p)
+        Return ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0).Rows.Count > 0 AndAlso Convert.ToString(ds.Tables(0).Rows(0)("freight_allowed")).Trim() = "Y"
+    End Function
+
+    ''' <summary>[opc_sku_std_formulation_list] the "Standard formulations" view of the Product Formulation list. vendorCode (vendor login) limits it to its Vendor Scope.</summary>
+    Function ListStdFormulations(ByVal brandCode As String, ByVal productCode As String, ByVal vendorCode As String) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@brand_code", brandCode), ScopeParam("@product_code", productCode), ScopeParam("@vendor_code", vendorCode)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_std_formulation_list]", CommandType.StoredProcedure, p)
+    End Function
+
+    ''' <summary>[opc_sku_std_formulation_header] key + names of one standard; for a vendor only when inside its Vendor Scope (no row otherwise).</summary>
+    Function GetStdFormulationHeader(ByVal ssfId As Integer, ByVal vendorCode As String) As DataSet
+        Dim p() As SqlParameter = {New SqlParameter("@ssf_id", SqlDbType.Int) With {.Value = ssfId}, ScopeParam("@vendor_code", vendorCode)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_std_formulation_header]", CommandType.StoredProcedure, p)
+    End Function
+
+    ''' <summary>[opc_std_product_search] product autocomplete of the HO standard entry (no vendor); brandId 0 = no brand limit.</summary>
+    Function GetStdProductSearch(ByVal searchKey As String, Optional ByVal brandId As Integer = 0) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@search_key", searchKey), New SqlParameter("@brand_id", SqlDbType.Int) With {.Value = If(brandId > 0, CObj(brandId), DBNull.Value)}}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_std_product_search]", CommandType.StoredProcedure, p)
+    End Function
+
+    ''' <summary>[opc_std_product_shades] every shade of a product (shade_code, shade_desc).</summary>
+    Function GetStdShades(ByVal prdCode As String) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@prd_code", prdCode)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_std_product_shades]", CommandType.StoredProcedure, p)
+    End Function
+
+    ''' <summary>[opc_std_rawmat_search] raw material search of the HO standard entry: the whole master, any vendor unit.</summary>
+    Function SearchStdRawMaterial(ByVal searchText As String) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@search_key", searchText)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_std_rawmat_search]", CommandType.StoredProcedure, p)
     End Function
 
     ''' <summary>[opc_sku_formulation_get] - table 0 header, 1 raw materials, 2 packs, 3 pack lines. Pass sfId, or 0 with the key for the current version.</summary>
@@ -1349,25 +1611,43 @@ Public Class OPC_VendorClass
     End Function
 
     ''' <summary>[opc_sku_formulation_material_email] TOAddr/CCAddr/BCCAddr of the Material Department (26-10-2026).
-    ''' Modified-by MUKESH BHAGAT 28-10-2026: addresses come from user_profile; the two Web.config lists (users, groups) say who the Material Dept is.</summary>
-    Function GetSkuFormulationMaterialEmail(Optional ByVal users As String = "", Optional ByVal groups As String = "") As DataSet
+    ''' Modified-by MUKESH BHAGAT 28-10-2026: recipients = holders of the "Material Dept Rate Review" form in User Form Access, mail ids from user_profile.</summary>
+    Function GetSkuFormulationMaterialEmail() As DataSet
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_material_email]", Data.CommandType.StoredProcedure)
+    End Function
+
+    ''' <summary>[opc_formulation_material_access] True when the user holds the "Material Dept Rate Review" form in User Form Access
+    ''' (UsrFrmAccssNewMod.aspx) or is SYSADMIN. Author: MUKESH BHAGAT 28-10-2026 - replaces the Web.config user / group lists.</summary>
+    Function IsFormulationMaterialUser(ByVal userId As String, ByVal groupCode As String) As Boolean
         Dim sqlParams(1) As SqlParameter
-        sqlParams(0) = New SqlParameter("@users", SqlDbType.VarChar, 500) With {.Value = If(users, "")}
-        sqlParams(1) = New SqlParameter("@groups", SqlDbType.VarChar, 500) With {.Value = If(groups, "")}
-        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_material_email]", Data.CommandType.StoredProcedure, sqlParams)
+        sqlParams(0) = New SqlParameter("@user_id", SqlDbType.VarChar, 50) With {.Value = If(userId, "")}
+        sqlParams(1) = New SqlParameter("@group_code", SqlDbType.VarChar, 15) With {.Value = If(groupCode, "")}
+        Dim ds As DataSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_formulation_material_access]", Data.CommandType.StoredProcedure, sqlParams)
+        If ds Is Nothing OrElse ds.Tables.Count = 0 OrElse ds.Tables(0).Rows.Count = 0 Then Return False
+        Return Convert.ToInt32(ds.Tables(0).Rows(0)(0)) = 1
     End Function
 
     ''' <summary>[opc_sku_formulation_approve] - HO decision: action "A" approve / "R" reject (remarks mandatory). Returns the SP message; "" on success.</summary>
     Function ApproveSkuFormulation(ByVal sfId As Integer, ByVal action As String, ByVal remarks As String, ByVal userId As String, Optional ByVal role As String = "HO") As String
-        Dim sqlParams(4) As SqlParameter
+        Dim okMessage As String = ""
+        Return ApproveSkuFormulation(sfId, action, remarks, userId, role, Nothing, okMessage)
+    End Function
+
+    ''' <summary>Same as above plus HO's EFFECTIVE DATE of a rate revision (04-Nov-2026) and the procedure's success message (returned in okMessage).
+    ''' Returns "" on success, otherwise the reason.</summary>
+    Function ApproveSkuFormulation(ByVal sfId As Integer, ByVal action As String, ByVal remarks As String, ByVal userId As String, ByVal role As String,
+                                   ByVal effectiveFrom As Nullable(Of Date), ByRef okMessage As String) As String
+        Dim sqlParams(5) As SqlParameter
         sqlParams(0) = New SqlParameter("@sf_id", SqlDbType.Int) With {.Value = sfId}
         sqlParams(1) = New SqlParameter("@action", SqlDbType.Char, 1) With {.Value = action}
         sqlParams(2) = New SqlParameter("@remarks", SqlDbType.VarChar, 1000) With {.Value = If(String.IsNullOrWhiteSpace(remarks), CObj(DBNull.Value), remarks.Trim())}
         sqlParams(3) = New SqlParameter("@user_id", SqlDbType.VarChar, 50) With {.Value = userId}
         sqlParams(4) = New SqlParameter("@role", SqlDbType.VarChar, 10) With {.Value = If(role = "VENDOR", "VENDOR", "HO")}
+        sqlParams(5) = New SqlParameter("@effective_from", SqlDbType.Date) With {.Value = If(effectiveFrom.HasValue, CObj(effectiveFrom.Value.Date), DBNull.Value)}
         Dim ds As DataSet = DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_approve]", Data.CommandType.StoredProcedure, sqlParams)
         If ds Is Nothing OrElse ds.Tables.Count = 0 OrElse ds.Tables(0).Rows.Count = 0 Then Return "No response from the approval procedure."
         Dim r As DataRow = ds.Tables(0).Rows(0)
+        okMessage = Convert.ToString(r("Message"))
         Return If(Convert.ToInt32(r("Status")) = 1, "", Convert.ToString(r("Message")))
     End Function
 
@@ -1879,8 +2159,10 @@ Public Class OPC_VendorClass
     End Function
 
     ' ---- used by Product_Formulation: product / shade / pack are limited to the vendor's scope ----
-    Function GetScopeProductSearch(ByVal vendorCode As String, ByVal searchKey As String) As DataSet
-        Dim p() As SqlParameter = {ScopeParam("@vendor_code", vendorCode), ScopeParam("@search_key", searchKey)}
+    ''' <summary>Modified-by MUKESH BHAGAT 30-10-2026: brandId (0 = none) limits the products to the Brand Product Linking of that brand.</summary>
+    Function GetScopeProductSearch(ByVal vendorCode As String, ByVal searchKey As String, Optional ByVal brandId As Integer = 0) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@vendor_code", vendorCode), ScopeParam("@search_key", searchKey),
+                                   New SqlParameter("@brand_id", SqlDbType.Int) With {.Value = If(brandId > 0, CObj(brandId), DBNull.Value)}}
         Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_vendor_scope_product_search]", CommandType.StoredProcedure, p)
     End Function
 
@@ -2000,6 +2282,28 @@ Public Class OPC_VendorClass
             Return New String() {Convert.ToString(r("Status")), Convert.ToString(r("Message")), Convert.ToString(r("Code")), Convert.ToString(r("Name"))}
         End If
         Return New String() {"0", "No response from server.", "", ""}
+    End Function
+#End Region
+
+#Region "OPC Raw Material Creation"
+    Function GetOpcRawMaterialCreationList(ByVal unitCode As String, ByVal searchKey As String, Optional ByVal itemType As String = "") As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@unit_code", unitCode, 20), ScopeParam("@search_key", searchKey, 200), ScopeParam("@item_type", itemType, 3)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_raw_material_creation_list]", CommandType.StoredProcedure, p)
+    End Function
+
+    Function GetOpcRawMaterialCreation(ByVal rmmCode As String) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@rmm_code", rmmCode, 50)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_raw_material_creation_get]", CommandType.StoredProcedure, p)
+    End Function
+
+    Function InsertOpcRawMaterialCreation(ByVal name As String, ByVal unitCode As String, ByVal userId As String, Optional ByVal itemType As String = "RM") As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@name", name, 200), ScopeParam("@unit_code", unitCode, 20), ScopeParam("@user_id", userId, 20), New SqlParameter("@item_type", SqlDbType.VarChar, 3) With {.Value = If(String.Equals(itemType, "PKG", StringComparison.OrdinalIgnoreCase), "PKG", "RM")}}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_raw_material_creation_insert]", CommandType.StoredProcedure, p)
+    End Function
+
+    Function UpdateOpcRawMaterialCreation(ByVal rmmCode As String, ByVal name As String, ByVal active As String, ByVal userId As String) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@rmm_code", rmmCode, 50), ScopeParam("@name", name, 200), ScopeParam("@active", active, 1), ScopeParam("@user_id", userId, 20)}
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_raw_material_creation_update]", CommandType.StoredProcedure, p)
     End Function
 #End Region
 #Region "FG Vendor Master"

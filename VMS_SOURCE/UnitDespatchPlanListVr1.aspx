@@ -143,7 +143,7 @@
 
             <div class="card">
                 <div class="card-body">
-                    <div class="form-group row ddlPageSize">
+                    <div class="form-group row ddlPageSize" style="display:none;">
                         <label for="ddlPageSize" class="col-auto form-control-label">
                             <asp:Label ID="Label4" runat="server" Text="Results Per Page:"></asp:Label>
                         </label>
@@ -151,8 +151,20 @@
                             <asp:DropDownList ID="ddlPageSize" runat="server" CssClass="form-control select2" AutoPostBack="true"></asp:DropDownList>
                         </div>
                     </div>
-                    <div class="table-responsive">
-                        <asp:GridView ID="gvChallanDetails" runat="server" AutoGenerateColumns="false" AllowPaging="True"
+                    <asp:HiddenField ID="hdnUdpHasData" runat="server" Value="0" />
+                    <asp:HiddenField ID="hdnUdpPageSize" runat="server" Value="15" />
+                    <asp:HiddenField ID="hdnUdpUnit" runat="server" />
+                    <asp:HiddenField ID="hdnUdpDepot" runat="server" />
+                    <asp:HiddenField ID="hdnUdpYear" runat="server" />
+                    <asp:HiddenField ID="hdnUdpMonth" runat="server" />
+                    <asp:HiddenField ID="hdnUdpChallan" runat="server" />
+                    <asp:HiddenField ID="hdnUdpStatus" runat="server" />
+                    <asp:HiddenField ID="hdnUdpApprove" runat="server" />
+                    <asp:HiddenField ID="hdnUdpDlPath" runat="server" />
+                    <asp:HiddenField ID="hdnUdpDlName" runat="server" />
+                    <asp:LinkButton ID="btnUdpDownload" runat="server" Style="display: none;" />
+                    <div class="table-responsive udp-grid-scroll">
+                        <asp:GridView ID="gvChallanDetails" runat="server" AutoGenerateColumns="false" AllowPaging="false"
                             Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
                             <RowStyle CssClass="tlrowlight" />
                             <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
@@ -265,7 +277,7 @@
                     </div>
                     <div class="row">
                         <div class="col-md-12 text-center">
-                            <asp:Button ID="btnAprove" CssClass="btn btn-success btn-sm" runat="server" Text="Approve" />
+                            <asp:Button ID="btnAprove" CssClass="btn btn-success btn-sm" runat="server" Text="Approve" OnClientClick="return udpCollectApprove();" />
                         </div>
                     </div>
                     <asp:Label ID="lblErrorMessage" CssClass="errormsg" Visible="true" runat="server"></asp:Label>
@@ -274,4 +286,172 @@
             </div>
         </ContentTemplate>
     </asp:UpdatePanel>
+    <style type="text/css">
+        .udp-grid-scroll,
+        .udp-grid-scroll table,
+        .udp-grid-scroll tr,
+        .udp-grid-scroll td {
+            overflow-anchor: none;
+        }
+        .udp-grid-scroll {
+            max-height: 440px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+    </style>
+    <script type="text/javascript">
+        function udpCollectApprove() {
+            var parts = [];
+            $('#<%= gvChallanDetails.ClientID %> input.udp-chk:checked').each(function () {
+                var d = this.dataset;
+                parts.push([d.challan || '', d.unit || '', d.year || '', d.month || '', d.depot || ''].join('|'));
+            });
+            $('#<%= hdnUdpApprove.ClientID %>').val(parts.join(';'));
+            return true;
+        }
+        (function () {
+            var gridSel = '#<%= gvChallanDetails.ClientID %>';
+            var pageIndex = 0, pageSize = 15, total = 0, loading = false, noMore = false, seq = 0;
+            var filters = { unit: '', depot: '', year: '', month: '', challan: '', status: '' };
+
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function attr(v) { return esc(v).replace(/"/g, '&quot;'); }
+            function dataRows() { return $(gridSel + ' tr.tlrowlight').not('.udp-skel'); }
+            function scrollBox() { return $(gridSel).closest('.udp-grid-scroll'); }
+            function capture() {
+                filters.unit = $('#<%= hdnUdpUnit.ClientID %>').val() || '';
+                filters.depot = $('#<%= hdnUdpDepot.ClientID %>').val() || '';
+                filters.year = $('#<%= hdnUdpYear.ClientID %>').val() || '';
+                filters.month = $('#<%= hdnUdpMonth.ClientID %>').val() || '';
+                filters.challan = $('#<%= hdnUdpChallan.ClientID %>').val() || '';
+                filters.status = $('#<%= hdnUdpStatus.ClientID %>').val() || '';
+                var size = parseInt($('#<%= hdnUdpPageSize.ClientID %>').val(), 10);
+                pageSize = size > 0 ? size : 15;
+                total = 0;
+            }
+            function skel() {
+                var widths = ['24px', '18px', '40px', '36px', '70%', '50px', '72px', '80%', '60px', '48px', '52px', '70px'];
+                var cells = '';
+                for (var i = 0; i < widths.length; i++) cells += '<td style="text-align:center"><span class="grid-skel-bar" style="width:' + widths[i] + '"></span></td>';
+                return '<tr class="tlrowlight udp-skel">' + cells + '</tr>';
+            }
+            function place(html) {
+                var $rows = $('<table><tbody>' + html + '</tbody></table>').find('tr');
+                var $grid = $(gridSel);
+                var $body = $grid.children('tbody');
+                if (!$body.length) $body = $grid.find('tbody').first();
+                if ($body.length) $body.append($rows);
+                else $grid.append($rows);
+            }
+            function loadNext() {
+                if (loading || noMore) return;
+                if ($('#<%= hdnUdpHasData.ClientID %>').val() !== '1') return;
+                if (!dataRows().length) return;
+                if (total && ((pageIndex + 1) * pageSize >= total || dataRows().length >= total)) { noMore = true; return; }
+                loading = true;
+                pageIndex++;
+                var token = ++seq;
+                place(skel());
+                if (!window.PageMethods || typeof PageMethods.GetMoreUnitDespatch !== 'function') {
+                    $(gridSel + ' tr.udp-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                    return;
+                }
+                PageMethods.GetMoreUnitDespatch(pageIndex, pageSize, filters.unit, filters.depot, filters.year, filters.month, filters.challan, filters.status, function (res) {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.udp-skel').remove();
+                    loading = false;
+                    if (!res || !res.rows) { noMore = true; return; }
+                    total = res.total || 0;
+                    if (!res.rows.length || res.rows.length < pageSize || (pageIndex + 1) * pageSize >= total) noMore = true;
+                    var html = '';
+                    for (var i = 0; i < res.rows.length; i++) {
+                        var r = res.rows[i];
+                        var approved = r.approved === 'Y';
+                        var select = approved ? '' : '<input type="checkbox" class="udp-chk" data-challan="' + attr(r.challanNo) + '" data-unit="' + attr(r.unit) + '" data-year="' + attr(r.year) + '" data-month="' + attr(r.month) + '" data-depot="' + attr(r.depot) + '" />';
+                        var print = approved ? '<a href="#" class="btn btn-primary btn-sm udp-print" data-unit="' + attr(r.unit) + '" data-depot="' + attr(r.depot) + '" data-year="' + attr(r.year) + '" data-challan="' + attr(r.challanNo) + '">Print</a>' : '';
+                        var del = approved ? '' : '<a href="#" class="btn btn-danger btn-sm udp-del" data-year="' + attr(r.year) + '" data-challan="' + attr(r.challanNo) + '">Delete</a>';
+                        var docs = '<a href="#" class="btn btn-outline-success btn-sm btn-doc-pill btn-doc-invoice udp-dl" data-path="' + attr(r.docPath) + '" data-name="' + attr(r.orgName) + '"><i class="fa fa-download"></i>&nbsp;Invoice</a>';
+                        if (r.ewayName) docs += '<a href="#" class="btn btn-outline-info btn-sm btn-doc-pill btn-doc-eway udp-dl" data-path="' + attr(r.ewayPath) + '" data-name="' + attr(r.ewayName) + '"><i class="fa fa-download"></i>&nbsp;E-Way</a>';
+                        var link = 'UnitDespatchPlanAddUpdateVr1.aspx?Challan_No=' + encodeURIComponent(r.challanNo || '') + '&Process_Year=' + encodeURIComponent(r.year || '') + '&UnitCode=' + encodeURIComponent(r.unit || '');
+                        html += '<tr class="tlrowlight"' + (approved ? ' style="background-color:#7CFC00"' : '') + '>'
+                            + '<td style="text-align:center">' + esc(r.serial) + '</td>'
+                            + '<td style="text-align:center">' + select + '</td>'
+                            + '<td style="text-align:center">' + esc(r.region) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.depot) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.depotName) + '</td>'
+                            + '<td style="text-align:center"><a href="' + link + '" class="gridlink">' + esc(r.challanNo) + '</a></td>'
+                            + '<td style="text-align:center">' + esc(r.challanDate) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.sku) + '</td>'
+                            + '<td style="text-align:center">' + (approved ? 'Approved' : 'Pending') + '</td>'
+                            + '<td style="text-align:center">' + print + '</td>'
+                            + '<td style="text-align:center">' + del + '</td>'
+                            + '<td style="text-align:center">' + docs + '</td></tr>';
+                    }
+                    if (html) place(html);
+                    if (!noMore && scrolledNear()) loadNext();
+                }, function () {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.udp-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                });
+            }
+            function scrolledNear() {
+                var box = scrollBox()[0];
+                if (!box) return false;
+                if (box.scrollHeight > box.clientHeight + 2) return box.scrollTop + box.clientHeight >= box.scrollHeight - 50;
+                var rect = box.getBoundingClientRect();
+                return rect.bottom <= window.innerHeight + 50;
+            }
+            function bind() {
+                pageIndex = 0; noMore = false; loading = false; seq++;
+                $(gridSel + ' tr.udp-skel').remove();
+                capture();
+                setTimeout(function () { if (scrolledNear()) loadNext(); }, 0);
+            }
+            $(document).off('click.udp').on('click.udp', gridSel + ' a.udp-print', function (e) {
+                e.preventDefault();
+                var d = this.dataset;
+                if (!window.PageMethods || typeof PageMethods.PrepareDespatchPrint !== 'function') return;
+                PageMethods.PrepareDespatchPrint(d.unit || '', d.depot || '', d.year || '', d.challan || '', function (ok) {
+                    if (ok && typeof fnNewWindow === 'function') fnNewWindow('ReportViewer.aspx', '_blank');
+                });
+            }).on('click.udp', gridSel + ' a.udp-del', function (e) {
+                e.preventDefault();
+                if (typeof DeleteItem === 'function' && !DeleteItem()) return;
+                var d = this.dataset;
+                if (!window.PageMethods || typeof PageMethods.DeleteAppendedChallan !== 'function') return;
+                PageMethods.DeleteAppendedChallan(d.year || '', parseInt(d.challan, 10) || 0, function (ok) {
+                    if (ok) __doPostBack('<%= ImgbtnSearch.UniqueID %>', '');
+                });
+            }).on('click.udp', gridSel + ' a.udp-dl', function (e) {
+                e.preventDefault();
+                var d = this.dataset;
+                if (!d.name) return;
+                $('#<%= hdnUdpDlPath.ClientID %>').val(d.path || '');
+                $('#<%= hdnUdpDlName.ClientID %>').val(d.name || '');
+                __doPostBack('<%= btnUdpDownload.UniqueID %>', '');
+            });
+            if (!window.__udpScroll) {
+                window.__udpScroll = true;
+                document.addEventListener('scroll', function (e) {
+                    var box = scrollBox()[0];
+                    if (!box) return;
+                    var t = e.target;
+                    if (t !== box && t !== document && t !== document.documentElement && t !== document.body && !(t.contains && (t.contains(box) || box.contains(t)))) return;
+                    if (scrolledNear()) loadNext();
+                }, true);
+            }
+            if (window.Sys && Sys.Application) Sys.Application.add_load(bind);
+            else $(bind);
+        })();
+    </script>
 </asp:Content>

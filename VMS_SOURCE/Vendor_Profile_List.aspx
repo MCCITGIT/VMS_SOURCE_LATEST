@@ -5,7 +5,6 @@
 </asp:Content>--%>
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="Server">
 
-
     <script type="text/javascript">
         document.onkeydown = checkValue;
         function checkValue() {
@@ -52,7 +51,7 @@
                     </div>
                 </div>
             </div>
-            <div class="form-group ddlPageSize"  style="display: flex; align-items: center; padding: 0px;">
+            <div class="form-group ddlPageSize"  style="display: flex; align-items: center; padding: 0px; display:none;">
                 <label for="ddlPageSize" class="col-auto form-control-label">
                     <asp:Label ID="Label1" runat="server" Text="Results Per Page:"></asp:Label>
                 </label>
@@ -65,9 +64,8 @@
             <div class="table-responsive">
                 <asp:UpdatePanel ID="UpdatePanel1" runat="server">
                     <ContentTemplate>
-                        <asp:GridView ID="gvVendorProfile" runat="server" AutoGenerateColumns="false" AllowPaging="True"
-                            OnRowDataBound="gvVendorProfile_RowDataBound" Visible="true"
-                            OnPageIndexChanging="gvVendorProfile_IndexChanging" BorderWidth="1" style="margin-bottom: 0" CssClass="table table-hover upgradDataGrid">
+                        <asp:GridView ID="gvVendorProfile" runat="server" AutoGenerateColumns="false" AllowPaging="false"
+                            OnRowDataBound="gvVendorProfile_RowDataBound" Visible="true" BorderWidth="1" style="margin-bottom: 0" CssClass="table table-hover upgradDataGrid">
                             <RowStyle CssClass="tlrowlight" />
                             <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
                             <HeaderStyle CssClass="headerGrid" />
@@ -121,4 +119,122 @@
             </div>
         </div>
     </div>
+    <script type="text/javascript">
+        $(function () {
+            var pageIndex = 0;
+            var loading = false;
+            var noMoreData = false;
+            var suppressScrollUntil = 0;
+            var gridSel = '#<%= gvVendorProfile.ClientID %>';
+            var pageSize = parseInt($('#<%= ddlPageSize.ClientID %>').val(), 10) || 15;
+
+            function dataRows() {
+                return $(gridSel + ' tbody tr').not('.vendor-skel').not('.headerGrid').not('.PagerGrid').filter(function () {
+                    return $(this).children('td[colspan]').length === 0;
+                });
+            }
+
+            function loadNext($el) {
+                if (loading || noMoreData || dataRows().length === 0) return;
+                loading = true;
+                pageIndex++;
+                showVendorSkeleton($el);
+
+                PageMethods.GetMoreVendorProfiles(pageIndex, pageSize,
+                    function (result) {
+                        hideVendorSkeleton();
+                        if (!result || !result.rows || result.rows.length === 0) {
+                            noMoreData = true;
+                            loading = false;
+                            return;
+                        }
+                        var $tbody = $(gridSel + ' tbody');
+                        $.each(result.rows, function (i, r) {
+                            appendVendorRow($tbody, r, pageIndex * pageSize + i + 1);
+                        });
+                        if (dataRows().length >= result.total || result.rows.length < pageSize) noMoreData = true;
+                        loading = false;
+                        var $scroll = $(gridSel).closest('.table-responsive');
+                        if (!noMoreData && $scroll.length && $scroll[0].scrollHeight <= $scroll.innerHeight() + 1) loadNext($scroll);
+                    },
+                    function () {
+                        hideVendorSkeleton();
+                        pageIndex--;
+                        loading = false;
+                    }
+                );
+            }
+
+            function showVendorSkeleton($scroll) {
+                var $tbody = $(gridSel + ' tbody');
+                if (!$tbody.length || $tbody.find('tr.vendor-skel').length) return;
+                var widths = [
+                    ['16px', '55%', '72%', '48%', '64%', '58%'],
+                    ['16px', '48%', '64%', '42%', '70%', '50%'],
+                    ['16px', '60%', '78%', '52%', '58%', '66%']
+                ];
+                var aligns = ['center', 'center', 'center', 'center', 'center', 'center'];
+                var colWidths = ['5%', '10%', '15%', '10%', '15%', '15%'];
+                var html = '';
+                for (var r = 0; r < 3; r++) {
+                    html += '<tr class="tlrowlight vendor-skel">';
+                    for (var c = 0; c < colWidths.length; c++) {
+                        html += '<td align="' + aligns[c] + '" style="width:' + colWidths[c] + ';"><span class="grid-skel-bar" style="width:' + widths[r][c] + ';"></span></td>';
+                    }
+                    html += '</tr>';
+                }
+                $tbody.append(html);
+                suppressScrollUntil = Date.now() + 200;
+                if ($scroll && $scroll.length) $scroll.scrollTop($scroll[0].scrollHeight);
+            }
+
+            function hideVendorSkeleton() {
+                var $rows = $(gridSel + ' tbody tr.vendor-skel');
+                if (!$rows.length) return;
+                suppressScrollUntil = Date.now() + 200;
+                $rows.remove();
+            }
+
+            function appendVendorRow($tbody, r, slNo) {
+                var active = String(r.active || '').toLowerCase() === 'y';
+                var nameLink = '<a href="Vendor_Profile_Add.aspx?UnitCode=' + encodeURIComponent(r.unit_code || '') + '" class="gridlink">' + esc(r.unit_name) + '</a>';
+                var rowStyle = active ? '' : ' style="background-color:Red;color:White;"';
+                $tbody.append(
+                    '<tr class="tlrowlight"' + rowStyle + '>' +
+                    '<td align="center" style="width:5%;">' + slNo + '</td>' +
+                    '<td align="center" style="width:10%;">' + esc(r.unit_code) + '</td>' +
+                    '<td align="center" style="width:15%;">' + nameLink + '</td>' +
+                    '<td align="center" style="width:10%;">' + (active ? 'Active' : 'InActive') + '</td>' +
+                    '<td align="center" style="width:15%;">' + esc(r.created_user) + '</td>' +
+                    '<td align="center" style="width:15%;">' + esc(r.created_date) + '</td>' +
+                    '</tr>'
+                );
+            }
+
+            function esc(v) {
+                return $('<div>').text(v == null ? '' : v).html();
+            }
+
+            function bindVendorScroll() {
+                var $scroll = $(gridSel).closest('.table-responsive');
+                $scroll.off('scroll.vendorskel').on('scroll.vendorskel', function () {
+                    if (Date.now() < suppressScrollUntil) return;
+                    if ($scroll.scrollTop() + $scroll.innerHeight() < $scroll[0].scrollHeight - 50) return;
+                    loadNext($scroll);
+                });
+                if ($scroll.length && dataRows().length > 0 && $scroll[0].scrollHeight <= $scroll.innerHeight() + 1) loadNext($scroll);
+            }
+
+            bindVendorScroll();
+            if (typeof Sys !== 'undefined' && Sys.WebForms) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function () {
+                    pageIndex = 0;
+                    noMoreData = false;
+                    loading = false;
+                    pageSize = parseInt($('#<%= ddlPageSize.ClientID %>').val(), 10) || 15;
+                    bindVendorScroll();
+                });
+            }
+        });
+    </script>
 </asp:Content>

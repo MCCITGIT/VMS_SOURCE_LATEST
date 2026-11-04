@@ -177,7 +177,7 @@
 
             <div class="card">
                 <div class="card-body">
-                    <div class="form-group row ddlPageSize">
+                    <div class="form-group row ddlPageSize" style="display:none;">
                         <label for="ddlPageSize" class="col-auto form-control-label">
                             <asp:Label ID="Label4" runat="server" Text="Results Per Page:"></asp:Label>
                         </label>
@@ -185,8 +185,23 @@
                             <asp:DropDownList ID="ddlPageSize" runat="server" CssClass="form-control select2" AutoPostBack="true"></asp:DropDownList>
                         </div>
                     </div>
-                    <div class="table-responsive no-record-card">
-                        <asp:GridView ID="gvChallanDetails" runat="server" AutoGenerateColumns="false" AllowPaging="True"
+                    <asp:HiddenField ID="hdnVclHasData" runat="server" Value="0" />
+                    <asp:HiddenField ID="hdnVclPageSize" runat="server" Value="15" />
+                    <asp:HiddenField ID="hdnVclUnit" runat="server" />
+                    <asp:HiddenField ID="hdnVclDepot" runat="server" />
+                    <asp:HiddenField ID="hdnVclFrom" runat="server" />
+                    <asp:HiddenField ID="hdnVclTo" runat="server" />
+                    <asp:HiddenField ID="hdnVclInvoice" runat="server" />
+                    <asp:HiddenField ID="hdnVclType" runat="server" />
+                    <asp:HiddenField ID="hdnVclStatus" runat="server" />
+                    <asp:HiddenField ID="hdnVclHidePrint" runat="server" Value="1" />
+                    <asp:HiddenField ID="hdnVclViewId" runat="server" />
+                    <asp:HiddenField ID="hdnVclDlPath" runat="server" />
+                    <asp:HiddenField ID="hdnVclDlName" runat="server" />
+                    <asp:LinkButton ID="btnVclView" runat="server" Style="display: none;" />
+                    <asp:LinkButton ID="btnVclDownload" runat="server" Style="display: none;" />
+                    <div class="table-responsive no-record-card vcl-grid-scroll">
+                        <asp:GridView ID="gvChallanDetails" runat="server" AutoGenerateColumns="false" AllowPaging="False"
                             Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
                             <RowStyle CssClass="tlrowlight" />
                             <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
@@ -565,6 +580,171 @@
        <Triggers>
             <asp:PostBackTrigger ControlID="gvChallanDetails" />
             <asp:PostBackTrigger ControlID="btnExcel" />
+            <asp:PostBackTrigger ControlID="btnVclDownload" />
         </Triggers>
     </asp:UpdatePanel>
+    <style type="text/css">
+        .vcl-grid-scroll,
+        .vcl-grid-scroll table,
+        .vcl-grid-scroll tr,
+        .vcl-grid-scroll td {
+            overflow-anchor: none;
+        }
+        .vcl-grid-scroll {
+            max-height: 440px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+    </style>
+    <script type="text/javascript">
+        (function () {
+            var gridSel = '#<%= gvChallanDetails.ClientID %>';
+            var pageIndex = 0, pageSize = 15, total = 0, loading = false, noMore = false, seq = 0, hidePrint = true;
+            var filters = { unit: '', depot: '', from: '', to: '', invoice: '', type: '', status: '' };
+
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function attr(v) { return esc(v); }
+            function dataRows() { return $(gridSel + ' tr.tlrowlight').not('.vcl-skel'); }
+            function scrollBox() { return $(gridSel).closest('.vcl-grid-scroll'); }
+            function capture() {
+                filters.unit = $('#<%= hdnVclUnit.ClientID %>').val() || '';
+                filters.depot = $('#<%= hdnVclDepot.ClientID %>').val() || '';
+                filters.from = $('#<%= hdnVclFrom.ClientID %>').val() || '';
+                filters.to = $('#<%= hdnVclTo.ClientID %>').val() || '';
+                filters.invoice = $('#<%= hdnVclInvoice.ClientID %>').val() || '';
+                filters.type = $('#<%= hdnVclType.ClientID %>').val() || '';
+                filters.status = $('#<%= hdnVclStatus.ClientID %>').val() || '';
+                hidePrint = $('#<%= hdnVclHidePrint.ClientID %>').val() === '1';
+                var size = parseInt($('#<%= hdnVclPageSize.ClientID %>').val(), 10);
+                pageSize = size > 0 ? size : 15;
+                total = 0;
+            }
+            function skel() {
+                var widths = ['24px', '70%', '36px', '36px', '70%', '50px', '72px', '80%', '70px', '72px', '50px', '72px', '36px', '60px', '28px', '28px'];
+                if (hidePrint) widths.splice(14, 1);
+                var cells = '';
+                for (var i = 0; i < widths.length; i++) cells += '<td style="text-align:center"><span class="grid-skel-bar" style="width:' + widths[i] + '"></span></td>';
+                return '<tr class="tlrowlight vcl-skel">' + cells + '</tr>';
+            }
+            function place(html) {
+                var $rows = $('<table><tbody>' + html + '</tbody></table>').find('tr');
+                var $grid = $(gridSel);
+                var $body = $grid.children('tbody');
+                if (!$body.length) $body = $grid.find('tbody').first();
+                if ($body.length) $body.append($rows);
+                else $grid.append($rows);
+            }
+            function loadNext() {
+                if (loading || noMore) return;
+                if ($('#<%= hdnVclHasData.ClientID %>').val() !== '1') return;
+                if (!dataRows().length) return;
+                if (total && ((pageIndex + 1) * pageSize >= total || dataRows().length >= total)) { noMore = true; return; }
+                loading = true;
+                pageIndex++;
+                var token = ++seq;
+                place(skel());
+                if (!window.PageMethods || typeof PageMethods.GetMoreVendorChallans !== 'function') {
+                    $(gridSel + ' tr.vcl-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                    return;
+                }
+                PageMethods.GetMoreVendorChallans(pageIndex, pageSize, filters.unit, filters.depot, filters.from, filters.to, filters.invoice, filters.type, function (res) {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.vcl-skel').remove();
+                    loading = false;
+                    if (!res || !res.rows) { noMore = true; return; }
+                    total = res.total || 0;
+                    if (!res.rows.length || res.rows.length < pageSize || (pageIndex + 1) * pageSize >= total) noMore = true;
+                    var html = '';
+                    for (var i = 0; i < res.rows.length; i++) {
+                        var r = res.rows[i];
+                        var approved = r.approved === 'Y';
+                        var challan;
+                        if (filters.type === 'Direct' && filters.status === 'A') {
+                            challan = '<a href="#" class="vcl-view" style="color:#005aad" data-id="' + attr(r.challanNo) + '">' + esc(r.challanNo) + '</a>';
+                        } else {
+                            challan = '<a href="VendorChallanDetail.aspx?Challan_No=' + encodeURIComponent(r.challanNo || '') + '&Process_Year=' + encodeURIComponent(r.year || '') + '&UnitCode=' + encodeURIComponent(r.unit || '') + '" style="color:#005aad">' + esc(r.challanNo) + '</a>';
+                        }
+                        var print = (!hidePrint && approved) ? '<a href="#" class="vcl-print" data-unit="' + attr(r.unit) + '" data-depot="' + attr(r.depot) + '" data-year="' + attr(r.year) + '" data-challan="' + attr(r.challanNo) + '"><img src="images/printButton.png" alt="Print" /></a>' : '';
+                        var download = '<a href="#" class="vcl-dl" data-path="' + attr(r.docPath) + '" data-name="' + attr(r.orgName) + '"><img src="images/download.gif" alt="Download Challan" title="Click to download challan" style="height:70px" /></a>';
+                        html += '<tr class="tlrowlight"' + (approved ? ' style="background-color:#a5faaf"' : '') + '>'
+                            + '<td style="text-align:center">' + esc(r.serial) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.despatchType) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.region) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.depot) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.depotName) + '</td>'
+                            + '<td style="text-align:center">' + challan + '</td>'
+                            + '<td style="text-align:center">' + esc(r.challanDate) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.sku) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.invoiceNo) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.invoiceDate) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.grnNo) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.grnDate) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.skuNop) + '</td>'
+                            + '<td style="text-align:center">' + (approved ? 'Approved' : 'Pending') + '</td>'
+                            + (hidePrint ? '' : '<td style="text-align:center">' + print + '</td>')
+                            + '<td style="text-align:center">' + download + '</td></tr>';
+                    }
+                    if (html) place(html);
+                    if (!noMore && scrolledNear()) loadNext();
+                }, function () {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.vcl-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                });
+            }
+            function scrolledNear() {
+                var box = scrollBox()[0];
+                if (!box) return false;
+                if (box.scrollHeight > box.clientHeight + 2) return box.scrollTop + box.clientHeight >= box.scrollHeight - 50;
+                var rect = box.getBoundingClientRect();
+                return rect.bottom <= window.innerHeight + 50;
+            }
+            function bind() {
+                pageIndex = 0; noMore = false; loading = false; seq++;
+                $(gridSel + ' tr.vcl-skel').remove();
+                capture();
+                setTimeout(function () { if (scrolledNear()) loadNext(); }, 0);
+            }
+            $(document).off('click.vcl').on('click.vcl', gridSel + ' a.vcl-view', function (e) {
+                e.preventDefault();
+                $('#<%= hdnVclViewId.ClientID %>').val(this.dataset.id || '');
+                __doPostBack('<%= btnVclView.UniqueID %>', '');
+            }).on('click.vcl', gridSel + ' a.vcl-print', function (e) {
+                e.preventDefault();
+                var d = this.dataset;
+                if (!window.PageMethods || typeof PageMethods.PrepareVendorChallanPrint !== 'function') return;
+                PageMethods.PrepareVendorChallanPrint(d.unit || '', d.depot || '', d.year || '', d.challan || '', function (ok) {
+                    if (ok && typeof fnNewWindow === 'function') fnNewWindow('ReportViewer.aspx', '_blank');
+                });
+            }).on('click.vcl', gridSel + ' a.vcl-dl', function (e) {
+                e.preventDefault();
+                var d = this.dataset;
+                if (!d.name) return;
+                $('#<%= hdnVclDlPath.ClientID %>').val(d.path || '');
+                $('#<%= hdnVclDlName.ClientID %>').val(d.name || '');
+                __doPostBack('<%= btnVclDownload.UniqueID %>', '');
+            });
+            if (!window.__vclScroll) {
+                window.__vclScroll = true;
+                document.addEventListener('scroll', function (e) {
+                    var box = scrollBox()[0];
+                    if (!box) return;
+                    var t = e.target;
+                    if (t !== box && t !== document && t !== document.documentElement && t !== document.body && !(t.contains && (t.contains(box) || box.contains(t)))) return;
+                    if (scrolledNear()) loadNext();
+                }, true);
+            }
+            if (window.Sys && Sys.Application) Sys.Application.add_load(bind);
+            else $(bind);
+        })();
+    </script>
 </asp:Content>

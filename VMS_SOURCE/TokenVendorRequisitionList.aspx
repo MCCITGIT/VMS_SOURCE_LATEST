@@ -112,8 +112,10 @@
             <div class="table-responsive">
                 <asp:UpdatePanel ID="UpdatePanel1" runat="server">
                     <ContentTemplate>
-                        <div class="table-responsive">
-                            <asp:GridView ID="gvRequistionList" runat="server" AutoGenerateColumns="False" EmptyDataText="No records found" AllowPaging="true" PageSize="20" CssClass="table table-hover upgradDataGrid">
+                        <asp:HiddenField ID="hdnVendorReqHasData" runat="server" Value="0" />
+                        <asp:HiddenField ID="hdnVendorReqPageSize" runat="server" Value="20" />
+                        <div class="table-responsive grid-skel-bar">
+                                    <asp:GridView ID="gvRequistionList" runat="server" AutoGenerateColumns="False" EmptyDataText="No records found" AllowPaging="false" PageSize="20" CssClass="table table-hover upgradDataGrid">
                                 <RowStyle CssClass="tlrowlight" />
                                 <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
                                 <HeaderStyle CssClass="headerGrid" />
@@ -219,4 +221,112 @@
         </div>
     </div>
 
+    <script type="text/javascript">
+        (function () {
+            var gridSel = '#<%= gvRequistionList.ClientID %>';
+            var pageIndex = 0, pageSize = 20, total = 0, loading = false, noMore = false, seq = 0;
+            var filters = { unit: '', vendor: '', req: '', from: '', to: '' };
+
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function dataRows() { return $(gridSel + ' tbody tr.tlrowlight').not('.tvr-skel'); }
+            function scrollBox() { return $(gridSel).closest('.grid-skel-bar'); }
+            function capture() {
+                filters.unit = $('#<%= ddlVendorUnit.ClientID %>').val() || '';
+                filters.vendor = $('#<%= ddlTokenVendor.ClientID %>').val() || '';
+                filters.req = $('#<%= ddlVendorRequisition.ClientID %>').val() || '';
+                filters.from = $('#<%= txtFromDate.ClientID %>').val() || '';
+                filters.to = $('#<%= txtTodate.ClientID %>').val() || '';
+                var size = parseInt($('#<%= hdnVendorReqPageSize.ClientID %>').val(), 10);
+                pageSize = size > 0 ? size : 20;
+                total = 0;
+            }
+            function skel() {
+                var widths = ['40px', '72px', '70%', '70%', '75%', '80%', '36px', '40px'];
+                var cells = '';
+                for (var i = 0; i < widths.length; i++) cells += '<td style="text-align:center"><span class="grid-skel-bar" style="width:' + widths[i] + '"></span></td>';
+                return '<tr class="tlrowlight tvr-skel">' + cells + '</tr>';
+            }
+            function place(html) {
+                var $rows = $('<table><tbody>' + html + '</tbody></table>').find('tr');
+                $(gridSel).find('tbody').append($rows);
+            }
+            function rowHtml(r) {
+                return '<tr class="tlrowlight">'
+                    + '<td style="text-align:center"><a href="TokenRequisitionList_Vendor.aspx?id=' + esc(r.id) + '" style="color:blue">' + esc(r.id) + '</a></td>'
+                    + '<td style="text-align:center">' + esc(r.created) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.unit) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.vendor) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.site) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.desc) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.items) + '</td>'
+                    + '<td style="text-align:center">' + esc(r.qty) + '</td></tr>';
+            }
+            function loadNext() {
+                if (loading || noMore) return;
+                if ($('#<%= hdnVendorReqHasData.ClientID %>').val() !== '1') return;
+                if (!dataRows().length) return;
+                if (total && ((pageIndex + 1) * pageSize >= total || dataRows().length >= total)) { noMore = true; return; }
+                loading = true;
+                pageIndex++;
+                var token = ++seq;
+                place(skel());
+                if (!window.PageMethods || typeof PageMethods.GetMoreVendorTokenReqs !== 'function') {
+                    $(gridSel + ' tr.tvr-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                    return;
+                }
+                PageMethods.GetMoreVendorTokenReqs(pageIndex, pageSize, filters.unit, filters.vendor, filters.req, filters.from, filters.to, function (res) {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.tvr-skel').remove();
+                    loading = false;
+                    if (!res || !res.rows) { noMore = true; return; }
+                    total = res.total || 0;
+                    if (!res.rows.length || res.rows.length < pageSize || (pageIndex + 1) * pageSize >= total) noMore = true;
+                    var html = '';
+                    for (var i = 0; i < res.rows.length; i++) html += rowHtml(res.rows[i]);
+                    if (html) place(html);
+                    var live = scrollBox();
+                    if (!noMore && live.length && live[0].scrollHeight <= live[0].clientHeight + 2) loadNext();
+                }, function () {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.tvr-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                });
+            }
+            function onScroll() {
+                if (this.scrollTop + this.clientHeight >= this.scrollHeight - 50) loadNext();
+            }
+            function bind() {
+                pageIndex = 0; noMore = false; loading = false; seq++;
+                $(gridSel + ' tr.tvr-skel').remove();
+                capture();
+                var box = scrollBox();
+                box.off('scroll.tvr').on('scroll.tvr', onScroll);
+                setTimeout(function () {
+                    var live = scrollBox();
+                    if ($('#<%= hdnVendorReqHasData.ClientID %>').val() === '1' && live.length && live[0].scrollHeight <= live[0].clientHeight + 2) loadNext();
+                }, 0);
+            }
+            $(bind);
+            if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function (sender, args) {
+                    try {
+                        if (args.get_error && args.get_error()) return;
+                        var updated = args.get_panelsUpdated() || [];
+                        for (var i = 0; i < updated.length; i++) {
+                            if ($(updated[i]).find(gridSel).length) { bind(); break; }
+                        }
+                    } catch (e) { }
+                });
+            }
+        })();
+    </script>
 </asp:Content>

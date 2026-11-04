@@ -92,7 +92,7 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-control-label">Factory:<span class="mandatory">*</span></label>
+                                            <label class="form-control-label">Nearest Factory:<span class="mandatory">*</span></label>
                                             <div class="input-group product-search-group">
                                                 <asp:TextBox ID="txtFactorySearch" ClientIDMode="Static" CssClass="form-control" TabIndex="2" runat="server" AutoComplete="Off"
                                                     Placeholder="Type 2+ letters: code, name or city" onkeyup="clearFactorySelection();"></asp:TextBox>

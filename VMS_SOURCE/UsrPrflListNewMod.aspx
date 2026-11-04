@@ -79,7 +79,7 @@
                     </div>
                 </div>
             </div>
-            <div class="form-group ddlPageSize" style="display: flex; align-items: center; padding: 0 15px;">
+            <div class="form-group ddlPageSize" style="display: flex; align-items: center; padding: 0 15px;display:none;">
                 <label for="ddlPageSize" class="col-auto form-control-label">
                     <asp:Label ID="Label4" runat="server" Text="Results Per Page:"></asp:Label>
                 </label>
@@ -90,8 +90,8 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <asp:GridView ID="gvUserProfile" runat="server" AutoGenerateColumns="false" AllowPaging="True"
-                    Visible="true" OnRowDataBound="gvUserProfile_RowDataBound" OnPageIndexChanging="gvUserProfile_IndexChanging" CssClass="table table-hover upgradDataGrid">
+                <asp:GridView ID="gvUserProfile" runat="server" AutoGenerateColumns="false" AllowPaging="false"
+                    Visible="true" OnRowDataBound="gvUserProfile_RowDataBound" CssClass="table table-hover upgradDataGrid">
                     <RowStyle CssClass="tlrowlight" />
                     <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
                     <HeaderStyle CssClass="headerGrid" />
@@ -130,4 +130,113 @@
             </div>
         </div>
     </div>
+    <script type="text/javascript">
+        $(function () {
+            var pageIndex = 0;
+            var loading = false;
+            var noMoreData = false;
+            var suppressScrollUntil = 0;
+            var gridSel = '#<%= gvUserProfile.ClientID %>';
+            var filters = {
+                branch: $('#<%= ddlBranch.ClientID %>').val() || '',
+                department: $('#<%= ddlDepartment.ClientID %>').val() || '',
+                userGroup: $('#<%= ddlUserGroup.ClientID %>').val() || '',
+                userName: $('#<%= txtSearchUserName.ClientID %>').val() || '',
+                pageSize: parseInt($('#<%= ddlPageSize.ClientID %>').val(), 10) || 15
+            };
+
+            function dataRows() {
+                return $(gridSel + ' tbody tr').not('.usr-skel').not('.headerGrid').filter(function () {
+                    return $(this).children('td[colspan]').length === 0;
+                });
+            }
+
+            function loadNext($el) {
+                if (loading || noMoreData || dataRows().length === 0) return;
+                loading = true;
+                pageIndex++;
+                showUserSkeleton($el);
+
+                PageMethods.GetMoreUserProfiles(pageIndex, filters.branch, filters.userGroup, filters.userName, filters.department, filters.pageSize,
+                    function (result) {
+                        hideUserSkeleton();
+                        if (!result || !result.rows || result.rows.length === 0) {
+                            noMoreData = true;
+                            loading = false;
+                            return;
+                        }
+                        var $tbody = $(gridSel + ' tbody');
+                        $.each(result.rows, function (i, r) {
+                            appendUserRow($tbody, r, pageIndex * filters.pageSize + i + 1);
+                        });
+                        if (dataRows().length >= result.total || result.rows.length < filters.pageSize) noMoreData = true;
+                        loading = false;
+                        var $scroll = $(gridSel).closest('.table-responsive');
+                        if (!noMoreData && $scroll.length && $scroll[0].scrollHeight <= $scroll.innerHeight() + 1) loadNext($scroll);
+                    },
+                    function () {
+                        hideUserSkeleton();
+                        pageIndex--;
+                        loading = false;
+                    }
+                );
+            }
+
+            function showUserSkeleton($scroll) {
+                var $tbody = $(gridSel + ' tbody');
+                if (!$tbody.length || $tbody.find('tr.usr-skel').length) return;
+                var widths = ['46px', '70%', '62%', '78%', '66%', '54%', '60%', '48%', '40%'];
+                var html = '';
+                for (var r = 0; r < 3; r++) {
+                    html += '<tr class="tlrowlight usr-skel">';
+                    for (var c = 0; c < widths.length; c++) {
+                        var w = c === 0 ? '16px' : widths[c];
+                        html += '<td align="center"><span class="grid-skel-bar" style="width:' + w + ';"></span></td>';
+                    }
+                    html += '</tr>';
+                }
+                $tbody.append(html);
+                suppressScrollUntil = Date.now() + 200;
+                if ($scroll && $scroll.length) $scroll.scrollTop($scroll[0].scrollHeight);
+            }
+
+            function hideUserSkeleton() {
+                var $rows = $(gridSel + ' tbody tr.usr-skel');
+                if (!$rows.length) return;
+                suppressScrollUntil = Date.now() + 200;
+                $rows.remove();
+            }
+
+            function appendUserRow($tbody, r, slNo) {
+                var active = String(r.active || '').toLowerCase() === 'y';
+                var nameLink = '<a href="UsrPrfileAddNewMod.aspx?UserId=' + encodeURIComponent(r.usp_user_id || '') + '" class="gridlink">' + esc(r.usp_name) + '</a>';
+                var rowStyle = active ? '' : ' style="background-color:Red;color:White;"';
+                $tbody.append(
+                    '<tr class="tlrowlight"' + rowStyle + '>' +
+                    '<td align="center">' + slNo + '</td>' +
+                    '<td align="center">' + esc(r.usp_user_id) + '</td>' +
+                    '<td align="center">' + esc(r.usp_dept) + '</td>' +
+                    '<td align="center">' + nameLink + '</td>' +
+                    '<td align="center">' + esc(r.usp_branch) + '</td>' +
+                    '<td align="center">' + esc(r.usp_region) + '</td>' +
+                    '<td align="center">' + esc(r.usp_desig) + '</td>' +
+                    '<td align="center">' + (active ? 'Active' : 'InActive') + '</td>' +
+                    '<td align="center">' + esc(r.active) + '</td>' +
+                    '</tr>'
+                );
+            }
+
+            function esc(v) {
+                return $('<div>').text(v == null ? '' : v).html();
+            }
+
+            var $scroll = $(gridSel).closest('.table-responsive');
+            $scroll.on('scroll', function () {
+                if (Date.now() < suppressScrollUntil) return;
+                if ($scroll.scrollTop() + $scroll.innerHeight() < $scroll[0].scrollHeight - 50) return;
+                loadNext($scroll);
+            });
+            if ($scroll.length && dataRows().length > 0 && $scroll[0].scrollHeight <= $scroll.innerHeight() + 1) loadNext($scroll);
+        });
+    </script>
 </asp:Content>

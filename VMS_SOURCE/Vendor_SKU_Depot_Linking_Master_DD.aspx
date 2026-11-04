@@ -200,7 +200,7 @@
 
     <div class="card">
         <div class="card-body">
-            <div class="form-group row ddlPageSize">
+            <div class="form-group row ddlPageSize" style="display:none;">
                 <label for="ddlPageSize" class="col-auto form-control-label">
                     <asp:Label ID="lblResultspPage" runat="server" Text="Results Per Page:"></asp:Label>
                 </label>
@@ -208,12 +208,14 @@
                     <asp:DropDownList ID="ddlPageSize" runat="server" CssClass="form-control select2" AutoPostBack="true"></asp:DropDownList>
                 </div>
             </div>
-            <div class="table-responsive">
+            <div class="table-responsive dd-grid-scroll">
                 <asp:UpdatePanel ID="UpdatePanel1" runat="server">
                     <ContentTemplate>
                         <asp:HiddenField ID="hdnSKUCode" runat="server" />
                         <asp:HiddenField ID="hdnNewVendorName" runat="server" />
-                        <asp:GridView ID="gvVendorSKUList" runat="server" AutoGenerateColumns="false" AllowPaging="true"
+                        <asp:HiddenField ID="hdnDdSkuHasData" runat="server" Value="0" />
+                        <asp:HiddenField ID="hdnDdSkuPageSize" runat="server" Value="15" />
+                        <asp:GridView ID="gvVendorSKUList" runat="server" AutoGenerateColumns="false" AllowPaging="false"
                             Visible="true" BorderWidth="1" CssClass="table table-hover upgradDataGrid" ShowFooter="true" EmptyDataText="There are No Data..."
                             OnRowCancelingEdit="gvVendorSKUList_RowCancelingEdit" OnRowEditing="gvVendorSKUList_RowEditing">
                             <RowStyle CssClass="tlrowlight" />
@@ -404,4 +406,157 @@
             </div>
         </div>
     </div>
+    <style type="text/css">
+        .dd-grid-scroll,
+        .dd-grid-scroll table,
+        .dd-grid-scroll tr,
+        .dd-grid-scroll td {
+            overflow-anchor: none;
+        }
+        .dd-grid-scroll {
+            overscroll-behavior: contain;
+        }
+    </style>
+    <script type="text/javascript">
+        (function () {
+            var gridSel = '#<%= gvVendorSKUList.ClientID %>';
+            var pageIndex = 0, pageSize = 15, total = 0, loading = false, noMore = false, seq = 0;
+            var filters = { vendor: '', skuHidden: '', skuText: '' };
+            var vendors = null;
+
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function dataRows() { return $(gridSel + ' tbody tr.tlrowlight').not('.dd-skel'); }
+            function scrollBox() { return $(gridSel).closest('.dd-grid-scroll'); }
+            function capture() {
+                filters.vendor = $('#<%= ddlVendor.ClientID %>').val() || '';
+                filters.skuHidden = $('#<%= hdnskucode1.ClientID %>').val() || '';
+                filters.skuText = $('#<%= txtSkuCode.ClientID %>').val() || '';
+                var size = parseInt($('#<%= hdnDdSkuPageSize.ClientID %>').val(), 10);
+                pageSize = size > 0 ? size : 15;
+                total = 0;
+            }
+            function skel() {
+                var widths = ['24px', '70%', '50px', '70%', '80%', '36px', '40px'];
+                var cols = ['4%', '21%', '11%', '15%', '18%', '6%', '10%'];
+                var cells = '';
+                for (var i = 0; i < widths.length; i++) cells += '<td style="text-align:center;width:' + cols[i] + '"><span class="grid-skel-bar" style="width:' + widths[i] + '"></span></td>';
+                return '<tr class="tlrowlight dd-skel">' + cells + '</tr>';
+            }
+            function place(html) {
+                var $rows = $('<table><tbody>' + html + '</tbody></table>').find('tr');
+                var $footer = $(gridSel).find('tr.footerGrid').first();
+                if ($footer.length) $footer.before($rows);
+                else $(gridSel).find('tbody').append($rows);
+            }
+            function vendorSelect(id, selected) {
+                var html = '<select id="' + id + '" class="form-control select2 dd-link-vendor">';
+                for (var i = 0; i < vendors.length; i++) {
+                    html += '<option value="' + esc(vendors[i].code) + '"' + (vendors[i].code === selected ? ' selected' : '') + '>' + esc(vendors[i].name) + '</option>';
+                }
+                return html + '</select>';
+            }
+            function activeSelect(id, selected) {
+                return '<select id="' + id + '" class="form-control select2 dd-link-active" style="width:80px">'
+                    + '<option value="Y"' + (selected === 'Y' ? ' selected' : '') + '>Yes</option>'
+                    + '<option value="N"' + (selected !== 'Y' ? ' selected' : '') + '>No</option></select>';
+            }
+            function loadNext() {
+                if (loading || noMore) return;
+                if ($('#<%= hdnDdSkuHasData.ClientID %>').val() !== '1') return;
+                if (!dataRows().length) return;
+                if (total && ((pageIndex + 1) * pageSize >= total || dataRows().length >= total)) { noMore = true; return; }
+                loading = true;
+                pageIndex++;
+                var token = ++seq;
+                place(skel());
+                PageMethods.GetMoreDdVendorSkus(pageIndex, pageSize, filters.vendor, filters.skuHidden, filters.skuText, function (res) {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.dd-skel').remove();
+                    loading = false;
+                    if (!res || !res.rows) { noMore = true; return; }
+                    total = res.total || 0;
+                    if (res.vendors && res.vendors.length) vendors = res.vendors;
+                    if (!res.rows.length || res.rows.length < pageSize || (pageIndex + 1) * pageSize >= total) noMore = true;
+                    var html = '';
+                    for (var i = 0; i < res.rows.length; i++) {
+                        var r = res.rows[i];
+                        var n = pageIndex * pageSize + i + 1;
+                        var vendorCell = '', actionCell = '';
+                        if (r.vendor) {
+                            vendorCell = vendorSelect('ddVendor' + n, r.vendor)
+                                + '<input type="hidden" class="js-sku" id="ddSku' + n + '" value="' + esc(r.sku) + '" />'
+                                + '<input type="hidden" class="js-vendorname" id="ddVendorName' + n + '" value="' + esc(r.vendorName) + '" />';
+                            actionCell = '<a href="javascript:void(0)" id="ddSave' + n + '" class="btn btn-success gridBtn dd-link-save">Save</a>';
+                        }
+                        var activeCell = r.active ? activeSelect('ddActive' + n, r.active) : '';
+                        html += '<tr class="tlrowlight" data-sku="' + esc(r.sku) + '" data-oldvendor="' + esc(r.vendor) + '">'
+                            + '<td style="text-align:center">' + n + '</td>'
+                            + '<td style="text-align:center">' + esc(r.skuDesc) + '</td>'
+                            + '<td style="text-align:center">' + esc(r.sku) + '</td>'
+                            + '<td style="text-align:center" class="js-current">' + esc(r.vendorName) + '</td>'
+                            + '<td style="text-align:center">' + vendorCell + '</td>'
+                            + '<td style="text-align:center">' + activeCell + '</td>'
+                            + '<td style="text-align:center">' + actionCell + '</td></tr>';
+                    }
+                    if (html) {
+                        place(html);
+                        if (window.jQuery && jQuery.fn.select2) $(gridSel + ' select.dd-link-vendor, ' + gridSel + ' select.dd-link-active').not('.select2-hidden-accessible').select2();
+                    }
+                    var live = scrollBox();
+                    if (!noMore && live.length && live[0].scrollHeight <= live[0].clientHeight + 2) loadNext();
+                }, function () {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.dd-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                });
+            }
+            function onScroll() {
+                if (this.scrollTop + this.clientHeight >= this.scrollHeight - 50) loadNext();
+            }
+            function bind() {
+                pageIndex = 0; noMore = false; loading = false; seq++; vendors = null;
+                capture();
+                var box = scrollBox();
+                box.off('scroll.ddSku').on('scroll.ddSku', onScroll);
+                if ($('#<%= hdnDdSkuHasData.ClientID %>').val() === '1' && box.length && box[0].scrollHeight <= box[0].clientHeight + 2) loadNext();
+            }
+            $(document).on('click', '.dd-link-save', function (ev) {
+                ev.preventDefault();
+                var tr = $(this).closest('tr');
+                var sel = tr.find('select.dd-link-vendor')[0];
+                var active = tr.find('select.dd-link-active');
+                var nameBox = document.getElementById('<%= hdnNewVendorName.ClientID %>');
+                if (!sel) return false;
+                if (nameBox && sel.selectedIndex >= 0) nameBox.value = sel.options[sel.selectedIndex].text;
+                if (!ValidateUpdate(sel.id, tr.find('.js-sku').attr('id'), tr.find('.js-vendorname').attr('id'), '<%= hdnNewVendorName.ClientID %>', '<%= lblErrorMessage.ClientID %>', this.id)) return false;
+                PageMethods.SaveDdVendorSkuLink(sel.value, tr.attr('data-oldvendor'), tr.attr('data-sku'), active.length ? active.val() : '', function (msg) {
+                    if (msg === 'ok') {
+                        alert('Data updated successfully');
+                        tr.find('.js-current').text(sel.options[sel.selectedIndex].text);
+                        tr.find('.js-vendorname').val(sel.options[sel.selectedIndex].text);
+                        tr.attr('data-oldvendor', sel.value);
+                    } else if (msg === 'exists') {
+                        alert('Data already exists');
+                    } else if (msg) {
+                        alert(msg);
+                    }
+                });
+                return false;
+            });
+            $(bind);
+            if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function (sender, args) {
+                    var panels = args.get_panelsUpdated();
+                    for (var i = 0; i < panels.length; i++) {
+                        if ($(panels[i]).find(gridSel).length) { bind(); break; }
+                    }
+                });
+            }
+        })();
+    </script>
 </asp:Content>

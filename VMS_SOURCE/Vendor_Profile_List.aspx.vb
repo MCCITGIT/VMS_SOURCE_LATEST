@@ -10,6 +10,7 @@
 
 '**************************************************
 Imports System.Data
+Imports System.Collections.Generic
 Imports VMS.Web
 Imports System.Data.SqlClient
 Partial Class Vendor_Profile_List
@@ -54,31 +55,31 @@ Partial Class Vendor_Profile_List
 
             End If
         End If
-        If (e.Row.RowType = DataControlRowType.Pager) Then
-            Dim row As TableRow = New TableRow
-            row = e.Row.Controls(0).Controls(0).Controls(0)
-            For Each cell As TableCell In row.Cells
-                Dim lb As Control = cell.Controls(0)
+        'If (e.Row.RowType = DataControlRowType.Pager) Then
+        '    Dim row As TableRow = New TableRow
+        '    row = e.Row.Controls(0).Controls(0).Controls(0)
+        '    For Each cell As TableCell In row.Cells
+        '        Dim lb As Control = cell.Controls(0)
 
 
-                If (TypeOf (lb) Is Label) Then
+        '        If (TypeOf (lb) Is Label) Then
 
-                    'CType(lb, Label).ForeColor = System.Drawing.Color.Red
-                    CType(lb, Label).CssClass = "lblpager"
-                    'CType(lb, Label).Width = 20
-                    'CType(lb, Label).Height = 15
-                    'set current pager
+        '            'CType(lb, Label).ForeColor = System.Drawing.Color.Red
+        '            CType(lb, Label).CssClass = "lblpager"
+        '            'CType(lb, Label).Width = 20
+        '            'CType(lb, Label).Height = 15
+        '            'set current pager
 
-                ElseIf (TypeOf (lb) Is LinkButton) Then
+        '        ElseIf (TypeOf (lb) Is LinkButton) Then
 
-                    CType(lb, LinkButton).CssClass = "lnkpager"
-                    'CType(lb, LinkButton).Width = 20
-                    'CType(lb, LinkButton).Height = 15
-                    'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
-                End If
+        '            CType(lb, LinkButton).CssClass = "lnkpager"
+        '            'CType(lb, LinkButton).Width = 20
+        '            'CType(lb, LinkButton).Height = 15
+        '            'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
+        '        End If
 
-            Next
-        End If
+        '    Next
+        'End If
     End Sub
 #End Region
 
@@ -235,7 +236,7 @@ Partial Class Vendor_Profile_List
             VendorSet = oVendorFunction.Vendor_List_Get()
             If (Not (VendorSet Is Nothing) AndAlso VendorSet.Tables.Count > 0 AndAlso Not (VendorSet.Tables(0) Is Nothing) AndAlso VendorSet.Tables(0).Rows.Count > 0) Then
                 gvVendorProfile.Visible = True
-                gvVendorProfile.DataSource = VendorSet.Tables(0)
+                gvVendorProfile.DataSource = FirstVendorPage(VendorSet.Tables(0))
                 gvVendorProfile.DataBind()
                 'Div_Vendor_List_Grid.Visible = False
             Else
@@ -253,10 +254,10 @@ Partial Class Vendor_Profile_List
 
 #Region "Grid Page Index Changed"
     ' Event Handler for Page Changing
-    Protected Sub gvVendorProfile_IndexChanging(ByVal sender As Object, ByVal e As GridViewPageEventArgs)
-        gvVendorProfile.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub gvVendorProfile_IndexChanging(ByVal sender As Object, ByVal e As GridViewPageEventArgs)
+    '    gvVendorProfile.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
 #End Region
 
     '#Region "Search Click Event"
@@ -278,5 +279,48 @@ Partial Class Vendor_Profile_List
         'Response.Redirect("~/Vendor_Profile_Add.aspx")
     End Sub
 #End Region
+
+    Private Function SelectedPageSize() As Integer
+        Dim pageSize As Integer = 15
+        Integer.TryParse(Convert.ToString(ddlPageSize.SelectedValue), pageSize)
+        If pageSize <= 0 Then pageSize = 15
+        Return pageSize
+    End Function
+
+    Private Function FirstVendorPage(ByVal dt As DataTable) As DataTable
+        Dim pageDt As DataTable = dt.Clone()
+        Dim take As Integer = Math.Min(SelectedPageSize(), dt.Rows.Count)
+        For i As Integer = 0 To take - 1
+            pageDt.ImportRow(dt.Rows(i))
+        Next
+        Return pageDt
+    End Function
+
+    <System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreVendorProfiles(pageIndex As Integer, pageSize As Integer) As Object
+        Dim rows As New List(Of Object)
+        Dim total As Integer = 0
+        If pageSize <= 0 Then pageSize = 15
+
+        Dim vendorSet As DataSet = New VendorUnit().Vendor_List_Get()
+        If vendorSet IsNot Nothing AndAlso vendorSet.Tables.Count > 0 AndAlso vendorSet.Tables(0) IsNot Nothing Then
+            Dim dt As DataTable = vendorSet.Tables(0)
+            total = dt.Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            For i As Integer = start To last
+                Dim r As DataRow = dt.Rows(i)
+                rows.Add(New With {
+                    .unit_code = Convert.ToString(r("unit_code")),
+                    .unit_name = Convert.ToString(r("unit_name")),
+                    .active = Convert.ToString(r("active")),
+                    .created_user = Convert.ToString(r("created_user")),
+                    .created_date = Convert.ToString(r("created_date"))
+                })
+            Next
+        End If
+
+        Return New With {.rows = rows, .total = total}
+    End Function
 
 End Class

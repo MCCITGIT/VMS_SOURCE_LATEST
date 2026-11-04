@@ -103,30 +103,38 @@
             </div>
         </div>
         <div class="card-body">
-            <div class="table-responsive">
-                <asp:GridView ID="gvVendorInvoiceDtls" runat="server" AutoGenerateColumns="false" AllowPaging="True" OnRowDataBound="gvVendorInvoiceDtls_RowDataBound" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
+            <asp:HiddenField ID="hdnVirHasData" runat="server" Value="0" />
+            <asp:HiddenField ID="hdnVirPageSize" runat="server" Value="10" />
+            <asp:HiddenField ID="hdnVirVendor" runat="server" />
+            <asp:HiddenField ID="hdnVirStatus" runat="server" />
+            <asp:HiddenField ID="hdnVirFrom" runat="server" />
+            <asp:HiddenField ID="hdnVirTo" runat="server" />
+            <asp:HiddenField ID="hdnVirDepot" runat="server" />
+            <asp:HiddenField ID="hdnVirType" runat="server" />
+            <div class="table-responsive vir-grid-scroll">
+                <asp:GridView ID="gvVendorInvoiceDtls" runat="server" AutoGenerateColumns="false" AllowPaging="False" OnRowDataBound="gvVendorInvoiceDtls_RowDataBound" CssClass="table table-hover upgradDataGrid" EmptyDataText="No Record Found">
                     <RowStyle CssClass="tlrowlight" />
                     <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
                     <HeaderStyle CssClass="headerGrid" />
                     <FooterStyle CssClass="footerGrid" />
                     <Columns>
                         <%--<asp:BoundField HeaderStyle-HorizontalAlign="Center" HeaderText="S.No" ItemStyle-HorizontalAlign="Left">
-                                                                                <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="5%" />
-                                                                                <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="5%" />
-                                                                                <FooterStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="5%" />
-                                                                            </asp:BoundField>--%>
+                            <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="5%" />
+                            <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="5%" />
+                            <FooterStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="5%" />
+                        </asp:BoundField>--%>
                         <asp:BoundField HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center"
                             HeaderText="Type" DataField="Type">
                             <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
                             <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
                             <FooterStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
                         </asp:BoundField>
-                        <asp:BoundField HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center"
+                        <%--<asp:BoundField HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center"
                             HeaderText="Vendor Name" DataField="vendor_unit_name">
                             <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
                             <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" CssClass="vendor-name-column" />
                             <FooterStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="10%" />
-                        </asp:BoundField>
+                        </asp:BoundField>--%>
                         <asp:BoundField HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center"
                             HeaderText="Depot" DataField="depot_name">
                             <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="5%" />
@@ -207,4 +215,124 @@
         </div>
     </div>
 
+    <style type="text/css">
+        .vir-grid-scroll,
+        .vir-grid-scroll table,
+        .vir-grid-scroll tr,
+        .vir-grid-scroll td {
+            overflow-anchor: none;
+        }
+
+        .vir-grid-scroll {
+            max-height: 440px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+    </style>
+    <script type="text/javascript">
+        (function () {
+            var gridSel = '#<%= gvVendorInvoiceDtls.ClientID %>';
+            var pageIndex = 0, pageSize = 10, total = 0, loading = false, noMore = false, seq = 0;
+            var filters = { vendor: '', status: '', from: '', to: '', depot: '', type: '' };
+
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function dataRows() { return $(gridSel + ' tr.tlrowlight').not('.vir-skel'); }
+            function scrollBox() { return $(gridSel).closest('.vir-grid-scroll'); }
+            function capture() {
+                filters.vendor = $('#<%= hdnVirVendor.ClientID %>').val() || '';
+                filters.status = $('#<%= hdnVirStatus.ClientID %>').val() || '';
+                filters.from = $('#<%= hdnVirFrom.ClientID %>').val() || '';
+                filters.to = $('#<%= hdnVirTo.ClientID %>').val() || '';
+                filters.depot = $('#<%= hdnVirDepot.ClientID %>').val() || '';
+                filters.type = $('#<%= hdnVirType.ClientID %>').val() || '';
+                var size = parseInt($('#<%= hdnVirPageSize.ClientID %>').val(), 10);
+                pageSize = size > 0 ? size : 10;
+                total = 0;
+            }
+            function skel() {
+                var widths = ['50px', '70%', '72px', '60px', '72px', '50px', '50px', '72px', '50px', '72px', '50px', '50px', '50px'];
+                var cells = '';
+                for (var i = 0; i < widths.length; i++) cells += '<td style="text-align:center"><span class="grid-skel-bar" style="width:' + widths[i] + '"></span></td>';
+                return '<tr class="tlrowlight vir-skel">' + cells + '</tr>';
+            }
+            function place(html) {
+                var $rows = $('<table><tbody>' + html + '</tbody></table>').find('tr');
+                var $grid = $(gridSel);
+                var $body = $grid.children('tbody');
+                if (!$body.length) $body = $grid.find('tbody').first();
+                if ($body.length) $body.append($rows);
+                else $grid.append($rows);
+            }
+            function loadNext() {
+                if (loading || noMore) return;
+                if ($('#<%= hdnVirHasData.ClientID %>').val() !== '1') return;
+                if (!dataRows().length) return;
+                if (total && ((pageIndex + 1) * pageSize >= total || dataRows().length >= total)) { noMore = true; return; }
+                loading = true;
+                pageIndex++;
+                var token = ++seq;
+                place(skel());
+                if (!window.PageMethods || typeof PageMethods.GetMoreVendorInvoices !== 'function') {
+                    $(gridSel + ' tr.vir-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                    return;
+                }
+                PageMethods.GetMoreVendorInvoices(pageIndex, pageSize, filters.vendor, filters.status, filters.from, filters.to, filters.depot, filters.type, function (res) {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.vir-skel').remove();
+                    loading = false;
+                    if (!res || !res.rows) { noMore = true; return; }
+                    total = res.total || 0;
+                    if (!res.rows.length || res.rows.length < pageSize || (pageIndex + 1) * pageSize >= total) noMore = true;
+                    var html = '';
+                    for (var i = 0; i < res.rows.length; i++) {
+                        var r = res.rows[i];
+                        var vals = [r.type, r.depot, r.despatchDate, r.invoiceNo, r.invoiceDate, r.invoiceValue, r.releaseNo, r.releaseDate, r.grnNo, r.grnDate, r.voucherNo, r.amountPaid, r.amountDue];
+                        html += '<tr class="tlrowlight"' + (r.missingDespatch ? ' style="background-color:#FFFF00"' : '') + '>';
+                        for (var c = 0; c < vals.length; c++) html += '<td style="text-align:center">' + esc(vals[c]) + '</td>';
+                        html += '</tr>';
+                    }
+                    if (html) place(html);
+                    if (!noMore && scrolledNear()) loadNext();
+                }, function () {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.vir-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                });
+            }
+            function scrolledNear() {
+                var box = scrollBox()[0];
+                if (!box) return false;
+                if (box.scrollHeight > box.clientHeight + 2) return box.scrollTop + box.clientHeight >= box.scrollHeight - 50;
+                var rect = box.getBoundingClientRect();
+                return rect.bottom <= window.innerHeight + 50;
+            }
+            function bind() {
+                pageIndex = 0; noMore = false; loading = false; seq++;
+                $(gridSel + ' tr.vir-skel').remove();
+                capture();
+                setTimeout(function () { if (scrolledNear()) loadNext(); }, 0);
+            }
+            if (!window.__virScroll) {
+                window.__virScroll = true;
+                document.addEventListener('scroll', function (e) {
+                    var box = scrollBox()[0];
+                    if (!box) return;
+                    var t = e.target;
+                    if (t !== box && t !== document && t !== document.documentElement && t !== document.body && !(t.contains && (t.contains(box) || box.contains(t)))) return;
+                    if (scrolledNear()) loadNext();
+                }, true);
+            }
+            if (window.Sys && Sys.Application) Sys.Application.add_load(bind);
+            else $(bind);
+        })();
+    </script>
 </asp:Content>

@@ -166,11 +166,11 @@ Partial Class Vendor_SKU_Depot_Linking_Master_DD
 
 #Region "Gridview PageIndexChanging event handling."
 
-    Protected Sub gvVendorSKUList_PageIndexChanging(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewPageEventArgs) Handles gvVendorSKUList.PageIndexChanging
-        ' gvVendorSKUList.EditIndex = -1
-        gvVendorSKUList.PageIndex = e.NewPageIndex
-        VendorSKUListLoad()
-    End Sub
+    'Protected Sub gvVendorSKUList_PageIndexChanging(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewPageEventArgs) Handles gvVendorSKUList.PageIndexChanging
+    '    ' gvVendorSKUList.EditIndex = -1
+    '    gvVendorSKUList.PageIndex = e.NewPageIndex
+    '    VendorSKUListLoad()
+    'End Sub
 
 #End Region
 
@@ -217,10 +217,14 @@ Partial Class Vendor_SKU_Depot_Linking_Master_DD
         gvVendorSKUList.DataBind()
 
         If (Not (VendorSKUList Is Nothing) AndAlso VendorSKUList.Tables.Count > 0 AndAlso Not (VendorSKUList.Tables(0) Is Nothing) AndAlso VendorSKUList.Tables(0).Rows.Count > 0) Then
-            gvVendorSKUList.DataSource = VendorSKUList.Tables(0)
+            gvVendorSKUList.PageIndex = 0
+            gvVendorSKUList.DataSource = FirstDdSkuPage(VendorSKUList.Tables(0))
             gvVendorSKUList.DataBind()
+            hdnDdSkuHasData.Value = "1"
+            hdnDdSkuPageSize.Value = gvVendorSKUList.PageSize.ToString()
         Else
             EmptyGridLoad()
+            hdnDdSkuHasData.Value = "0"
         End If
 
     End Sub
@@ -287,8 +291,10 @@ Partial Class Vendor_SKU_Depot_Linking_Master_DD
         dtColumn.ColumnName = "active"
         EmptyTable.Columns.Add(dtColumn)
 
+        gvVendorSKUList.PageIndex = 0
         gvVendorSKUList.DataSource = EmptyTable
         gvVendorSKUList.DataBind()
+        hdnDdSkuHasData.Value = "0"
 
     End Sub
 
@@ -570,31 +576,31 @@ Partial Class Vendor_SKU_Depot_Linking_Master_DD
 
             End If
         End If
-        If (e.Row.RowType = DataControlRowType.Pager) Then
-            Dim row As TableRow = New TableRow
-            row = e.Row.Controls(0).Controls(0).Controls(0)
-            For Each cell As TableCell In row.Cells
-                Dim lb As Control = cell.Controls(0)
+        'If (e.Row.RowType = DataControlRowType.Pager) Then
+        '    Dim row As TableRow = New TableRow
+        '    row = e.Row.Controls(0).Controls(0).Controls(0)
+        '    For Each cell As TableCell In row.Cells
+        '        Dim lb As Control = cell.Controls(0)
 
 
-                If (TypeOf (lb) Is Label) Then
+        '        If (TypeOf (lb) Is Label) Then
 
-                    'CType(lb, Label).ForeColor = System.Drawing.Color.Red
-                    CType(lb, Label).CssClass = "lblpager"
-                    'CType(lb, Label).Width = 20
-                    'CType(lb, Label).Height = 15
-                    'set current pager
+        '            'CType(lb, Label).ForeColor = System.Drawing.Color.Red
+        '            CType(lb, Label).CssClass = "lblpager"
+        '            'CType(lb, Label).Width = 20
+        '            'CType(lb, Label).Height = 15
+        '            'set current pager
 
-                ElseIf (TypeOf (lb) Is LinkButton) Then
+        '        ElseIf (TypeOf (lb) Is LinkButton) Then
 
-                    CType(lb, LinkButton).CssClass = "lnkpager"
-                    'CType(lb, LinkButton).Width = 20
-                    'CType(lb, LinkButton).Height = 15
-                    'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
-                End If
+        '            CType(lb, LinkButton).CssClass = "lnkpager"
+        '            'CType(lb, LinkButton).Width = 20
+        '            'CType(lb, LinkButton).Height = 15
+        '            'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
+        '        End If
 
-            Next
-        End If
+        '    Next
+        'End If
 
     End Sub
 
@@ -630,6 +636,78 @@ System.Web.Services.WebMethod()>
 
         Return SKUdetails.ToArray()
 
+    End Function
+
+    Private Function FirstDdSkuPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvVendorSKUList.PageSize
+        If pageSize <= 0 Then pageSize = 15
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    Private Shared Function CurrentDdUser() As VMSUserEntity
+        Dim sessionUser As Object = System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo)
+        If sessionUser Is Nothing Then Return Nothing
+        Return CType(sessionUser, VMSUserEntity)
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreDdVendorSkus(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal vendorUnit As String, ByVal skuHidden As String, ByVal skuText As String) As Object
+        Dim rows As New List(Of Object)
+        If CurrentDdUser() Is Nothing Then Return New With {.rows = rows, .total = 0, .vendors = New List(Of Object)}
+        If pageSize <= 0 Then pageSize = 15
+        If pageIndex < 0 Then pageIndex = 0
+        Dim skuCode As String = If(skuHidden, String.Empty).Trim()
+        If skuCode = String.Empty Then skuCode = If(skuText, String.Empty).Trim()
+        Dim ds As DataSet = New VendorSKUDepotLinkingDDClass().GetVendorSKUDetailsList(If(vendorUnit, String.Empty), skuCode)
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                rows.Add(New With {
+                    .skuDesc = dr("SkuDescription").ToString(),
+                    .sku = dr("v_sku_code").ToString(),
+                    .vendorName = dr("vendor_name").ToString(),
+                    .vendor = dr("v_vendor_unit").ToString(),
+                    .active = dr("active").ToString()
+                })
+            Next
+        End If
+        Dim vendors As New List(Of Object)
+        If pageIndex = 1 Then
+            vendors.Add(New With {.code = "", .name = "Select"})
+            Dim vendords As DataSet = New VendorMaster().GetUnitName(Constant.Common.ActiveStatus)
+            If vendords IsNot Nothing AndAlso vendords.Tables.Count > 0 AndAlso vendords.Tables(0) IsNot Nothing Then
+                For Each unitRow As DataRow In vendords.Tables(0).Rows
+                    vendors.Add(New With {.code = unitRow("unit_code").ToString(), .name = unitRow("unit_name").ToString()})
+                Next
+            End If
+        End If
+        Return New With {.rows = rows, .total = total, .vendors = vendors}
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function SaveDdVendorSkuLink(ByVal newVendor As String, ByVal oldVendor As String, ByVal sku As String, ByVal active As String) As String
+        Dim userInfo As VMSUserEntity = CurrentDdUser()
+        If userInfo Is Nothing Then Return "Please login again."
+        Try
+            Dim affected As Integer = New VendorSKUDepotLinkingDDClass().VendorSKUMstrInsertUpdate(newVendor, oldVendor, sku, active, userInfo.userIDEntity, "Update")
+            If affected > 0 Then Return "ok"
+            Return "exists"
+        Catch ex As Exception
+            Return ex.Message
+        End Try
     End Function
     Protected Sub txtftrSKUdsec_OnTextChanged(sender As Object, e As EventArgs)
         Dim SKUCode As TextBox = CType(sender, TextBox)
