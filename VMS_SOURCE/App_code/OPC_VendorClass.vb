@@ -1076,6 +1076,18 @@ Public Class OPC_VendorClass
 
     End Function
 
+    Public Function GetFormulationRateRevisionFlagged(ByVal vendor_code As String) As DataSet
+        Dim sqlParams(0) As SqlParameter
+
+        sqlParams(0) = New SqlParameter()
+        sqlParams(0).ParameterName = "@vendor_code"
+        sqlParams(0).DbType = DbType.String
+        sqlParams(0).Direction = Data.ParameterDirection.Input
+        sqlParams(0).Value = If(Not String.IsNullOrWhiteSpace(vendor_code), CObj(vendor_code.Trim()), DBNull.Value)
+
+        Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_sku_formulation_rate_revision_flagged]", Data.CommandType.StoredProcedure, sqlParams)
+    End Function
+
     Public Function GetFormulationRawmatList(ByVal sf_id As Integer) As DataSet
         Dim PrjectList As DataSet
 
@@ -1124,80 +1136,31 @@ Public Class OPC_VendorClass
 
     End Function
 
-    Function ApproveFormulationRawmatRevision(ByVal sf_id As Integer, ByVal rawmat As DataTable, Optional ByVal userId As String = "") As Integer
+    Function ApproveFormulationRateRevision(ByVal sfIds As DataTable, Optional ByVal userId As String = "") As Integer
         Dim sqlConn As SqlConnection = Nothing
         Dim outputCode As Integer = 0
-        Dim sqlParams(2) As SqlParameter
-        sqlParams(2) = New SqlParameter("@user_id", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(userId), CObj(DBNull.Value), userId.Trim())}      ' who opened the rates (04-Nov-2026)
+        Dim sqlParams(1) As SqlParameter
 
         Try
-            If rawmat Is Nothing OrElse rawmat.Rows.Count = 0 Then
+            If sfIds Is Nothing OrElse sfIds.Rows.Count = 0 Then
                 Return 0
             End If
 
             sqlConn = DBFactory.GetHelper.OpenConnection()
 
             sqlParams(0) = New SqlParameter()
-            sqlParams(0).ParameterName = "@sf_id"
-            sqlParams(0).SqlDbType = SqlDbType.Int
+            sqlParams(0).ParameterName = "@sf_ids"
+            sqlParams(0).SqlDbType = SqlDbType.Structured
             sqlParams(0).Direction = Data.ParameterDirection.Input
-            sqlParams(0).Value = sf_id
+            sqlParams(0).TypeName = "dbo.tbl_opc_rate_revision_sf"
+            sqlParams(0).Value = sfIds
 
-            sqlParams(1) = New SqlParameter()
-            sqlParams(1).ParameterName = "@rawmat"
-            sqlParams(1).SqlDbType = SqlDbType.Structured
-            sqlParams(1).Direction = Data.ParameterDirection.Input
-            sqlParams(1).TypeName = "dbo.tbl_opc_rate_revision_rawmat"
-            sqlParams(1).Value = rawmat
+            sqlParams(1) = New SqlParameter("@user_id", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(userId), CObj(DBNull.Value), userId.Trim())}
 
             Dim sqlCmd As New SqlCommand()
             sqlCmd.Connection = sqlConn
             sqlCmd.CommandType = CommandType.StoredProcedure
-            sqlCmd.CommandText = "[dbo].[opc_sku_formulation_rawmat_rate_revision]"
-            sqlCmd.Parameters.AddRange(sqlParams)
-            outputCode = sqlCmd.ExecuteNonQuery()
-        Catch ex As Exception
-            Throw ex
-        Finally
-            If (sqlConn IsNot Nothing) Then
-                sqlConn.Close()
-            End If
-        End Try
-
-        Return outputCode
-    End Function
-
-    ''' <summary>04-Nov-2026: packs = packaging cost LINES (column pcd_id), one specific packaging material each - type dbo.tbl_opc_rate_revision_pcd.</summary>
-    Function ApproveFormulationPackagingRevision(ByVal sf_id As Integer, ByVal packs As DataTable, Optional ByVal userId As String = "") As Integer
-        Dim sqlConn As SqlConnection = Nothing
-        Dim outputCode As Integer = 0
-        Dim sqlParams(2) As SqlParameter
-        sqlParams(2) = New SqlParameter("@user_id", SqlDbType.VarChar, 50) With {.Value = If(String.IsNullOrWhiteSpace(userId), CObj(DBNull.Value), userId.Trim())}
-
-        Try
-            If packs Is Nothing OrElse packs.Rows.Count = 0 Then
-                Return 0
-            End If
-
-            sqlConn = DBFactory.GetHelper.OpenConnection()
-
-            sqlParams(0) = New SqlParameter()
-            sqlParams(0).ParameterName = "@sf_id"
-            sqlParams(0).SqlDbType = SqlDbType.Int
-            sqlParams(0).Direction = Data.ParameterDirection.Input
-            sqlParams(0).Value = sf_id
-
-            sqlParams(1) = New SqlParameter()
-            sqlParams(1).ParameterName = "@packs"
-            sqlParams(1).SqlDbType = SqlDbType.Structured
-            sqlParams(1).Direction = Data.ParameterDirection.Input
-            sqlParams(1).TypeName = "dbo.tbl_opc_rate_revision_pcd"
-            sqlParams(1).Value = packs
-
-            Dim sqlCmd As New SqlCommand()
-            sqlCmd.Connection = sqlConn
-            sqlCmd.CommandType = CommandType.StoredProcedure
-            sqlCmd.CommandText = "[dbo].[opc_sku_formulation_packaging_rate_revision]"
+            sqlCmd.CommandText = "[dbo].[opc_sku_formulation_rate_revision]"
             sqlCmd.Parameters.AddRange(sqlParams)
             outputCode = sqlCmd.ExecuteNonQuery()
         Catch ex As Exception
@@ -2296,13 +2259,18 @@ Public Class OPC_VendorClass
         Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_raw_material_creation_get]", CommandType.StoredProcedure, p)
     End Function
 
-    Function InsertOpcRawMaterialCreation(ByVal name As String, ByVal unitCode As String, ByVal userId As String, Optional ByVal itemType As String = "RM") As DataSet
-        Dim p() As SqlParameter = {ScopeParam("@name", name, 200), ScopeParam("@unit_code", unitCode, 20), ScopeParam("@user_id", userId, 20), New SqlParameter("@item_type", SqlDbType.VarChar, 3) With {.Value = If(String.Equals(itemType, "PKG", StringComparison.OrdinalIgnoreCase), "PKG", "RM")}}
+    'Modified-by MUKESH BHAGAT on 04-11-2026 : unitCode "ALL" = raw material entered by HO for every vendor; bergerCode / bergerNotBuy link the Berger code
+    '(or "Berger doesn't buy this product") at creation - same columns as the Raw Material Code Linking page.
+    Function InsertOpcRawMaterialCreation(ByVal name As String, ByVal unitCode As String, ByVal userId As String, Optional ByVal itemType As String = "RM", Optional ByVal bergerCode As String = "", Optional ByVal bergerNotBuy As Boolean = False) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@name", name, 200), ScopeParam("@unit_code", unitCode, 20), ScopeParam("@user_id", userId, 20), New SqlParameter("@item_type", SqlDbType.VarChar, 3) With {.Value = If(String.Equals(itemType, "PKG", StringComparison.OrdinalIgnoreCase), "PKG", "RM")},
+                                   ScopeParam("@berger_code", bergerCode, 50), New SqlParameter("@berger_not_buy", SqlDbType.Char, 1) With {.Value = If(bergerNotBuy, "Y", "N")}}
         Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_raw_material_creation_insert]", CommandType.StoredProcedure, p)
     End Function
 
-    Function UpdateOpcRawMaterialCreation(ByVal rmmCode As String, ByVal name As String, ByVal active As String, ByVal userId As String) As DataSet
-        Dim p() As SqlParameter = {ScopeParam("@rmm_code", rmmCode, 50), ScopeParam("@name", name, 200), ScopeParam("@active", active, 1), ScopeParam("@user_id", userId, 20)}
+    'setBerger = True (HO edit of a raw material) also saves the Berger code / "doesn't buy".
+    Function UpdateOpcRawMaterialCreation(ByVal rmmCode As String, ByVal name As String, ByVal active As String, ByVal userId As String, Optional ByVal setBerger As Boolean = False, Optional ByVal bergerCode As String = "", Optional ByVal bergerNotBuy As Boolean = False) As DataSet
+        Dim p() As SqlParameter = {ScopeParam("@rmm_code", rmmCode, 50), ScopeParam("@name", name, 200), ScopeParam("@active", active, 1), ScopeParam("@user_id", userId, 20),
+                                   New SqlParameter("@set_berger", SqlDbType.Bit) With {.Value = setBerger}, ScopeParam("@berger_code", bergerCode, 50), New SqlParameter("@berger_not_buy", SqlDbType.Char, 1) With {.Value = If(bergerNotBuy, "Y", "N")}}
         Return DBFactory.GetHelper().ExecuteDataSet("[dbo].[opc_raw_material_creation_update]", CommandType.StoredProcedure, p)
     End Function
 #End Region

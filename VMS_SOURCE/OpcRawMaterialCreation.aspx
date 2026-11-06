@@ -68,8 +68,9 @@
                 <a href="Home.aspx" title="Home"><i class="fas fa-home"></i></a>
                 <div class="diveider">/</div>
                 <div class="pageTitleWrap">
-                    <h3 class="pageTitle">Raw Material / Packaging Creation</h3>
-                    <p class="pageSubTitle">Create and maintain vendor raw material and packaging entries</p>
+                    <%-- 05-11-2026: the captions follow the login - vendor = Packaging, HO = Raw Material (set in Page_Load) --%>
+                    <h3 class="pageTitle"><asp:Label ID="lblPageTitle" runat="server" Text="Raw Material / Packaging Creation"></asp:Label></h3>
+                    <p class="pageSubTitle"><asp:Label ID="lblPageSub" runat="server" Text="HO creates raw materials for all vendors; vendors create their packaging items"></asp:Label></p>
                 </div>
             </div>
             <div class="rightFung"></div>
@@ -80,8 +81,8 @@
                 <div class="mst-panel-header-left">
                     <span class="mst-panel-icon"><i class="fas fa-flask"></i></span>
                     <div>
-                        <h5 class="mst-panel-title">Item Details</h5>
-                        <p class="mst-panel-subtitle">Pick the type, the vendor and the name. The code is generated on save (MAN... raw material, PKG... packaging). Packaging items are created by the vendor.</p>
+                        <h5 class="mst-panel-title"><asp:Label ID="lblPanelTitle" runat="server" Text="Item Details"></asp:Label></h5>
+                        <p class="mst-panel-subtitle"><asp:Label ID="lblPanelSub" runat="server" Text="Enter the item name. The code is generated on save."></asp:Label></p>
                     </div>
                 </div>
             </div>
@@ -94,30 +95,55 @@
                             <asp:TextBox ID="txtRmCode" runat="server" ClientIDMode="Static" CssClass="form-control" ReadOnly="true"></asp:TextBox>
                         </div>
                     </asp:Panel>
-                    <div class="col-md-3">
+                    <%-- 04-11-2026 MUKESH BHAGAT: the item type is no longer chosen. HO enters raw materials (for ALL vendors); a vendor (UNIT login) enters packaging only.
+                         ddlItemType stays on the page (hidden) so the saved type of an edited item is known. --%>
+                    <asp:Panel ID="pnlType" runat="server" Visible="false" CssClass="col-md-3">
                         <div class="form-group">
-                            <%-- 02-11-2026 MUKESH BHAGAT: Type RM / PKG - packaging items share this master; only a vendor (UNIT) login can create a Packaging item --%>
-                            <label class="form-control-label">Type:<span class="mandatory">*</span></label>
+                            <label class="form-control-label">Type:</label>
                             <asp:DropDownList ID="ddlItemType" runat="server" ClientIDMode="Static" CssClass="form-control">
                                 <asp:ListItem Value="RM" Text="Raw Material"></asp:ListItem>
                                 <asp:ListItem Value="PKG" Text="Packaging"></asp:ListItem>
                             </asp:DropDownList>
                         </div>
-                    </div>
-                    <div class="col-md-3">
+                    </asp:Panel>
+                    <asp:Panel ID="pnlVendor" runat="server" CssClass="col-md-3">
                         <div class="form-group">
                             <label class="form-control-label">Vendor:<span class="mandatory">*</span></label>
                             <asp:DropDownList ID="ddlVendor" runat="server" ClientIDMode="Static" CssClass="form-control select2"></asp:DropDownList>
                             <asp:Label ID="valVendor" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                         </div>
-                    </div>
-                    <div class="col-md-4">
+                    </asp:Panel>
+                    <asp:Panel ID="pnlScope" runat="server" Visible="false" CssClass="col-md-3">
                         <div class="form-group">
-                            <label class="form-control-label">Name:<span class="mandatory">*</span></label>
+                            <label class="form-control-label">Applies to:</label>
+                            <asp:TextBox ID="txtScope" runat="server" CssClass="form-control" ReadOnly="true" Text="All vendors"></asp:TextBox>
+                        </div>
+                    </asp:Panel>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label class="form-control-label"><asp:Label ID="lblNameCaption" runat="server" Text="Name:"></asp:Label><span class="mandatory">*</span></label>
                             <asp:TextBox ID="txtRmName" runat="server" ClientIDMode="Static" CssClass="form-control" AutoComplete="Off" MaxLength="200" onkeyup="clearRmCreationValidation();"></asp:TextBox>
                             <asp:Label ID="valRmName" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                         </div>
                     </div>
+                    <%-- HO only, raw material: link the Berger code here, or tick "Berger doesn't buy this product" (same columns as Raw Material Code Linking).
+                         Both can be left empty and linked later on Raw Material Code Linking. --%>
+                    <%-- 05-11-2026: order = Name, then the tick box, then the Berger Code (the tick box switches the dropdown off) --%>
+                    <asp:Panel ID="pnlBergerTick" runat="server" Visible="false" CssClass="col-md-3">
+                        <div class="form-group">
+                            <label class="form-control-label">&nbsp;</label>
+                            <div class="checkRadioGroup" style="padding-top: 6px;">
+                                <asp:CheckBox ID="chkBergerNotBuy" runat="server" ClientIDMode="Static" Text="&nbsp;Berger doesn't buy this product" />
+                            </div>
+                        </div>
+                    </asp:Panel>
+                    <asp:Panel ID="pnlBerger" runat="server" Visible="false" CssClass="col-md-3">
+                        <div class="form-group">
+                            <label class="form-control-label">Berger Code:</label>
+                            <asp:HiddenField ID="hdnBergerCode" runat="server" ClientIDMode="Static" />
+                            <asp:Literal ID="litBergerSelect" runat="server"></asp:Literal>
+                        </div>
+                    </asp:Panel>
                     <asp:Panel ID="pnlActive" runat="server" CssClass="col-md-3" Visible="false">
                         <div class="form-group">
                             <label class="form-control-label">Active:<span class="mandatory">*</span></label>
@@ -139,4 +165,74 @@
         </div>
     </div>
     <script type="text/javascript" src="Scripts/rm-status-confirm.js?v=<%= DateTime.Now.Ticks %>"></script>
+    <script type="text/javascript">
+        /* 04-11-2026 MUKESH BHAGAT: Berger Code = lazy-loading select2 (page method BergerCodeSearch of this page, 30 rows a page, raw material items only).
+           The chosen code is copied to hdnBergerCode, which is what the server reads on Submit. Ticking "Berger doesn't buy" clears and disables it. */
+        var BERGER_PAGE_SIZE = 30;
+        function bergerSearchTransport(params, success, failure) {
+            var term = (params.data && params.data.term) || '';
+            var page = (params.data && params.data.page) || 1;
+            var ctrl = (typeof AbortController === "function") ? new AbortController() : null;
+            var req = { status: 200, abort: function () { req.status = 0; if (ctrl) { ctrl.abort(); } } };
+            fetch('<%= ResolveUrl("~/OpcRawMaterialCreation.aspx") %>/BergerCodeSearch', {
+                method: 'POST', credentials: 'same-origin', signal: ctrl ? ctrl.signal : undefined,
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+                body: JSON.stringify({ term: term, page: page })
+            }).then(function (r) {
+                req.status = r.status;
+                if (!r.ok) { return r.text().then(function (t) { throw new Error('HTTP ' + r.status + ' ' + t.substring(0, 300)); }); }
+                return r.json();
+            }).then(function (j) { success(j.d || { items: [], total: 0 }); })
+              .catch(function (err) {
+                  if (req.status !== 0 && window.console) { console.error('Berger code search failed:', err); }
+                  try { failure(); } catch (e) { }
+              });
+            return req;
+        }
+        function toggleBergerNotBuy() {
+            var chk = document.getElementById('chkBergerNotBuy');
+            var sel = document.getElementById('ddlBergerCode');
+            var hdn = document.getElementById('hdnBergerCode');
+            if (!chk || !sel) { return; }
+            var $sel = window.jQuery(sel);
+            if (chk.checked) {
+                if (hdn) { hdn.value = ''; }
+                $sel.val(null).trigger('change.select2');
+                $sel.prop('disabled', true);
+            } else {
+                $sel.prop('disabled', false);
+            }
+        }
+        function initBergerCodeSelect2() {
+            if (!window.jQuery || !window.jQuery.fn.select2) { return; }
+            var el = document.getElementById('ddlBergerCode');
+            if (!el) { return; }
+            var $ddl = window.jQuery(el);
+            if ($ddl.data("select2")) { return; }
+            $ddl.select2({
+                width: "100%",
+                placeholder: "Type to search Berger code",
+                allowClear: true,
+                minimumInputLength: 0,
+                dropdownParent: window.jQuery(document.body),
+                ajax: {
+                    delay: 300,
+                    transport: bergerSearchTransport,
+                    data: function (params) { return { term: params.term || '', page: params.page || 1 }; },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return { results: data.items || [], pagination: { more: (params.page * BERGER_PAGE_SIZE) < (data.total || 0) } };
+                    },
+                    cache: true
+                }
+            }).on("change", function () {
+                var hdn = document.getElementById('hdnBergerCode');
+                if (hdn) { hdn.value = this.value || ""; }
+            });
+            var chk = document.getElementById('chkBergerNotBuy');
+            if (chk) { chk.addEventListener('click', toggleBergerNotBuy); }
+            toggleBergerNotBuy();
+        }
+        window.jQuery(document).ready(function () { setTimeout(initBergerCodeSelect2, 0); });
+    </script>
 </asp:Content>

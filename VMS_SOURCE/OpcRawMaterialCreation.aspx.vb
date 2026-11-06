@@ -13,12 +13,33 @@ Partial Class OpcRawMaterialCreation
             Page.MaintainScrollPositionOnPostBack = True
 
             If Not IsPostBack Then
-                ' 02-11-2026: packaging items are created by the vendor only - HO / others can create raw materials only
-                If Not IsUnitUser() Then
-                    Dim pkg As ListItem = ddlItemType.Items.FindByValue("PKG")
-                    If pkg IsNot Nothing Then ddlItemType.Items.Remove(pkg)
-                End If
+                ' 04-11-2026: no item type choice any more - a vendor (UNIT) login enters packaging only, HO enters raw materials only (for ALL vendors)
+                ddlItemType.ClearSelection()
+                ddlItemType.Items.FindByValue(If(IsUnitUser(), "PKG", "RM")).Selected = True
+                ddlItemType.Enabled = False
                 PopulateVendor()
+                pnlVendor.Visible = IsUnitUser()          ' HO does not pick a vendor
+                pnlScope.Visible = Not IsUnitUser()       ' "Applies to: All vendors"
+                pnlBerger.Visible = Not IsUnitUser()      ' Berger code + "Berger doesn't buy" - HO raw material only
+                pnlBergerTick.Visible = Not IsUnitUser()
+
+                ' 05-11-2026: say what is being entered - a vendor enters PACKAGING, HO enters RAW MATERIAL
+                If IsUnitUser() Then
+                    lblPageTitle.Text = "Packaging Creation"
+                    lblPageSub.Text = "Create your packaging items (for example 1 KG bag, 20 KG bucket)"
+                    lblPanelTitle.Text = "Packaging Item Details"
+                    lblPanelSub.Text = "You are entering a PACKAGING item. Enter the packaging name; the code (PKG...) is generated on save. HO links its Berger code."
+                    lblNameCaption.Text = "Packaging Name:"
+                    pnlType.Visible = True                ' read-only Type box: Packaging
+                    txtName_Placeholder()
+                Else
+                    lblPageTitle.Text = "Raw Material Creation"
+                    lblPageSub.Text = "Create raw materials for all vendors"
+                    lblPanelTitle.Text = "Raw Material Details"
+                    lblPanelSub.Text = "You are entering a RAW MATERIAL for all vendors. Enter the name and link its Berger code (or tick that Berger doesn't buy it). The code (MAN...) is generated on save."
+                    lblNameCaption.Text = "Raw Material Name:"
+                    txtRmName.Attributes("placeholder") = "e.g. CEMENT 43 GRADE"
+                End If
 
                 Dim rmCode As String = If(Request.QueryString(RmCodeKey), String.Empty).Trim()
                 If Not String.IsNullOrWhiteSpace(rmCode) Then
@@ -38,6 +59,10 @@ Partial Class OpcRawMaterialCreation
             Session(Constant.SessionKeys.ErrMessage) = ex.ToString()
             Response.Redirect("~/ExceptionPage.aspx")
         End Try
+    End Sub
+
+    Private Sub txtName_Placeholder()
+        txtRmName.Attributes("placeholder") = "e.g. 1 KG BAG"
     End Sub
 
     Private ReadOnly Property IsEditMode As Boolean
@@ -115,9 +140,10 @@ Partial Class OpcRawMaterialCreation
             Return
         End If
 
-        ' type of the saved item (fixed after creation); an HO login cannot open a packaging item - those belong to the vendor
+        ' type of the saved item (fixed after creation). An HO login cannot open a packaging item (it belongs to the vendor, HO links its Berger code on
+        ' Raw Material Code Linking); a vendor login cannot open a raw material (raw materials are entered by HO) - 04-11-2026
         Dim savedType As String = If(row.Table.Columns.Contains("rmm_item_type"), Convert.ToString(row("rmm_item_type")).Trim().ToUpperInvariant(), "RM")
-        If savedType = "PKG" AndAlso Not IsUnitUser() Then
+        If (savedType = "PKG" AndAlso Not IsUnitUser()) OrElse (savedType <> "PKG" AndAlso IsUnitUser()) Then
             Response.Redirect("~/OpcRawMaterialCreationList.aspx", False)
             Context.ApplicationInstance.CompleteRequest()
             Return
@@ -131,16 +157,34 @@ Partial Class OpcRawMaterialCreation
         txtRmCode.Text = Convert.ToString(row("rmm_code")).Trim()
         txtRmName.Text = Convert.ToString(row("rmm_material_name")).Trim()
 
-        Dim vendorItem As ListItem = ddlVendor.Items.FindByValue(unitCode)
-        If vendorItem Is Nothing AndAlso Not String.IsNullOrWhiteSpace(unitCode) Then
-            vendorItem = New ListItem(Convert.ToString(row("vendor_name")).Trim(), unitCode)
-            ddlVendor.Items.Add(vendorItem)
+        ' scope: "All vendors" (entered by HO for everybody) or one vendor (old vendor-wise raw material / the vendor's packaging item)
+        If String.Equals(unitCode, AllVendors, StringComparison.OrdinalIgnoreCase) Then
+            pnlVendor.Visible = False
+            pnlScope.Visible = True
+            txtScope.Text = "All vendors"
+        Else
+            Dim vendorItem As ListItem = ddlVendor.Items.FindByValue(unitCode)
+            If vendorItem Is Nothing AndAlso Not String.IsNullOrWhiteSpace(unitCode) Then
+                vendorItem = New ListItem(Convert.ToString(row("vendor_name")).Trim(), unitCode)
+                ddlVendor.Items.Add(vendorItem)
+            End If
+            If vendorItem IsNot Nothing Then
+                ddlVendor.ClearSelection()
+                vendorItem.Selected = True
+            End If
+            ddlVendor.Enabled = False
+            If Not IsUnitUser() Then          ' HO opening an old vendor-wise raw material: show the vendor read-only
+                pnlVendor.Visible = True
+                pnlScope.Visible = False
+            End If
         End If
-        If vendorItem IsNot Nothing Then
-            ddlVendor.ClearSelection()
-            vendorItem.Selected = True
+
+        ' Berger link of the raw material (HO): code, or "Berger doesn't buy" (flag 'N' - same values as Raw Material Code Linking)
+        If savedType <> "PKG" Then
+            Dim flag As String = If(row.Table.Columns.Contains("berger_not_sale_flag"), Convert.ToString(row("berger_not_sale_flag")).Trim(), String.Empty)
+            chkBergerNotBuy.Checked = flag.Equals("N", StringComparison.OrdinalIgnoreCase)
+            hdnBergerCode.Value = If(chkBergerNotBuy.Checked OrElse Not row.Table.Columns.Contains("berger_code"), String.Empty, Convert.ToString(row("berger_code")).Trim())
         End If
-        ddlVendor.Enabled = False
 
         Dim activeValue As String = Convert.ToString(row("active")).Trim().ToUpper()
         rbtnActiveY.Checked = (activeValue <> "N")
@@ -178,11 +222,14 @@ Partial Class OpcRawMaterialCreation
         RmActionPopup.Show(Me, message, isSuccess)
     End Sub
 
+    'owner of a NEW item: the vendor's own unit for a vendor login; "ALL" (every vendor) for the raw materials HO enters
+    Private Const AllVendors As String = "ALL"
+
     Private Function GetSelectedUnitCode() As String
         If IsUnitUser() Then
             Return OwnUnitCode()
         End If
-        Return Convert.ToString(ddlVendor.SelectedValue).Trim()
+        Return AllVendors
     End Function
 
     Private Sub SetEditFieldsVisible(ByVal visible As Boolean)
@@ -190,8 +237,23 @@ Partial Class OpcRawMaterialCreation
         pnlActive.Visible = visible
     End Sub
 
+    'vendor login = packaging, HO = raw material (decided by the login, not by anything posted)
     Private Function GetSelectedItemType() As String
-        Return If(String.Equals(Convert.ToString(ddlItemType.SelectedValue).Trim(), "PKG", StringComparison.OrdinalIgnoreCase), "PKG", "RM")
+        Return If(IsUnitUser(), "PKG", "RM")
+    End Function
+
+    Private Function BergerNotBuy() As Boolean
+        Return Not IsUnitUser() AndAlso chkBergerNotBuy.Checked
+    End Function
+
+    Private Function SelectedBergerCode() As String
+        If IsUnitUser() OrElse chkBergerNotBuy.Checked Then Return String.Empty
+        Return Convert.ToString(hdnBergerCode.Value).Trim()
+    End Function
+
+    ' Berger link of an HO raw material is saved on a new item and when HO edits one (not for a vendor's packaging)
+    Private Function SavesBerger() As Boolean
+        Return Not IsUnitUser() AndAlso GetSelectedItemType() = "RM"
     End Function
 
     Private Function GetSelectedActiveStatus() As String
@@ -210,8 +272,8 @@ Partial Class OpcRawMaterialCreation
         Dim unitCode As String = GetSelectedUnitCode()
         Dim name As String = Convert.ToString(txtRmName.Text).Trim()
 
-        If String.IsNullOrWhiteSpace(unitCode) Then
-            SetFieldError(ddlVendor, valVendor, "Please select a vendor.")
+        If IsUnitUser() AndAlso String.IsNullOrWhiteSpace(unitCode) Then
+            SetFieldError(ddlVendor, valVendor, "Your vendor could not be identified. Please log in again.")
             isValid = False
         End If
 
@@ -220,13 +282,6 @@ Partial Class OpcRawMaterialCreation
             isValid = False
         ElseIf name.Length < 3 Then
             SetFieldError(txtRmName, valRmName, "Name must be at least 3 characters.")
-            isValid = False
-        End If
-
-        ' packaging is the vendor's entry only (the list the dropdown offers is already limited; this stops a posted value)
-        If Not IsEditMode AndAlso GetSelectedItemType() = "PKG" AndAlso Not IsUnitUser() Then
-            SetFieldError(ddlItemType, Nothing, "")
-            ShowMessage("Packaging items can be created by the vendor only.", False)
             isValid = False
         End If
 
@@ -244,9 +299,9 @@ Partial Class OpcRawMaterialCreation
             Dim obj As New OPC_VendorClass()
             Dim ds As DataSet
             If IsEditMode Then
-                ds = obj.UpdateOpcRawMaterialCreation(EditRmCode, Convert.ToString(txtRmName.Text).Trim(), GetSelectedActiveStatus(), userInfo.userIDEntity)
+                ds = obj.UpdateOpcRawMaterialCreation(EditRmCode, Convert.ToString(txtRmName.Text).Trim(), GetSelectedActiveStatus(), userInfo.userIDEntity, SavesBerger(), SelectedBergerCode(), BergerNotBuy())
             Else
-                ds = obj.InsertOpcRawMaterialCreation(Convert.ToString(txtRmName.Text).Trim(), GetSelectedUnitCode(), userInfo.userIDEntity, GetSelectedItemType())
+                ds = obj.InsertOpcRawMaterialCreation(Convert.ToString(txtRmName.Text).Trim(), GetSelectedUnitCode(), userInfo.userIDEntity, GetSelectedItemType(), SelectedBergerCode(), BergerNotBuy())
             End If
 
             If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing AndAlso ds.Tables(0).Rows.Count > 0 Then
@@ -268,6 +323,8 @@ Partial Class OpcRawMaterialCreation
                         End If
                         rbtnActiveY.Checked = True
                         rbtnActiveN.Checked = False
+                        hdnBergerCode.Value = String.Empty
+                        chkBergerNotBuy.Checked = False
                     End If
                     If Not String.IsNullOrWhiteSpace(savedCode) AndAlso message.IndexOf(savedCode, StringComparison.OrdinalIgnoreCase) < 0 Then
                         message = message & " Code: " & savedCode
@@ -302,8 +359,54 @@ Partial Class OpcRawMaterialCreation
             End If
             rbtnActiveY.Checked = True
             rbtnActiveN.Checked = False
+            hdnBergerCode.Value = String.Empty
+            chkBergerNotBuy.Checked = False
         End If
     End Sub
+
+    ' The Berger <select> is written here (after the postback events) with only the saved option; select2 loads the rest on demand.
+    Protected Sub Page_PreRender(ByVal sender As Object, ByVal e As EventArgs) Handles Me.PreRender
+        If Not pnlBerger.Visible Then Return
+        Dim code As String = If(chkBergerNotBuy.Checked, String.Empty, Convert.ToString(hdnBergerCode.Value).Trim())
+        Dim label As String = code
+        If code <> String.Empty Then
+            Try
+                Dim ds As DataSet = New OPC_VendorClass().GetRmBergerItemNames(code)
+                If ds IsNot Nothing AndAlso ds.Tables.Count > 0 Then
+                    For Each r As DataRow In ds.Tables(0).Rows
+                        If String.Equals(Convert.ToString(r("prd_code")).Trim(), code, StringComparison.OrdinalIgnoreCase) Then label = Convert.ToString(r("prd_name")).Trim()
+                    Next
+                End If
+            Catch
+            End Try
+        End If
+        Dim sb As New System.Text.StringBuilder()
+        sb.Append("<select id=""ddlBergerCode"" class=""form-control""").Append(If(chkBergerNotBuy.Checked, " disabled=""disabled""", "")).Append("><option value=""""></option>")
+        If code <> String.Empty Then sb.Append("<option value=""").Append(Server.HtmlEncode(code)).Append(""" selected=""selected"">").Append(Server.HtmlEncode(label)).Append("</option>")
+        sb.Append("</select>")
+        litBergerSelect.Text = sb.ToString()
+    End Sub
+
+    ''' <summary>Page method of the lazy Berger Code dropdown: one page (30 rows) of raw material items of the Berger item master whose code or description contains term.
+    ''' Returns { items: [{id, text}], total }. Author: MUKESH BHAGAT 04-11-2026.</summary>
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod(EnableSession:=True)>
+    Public Shared Function BergerCodeSearch(ByVal term As String, ByVal page As Integer) As Object
+        Dim items As New List(Of Object)()
+        Dim total As Integer = 0
+        If HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.items = items, .total = 0}
+        Try
+            Dim ds As DataSet = New OPC_VendorClass().SearchRmBergerItems(If(term, "").Trim(), Math.Max(page, 1) - 1, 30, "RM")
+            If ds IsNot Nothing AndAlso ds.Tables.Count > 0 Then
+                For Each r As DataRow In ds.Tables(0).Rows
+                    items.Add(New With {.id = Convert.ToString(r("prd_code")).Trim(), .text = Convert.ToString(r("prd_name")).Trim()})
+                    If total = 0 Then Integer.TryParse(Convert.ToString(r("total_rows")), total)
+                Next
+            End If
+        Catch
+        End Try
+        Return New With {.items = items, .total = total}
+    End Function
 
     Protected Sub btnBack_Click(ByVal sender As Object, ByVal e As EventArgs)
         Response.Redirect("~/OpcRawMaterialCreationList.aspx")

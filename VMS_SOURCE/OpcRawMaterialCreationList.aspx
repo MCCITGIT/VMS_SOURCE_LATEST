@@ -61,9 +61,15 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
+                <asp:HiddenField ID="hdnRmHasData" runat="server" Value="0" />
+                <asp:HiddenField ID="hdnRmPageSize" runat="server" Value="10" />
+                <asp:HiddenField ID="hdnRmUnit" runat="server" />
+                <asp:HiddenField ID="hdnRmSearch" runat="server" />
+                <asp:HiddenField ID="hdnRmType" runat="server" />
+                <asp:HiddenField ID="hdnRmIsUnit" runat="server" Value="0" />
+                <div class="table-responsive orm-grid-scroll">
                     <asp:GridView BorderWidth="1" CssClass="table table-hover upgradDataGrid" CellSpacing="0" CellPadding="0"
-                        ID="gvRmList" runat="server" AutoGenerateColumns="false" AllowPaging="true" PageSize="10"
+                        ID="gvRmList" runat="server" AutoGenerateColumns="false" AllowPaging="false" PageSize="10"
                         ShowFooter="false" GridLines="both" EmptyDataText="No records found"
                         PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
                         PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last"
@@ -114,6 +120,15 @@
                                 <ItemStyle HorizontalAlign="Left" VerticalAlign="Middle" Width="22%" />
                             </asp:TemplateField>
 
+                            <asp:TemplateField HeaderText="Berger Code">
+                                <ItemTemplate>
+                                    <%-- 04-11-2026: the linked Berger code, or a note when Berger does not buy the product (flag 'N') --%>
+                                    <asp:Label ID="lblBerger" runat="server" Text='<%# If(Convert.ToString(Eval("berger_not_sale_flag")).Trim().ToUpper() = "N", "Berger does not buy", Convert.ToString(Eval("berger_code")).Trim()) %>'></asp:Label>
+                                </ItemTemplate>
+                                <HeaderStyle HorizontalAlign="Center" VerticalAlign="Middle" />
+                                <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="14%" />
+                            </asp:TemplateField>
+
                             <asp:TemplateField HeaderText="Status">
                                 <ItemTemplate>
                                     <asp:Label ID="lblStatus" runat="server" Text='<%# Bind("rmm_status") %>'></asp:Label>
@@ -145,4 +160,122 @@
             </div>
         </div>
     </div>
+    <style type="text/css">
+        .orm-grid-scroll,
+        .orm-grid-scroll table,
+        .orm-grid-scroll tr,
+        .orm-grid-scroll td {
+            overflow-anchor: none;
+        }
+        .orm-grid-scroll {
+            max-height: 440px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+    </style>
+    <script type="text/javascript">
+        (function () {
+            var gridSel = '#<%= gvRmList.ClientID %>';
+            var pageIndex = 0, pageSize = 10, total = 0, loading = false, noMore = false, seq = 0;
+            var filters = { unit: '', search: '', type: '' };
+            var align = ['center', 'center', 'center', 'left', 'left', 'center', 'center', 'center', 'center'];
+
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function dataRows() { return $(gridSel + ' tr.tlrowlight').not('.orm-skel'); }
+            function scrollBox() { return $(gridSel).closest('.orm-grid-scroll'); }
+            function capture() {
+                filters.unit = $('#<%= hdnRmUnit.ClientID %>').val() || '';
+                filters.search = $('#<%= hdnRmSearch.ClientID %>').val() || '';
+                filters.type = $('#<%= hdnRmType.ClientID %>').val() || '';
+                var size = parseInt($('#<%= hdnRmPageSize.ClientID %>').val(), 10);
+                pageSize = size > 0 ? size : 10;
+                total = 0;
+            }
+            function skel() {
+                var widths = ['24px', '70px', '60px', '80%', '70%', '70px', '60px', '56px', '18px'];
+                var cells = '';
+                for (var i = 0; i < widths.length; i++) cells += '<td style="text-align:' + align[i] + '"><span class="grid-skel-bar" style="width:' + widths[i] + '"></span></td>';
+                return '<tr class="tlrowlight orm-skel">' + cells + '</tr>';
+            }
+            function place(html) {
+                var $rows = $('<table><tbody>' + html + '</tbody></table>').find('tr');
+                var $grid = $(gridSel);
+                var $body = $grid.children('tbody');
+                if (!$body.length) $body = $grid.find('tbody').first();
+                if ($body.length) $body.append($rows);
+                else $grid.append($rows);
+            }
+            function loadNext() {
+                if (loading || noMore) return;
+                if ($('#<%= hdnRmHasData.ClientID %>').val() !== '1') return;
+                if (!dataRows().length) return;
+                if (total && ((pageIndex + 1) * pageSize >= total || dataRows().length >= total)) { noMore = true; return; }
+                loading = true;
+                pageIndex++;
+                var token = ++seq;
+                place(skel());
+                if (!window.PageMethods || typeof PageMethods.GetMoreRawMaterials !== 'function') {
+                    $(gridSel + ' tr.orm-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                    return;
+                }
+                PageMethods.GetMoreRawMaterials(pageIndex, pageSize, filters.unit, filters.search, filters.type, function (res) {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.orm-skel').remove();
+                    loading = false;
+                    if (!res || !res.rows) { noMore = true; return; }
+                    total = res.total || 0;
+                    if (!res.rows.length || res.rows.length < pageSize || (pageIndex + 1) * pageSize >= total) noMore = true;
+                    var html = '';
+                    for (var i = 0; i < res.rows.length; i++) {
+                        var r = res.rows[i];
+                        var edit = r.canEdit ? '<div style="display:flex;align-items:center;justify-content:center"><a href="OpcRawMaterialCreation.aspx?RmCode=' + encodeURIComponent(r.code || '') + '" title="Edit"><i class="fa fa-edit"></i></a></div>' : '';
+                        var vals = [esc(r.serial), esc(r.typeName), esc(r.code), esc(r.name), esc(r.vendor), esc(r.berger), esc(r.status), '<span class="' + esc(r.activeClass) + '">' + esc(r.activeText) + '</span>', edit];
+                        html += '<tr class="tlrowlight">';
+                        for (var c = 0; c < vals.length; c++) html += '<td style="text-align:' + align[c] + '">' + vals[c] + '</td>';
+                        html += '</tr>';
+                    }
+                    if (html) place(html);
+                    if (!noMore && scrolledNear()) loadNext();
+                }, function () {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.orm-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                });
+            }
+            function scrolledNear() {
+                var box = scrollBox()[0];
+                if (!box) return false;
+                if (box.scrollHeight > box.clientHeight + 2) return box.scrollTop + box.clientHeight >= box.scrollHeight - 50;
+                var rect = box.getBoundingClientRect();
+                return rect.bottom <= window.innerHeight + 50;
+            }
+            function bind() {
+                pageIndex = 0; noMore = false; loading = false; seq++;
+                $(gridSel + ' tr.orm-skel').remove();
+                capture();
+                setTimeout(function () { if (scrolledNear()) loadNext(); }, 0);
+            }
+            if (!window.__ormScroll) {
+                window.__ormScroll = true;
+                document.addEventListener('scroll', function (e) {
+                    var box = scrollBox()[0];
+                    if (!box) return;
+                    var t = e.target;
+                    if (t !== box && t !== document && t !== document.documentElement && t !== document.body && !(t.contains && (t.contains(box) || box.contains(t)))) return;
+                    if (scrolledNear()) loadNext();
+                }, true);
+            }
+            if (window.Sys && Sys.Application) Sys.Application.add_load(bind);
+            else $(bind);
+        })();
+    </script>
 </asp:Content>

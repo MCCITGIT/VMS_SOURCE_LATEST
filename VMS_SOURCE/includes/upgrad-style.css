@@ -1156,7 +1156,7 @@ body {
         box-shadow: inset 3px 0 0 0 #dde7ef;
     }
     /* Dropdown caret */
-    .sideNavBarView ul li a .fa {
+    .sideNavBarView ul li a .fa, .sideNavBarView ul li a .fas {
         margin-right: 5px;
         width: 20px;
         text-align: left;

@@ -51,12 +51,15 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="table-responsive rm-grid-scroll">
+                <div class="table-responsive rm-grid-scroll pol-grid-scroll">
                     <asp:UpdatePanel ID="UpdatePanel1" runat="server">
                         <ContentTemplate>
+                            <asp:HiddenField ID="hdnPolHasData" runat="server" Value="0" />
+                            <asp:HiddenField ID="hdnPolPageSize" runat="server" Value="10" />
+                            <asp:HiddenField ID="hdnPolVendor" runat="server" />
                             <asp:GridView ID="gvPoList" runat="server" AutoGenerateColumns="False"
                                 CssClass="table table-hover upgradDataGrid" EmptyDataText="No records found"
-                                AllowPaging="true" PageSize="10" OnPageIndexChanging="gvPoList_PageIndexChanging">
+                                AllowPaging="false" PageSize="10">
                                 <RowStyle CssClass="tlrowlight" />
                                 <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
                                 <HeaderStyle CssClass="headerGrid" />
@@ -144,5 +147,120 @@
             </div>
         </div>
     </div>
+    <style type="text/css">
+        .pol-grid-scroll,
+        .pol-grid-scroll table,
+        .pol-grid-scroll tr,
+        .pol-grid-scroll td {
+            overflow-anchor: none;
+        }
+
+        .pol-grid-scroll {
+            overscroll-behavior: contain;
+        }
+    </style>
+    <script type="text/javascript">
+        (function () {
+            var gridSel = '#<%= gvPoList.ClientID %>';
+            var pageIndex = 0, pageSize = 10, total = 0, loading = false, noMore = false, seq = 0;
+            var vendor = '';
+            var align = ['center', 'center', 'left', 'center', 'center', 'center', 'center'];
+
+            function esc(v) {
+                return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+            function dataRows() { return $(gridSel + ' tr.tlrowlight').not('.pol-skel'); }
+            function scrollBox() { return $(gridSel).closest('.pol-grid-scroll'); }
+            function capture() {
+                vendor = $('#<%= hdnPolVendor.ClientID %>').val() || '';
+                var size = parseInt($('#<%= hdnPolPageSize.ClientID %>').val(), 10);
+                pageSize = size > 0 ? size : 10;
+                total = 0;
+            }
+            function skel() {
+                var widths = ['24px', '70px', '70%', '60px', '48px', '60px', '16px'];
+                var cells = '';
+                for (var i = 0; i < widths.length; i++) cells += '<td style="text-align:' + align[i] + '"><span class="grid-skel-bar" style="width:' + widths[i] + '"></span></td>';
+                return '<tr class="tlrowlight pol-skel">' + cells + '</tr>';
+            }
+            function place(html) {
+                var $rows = $('<table><tbody>' + html + '</tbody></table>').find('tr');
+                var $grid = $(gridSel);
+                var $body = $grid.children('tbody');
+                if (!$body.length) $body = $grid.find('tbody').first();
+                if ($body.length) $body.append($rows);
+                else $grid.append($rows);
+            }
+            function loadNext() {
+                if (loading || noMore) return;
+                if ($('#<%= hdnPolHasData.ClientID %>').val() !== '1') return;
+                if (!dataRows().length) return;
+                if (total && ((pageIndex + 1) * pageSize >= total || dataRows().length >= total)) { noMore = true; return; }
+                loading = true;
+                pageIndex++;
+                var token = ++seq;
+                place(skel());
+                if (!window.PageMethods || typeof PageMethods.GetMoreRawMaterialPos !== 'function') {
+                    $(gridSel + ' tr.pol-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                    return;
+                }
+                PageMethods.GetMoreRawMaterialPos(pageIndex, pageSize, vendor, function (res) {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.pol-skel').remove();
+                    loading = false;
+                    if (!res || !res.rows) { noMore = true; return; }
+                    total = res.total || 0;
+                    if (!res.rows.length || res.rows.length < pageSize || (pageIndex + 1) * pageSize >= total) noMore = true;
+                    var html = '';
+                    for (var i = 0; i < res.rows.length; i++) {
+                        var r = res.rows[i];
+                        var pdf = '<a href="RawMaterialPoPdf.aspx?po=' + encodeURIComponent(r.pdfPo || '') + '" target="_blank" class="rm-btn-icon text-primary" title="Preview PDF"><i class="fas fa-file-pdf"></i></a>';
+                        var vals = [esc(r.serial), esc(r.poNo), esc(r.vendorName), esc(r.vendorCode), esc(r.qty), esc(r.amount), pdf];
+                        html += '<tr class="tlrowlight">';
+                        for (var c = 0; c < vals.length; c++) html += '<td style="text-align:' + align[c] + '">' + vals[c] + '</td>';
+                        html += '</tr>';
+                    }
+                    if (html) place(html);
+                    if (!noMore && scrolledNear()) loadNext();
+                }, function () {
+                    if (token !== seq) return;
+                    $(gridSel + ' tr.pol-skel').remove();
+                    loading = false;
+                    pageIndex--;
+                    noMore = true;
+                });
+            }
+            function scrolledNear() {
+                var box = scrollBox()[0];
+                if (!box) return false;
+                if (box.scrollHeight > box.clientHeight + 2) return box.scrollTop + box.clientHeight >= box.scrollHeight - 50;
+                var rect = box.getBoundingClientRect();
+                return rect.bottom <= window.innerHeight + 50;
+            }
+            function bind() {
+                pageIndex = 0; noMore = false; loading = false; seq++;
+                $(gridSel + ' tr.pol-skel').remove();
+                capture();
+                setTimeout(function () { if (scrolledNear()) loadNext(); }, 0);
+            }
+            if (!window.__polScroll) {
+                window.__polScroll = true;
+                document.addEventListener('scroll', function (e) {
+                    var box = scrollBox()[0];
+                    if (!box) return;
+                    var t = e.target;
+                    if (t !== box && t !== document && t !== document.documentElement && t !== document.body && !(t.contains && (t.contains(box) || box.contains(t)))) return;
+                    if (scrolledNear()) loadNext();
+                }, true);
+            }
+            if (window.Sys && Sys.Application) Sys.Application.add_load(bind);
+            else $(bind);
+        })();
+    </script>
 </asp:Content>
 
