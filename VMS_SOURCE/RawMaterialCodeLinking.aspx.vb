@@ -147,13 +147,104 @@ Partial Class RawMaterialCodeLinking
         Dim status As String = ddlStatus.SelectedValue
         Dim ds As DataSet = obj.GetRawmaterialBergerCodeLinking(rmName, bergerCode, status, ddlItemType.SelectedValue)
 
-        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 Then
-            LoadSavedBergerNames(ds.Tables(0))
-            RmGridHelper.BindPaged(gvrawMatDetails, ds.Tables(0))
+        gvrawMatDetails.PageIndex = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing AndAlso ds.Tables(0).Rows.Count > 0 Then
+            If gvrawMatDetails.PageSize <= 0 Then gvrawMatDetails.PageSize = 10
+            Dim page As DataTable = FirstLinkPage(ds.Tables(0))
+            LoadSavedBergerNames(page)
+            RmGridHelper.BindPaged(gvrawMatDetails, page)
+            hdnRmlHasData.Value = "1"
         Else
             RmGridHelper.BindPaged(gvrawMatDetails, Nothing)
+            hdnRmlHasData.Value = "0"
         End If
+        hdnRmlPageSize.Value = If(gvrawMatDetails.PageSize > 0, gvrawMatDetails.PageSize, 10).ToString()
+        hdnRmlName.Value = rmName
+        hdnRmlBerger.Value = bergerCode
+        hdnRmlStatus.Value = status
+        hdnRmlType.Value = ddlItemType.SelectedValue
+        hdnRmlExtra.Value = String.Empty
     End Sub
+
+    Private Function FirstLinkPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvrawMatDetails.PageSize
+        If pageSize <= 0 Then pageSize = 10
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod()>
+    <System.Web.Services.WebMethod(EnableSession:=True)>
+    Public Shared Function GetMoreRawMaterialLinks(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal rmName As String, ByVal bergerCode As String, ByVal status As String, ByVal itemType As String) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        If pageSize <= 0 Then pageSize = 10
+        If pageIndex < 0 Then pageIndex = 0
+        Dim ds As DataSet = New OPC_VendorClass().GetRawmaterialBergerCodeLinking(If(rmName, String.Empty), If(bergerCode, String.Empty), If(status, String.Empty), If(itemType, String.Empty))
+        Dim total As Integer = 0
+        Dim table As DataTable = RmGridHelper.GetTable(ds)
+        If table IsNot Nothing Then
+            total = table.Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim codes As New List(Of String)
+            Dim i As Integer
+            For i = start To last
+                Dim code As String = ColumnValue(table.Rows(i), "BergerCode", "Berger_Code", "berger_Code", "berger_code")
+                If code <> "" AndAlso Not codes.Contains(code) Then codes.Add(code)
+            Next
+            Dim labels As Dictionary(Of String, String) = BergerLabels(codes)
+            For i = start To last
+                Dim r As DataRow = table.Rows(i)
+                Dim savedCode As String = ColumnValue(r, "BergerCode", "Berger_Code", "berger_Code", "berger_code")
+                Dim label As String = savedCode
+                If savedCode <> "" AndAlso labels.ContainsKey(savedCode) Then label = labels(savedCode)
+                Dim typeCode As String = ColumnValue(r, "item_type").ToUpperInvariant()
+                Dim notSold As Boolean = ColumnValue(r, "berger_not_sale_flag", "rmm_berger_not_sale_flag").Equals("N", StringComparison.OrdinalIgnoreCase)
+                rows.Add(New With {
+                    .serial = (i + 1).ToString(),
+                    .itemType = If(typeCode = "PKG", "PKG", "RM"),
+                    .typeName = If(typeCode = "PKG", "Packaging", "Raw Material"),
+                    .code = ColumnValue(r, "Raw_Mat_Code"),
+                    .name = ColumnValue(r, "Raw_Mat_Name"),
+                    .id = ColumnValue(r, "id", "Id", "link_id"),
+                    .bergerCode = savedCode,
+                    .bergerLabel = label,
+                    .notSold = notSold
+                })
+            Next
+        End If
+        Return New With {.rows = rows, .total = total}
+    End Function
+
+    Private Shared Function ColumnValue(ByVal row As DataRow, ByVal ParamArray columnNames As String()) As String
+        For Each columnName As String In columnNames
+            If row.Table.Columns.Contains(columnName) AndAlso Not IsDBNull(row(columnName)) Then
+                Return Convert.ToString(row(columnName)).Trim()
+            End If
+        Next
+        Return String.Empty
+    End Function
+
+    Private Shared Function BergerLabels(ByVal codes As List(Of String)) As Dictionary(Of String, String)
+        Dim map As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
+        If codes Is Nothing OrElse codes.Count = 0 Then Return map
+        Try
+            Dim ds As DataSet = New OPC_VendorClass().GetRmBergerItemNames(String.Join(",", codes.ToArray()))
+            If ds IsNot Nothing AndAlso ds.Tables.Count > 0 Then
+                For Each r As DataRow In ds.Tables(0).Rows
+                    map(Convert.ToString(r("prd_code")).Trim()) = Convert.ToString(r("prd_name")).Trim()
+                Next
+            End If
+        Catch
+        End Try
+        Return map
+    End Function
 
     ''' <summary>One SP call for the labels of every Berger code already saved on the rows about to be shown (lazy dropdown shows only those).
     ''' Modified-by MUKESH BHAGAT 30-10-2026: replaces the full item list that used to be loaded into every row.</summary>
@@ -330,6 +421,8 @@ Partial Class RawMaterialCodeLinking
             End If
         Next
 
+        If Not hasValue AndAlso ExtraLinksHaveValue() Then hasValue = True
+
         If Not hasValue Then
             valGrid.Text = "Please select Berger code for at least one raw material."
             Return False
@@ -425,8 +518,61 @@ Partial Class RawMaterialCodeLinking
             dtDetails.Rows.Add(dr)
         Next
 
+        AddExtraLinks(dtDetails)
         dtDetails.AcceptChanges()
         Return dtDetails
+    End Function
+
+    Private Function ExtraLinksHaveValue() As Boolean
+        For Each item As Dictionary(Of String, Object) In ReadExtraLinks()
+            If DictFlag(item, "notSold") Then Return True
+            If DictText(item, "berger") <> "" Then Return True
+        Next
+        Return False
+    End Function
+
+    Private Sub AddExtraLinks(ByVal dtDetails As DataTable)
+        For Each item As Dictionary(Of String, Object) In ReadExtraLinks()
+            Dim rawMat As String = DictText(item, "raw")
+            If rawMat = String.Empty Then Continue For
+            Dim notSold As Boolean = DictFlag(item, "notSold")
+            Dim berger As String = DictText(item, "berger")
+            If Not notSold AndAlso berger = String.Empty Then Continue For
+            Dim dr As DataRow = dtDetails.NewRow()
+            dr("id") = DictText(item, "id")
+            dr("raw_mat_code") = rawMat
+            If notSold Then
+                dr("berger_code") = DBNull.Value
+                dr("berger_not_sale_flag") = "N"
+            Else
+                dr("berger_code") = berger
+                dr("berger_not_sale_flag") = "Y"
+            End If
+            dtDetails.Rows.Add(dr)
+        Next
+    End Sub
+
+    Private Function ReadExtraLinks() As List(Of Dictionary(Of String, Object))
+        Dim empty As New List(Of Dictionary(Of String, Object))
+        If String.IsNullOrWhiteSpace(hdnRmlExtra.Value) Then Return empty
+        Try
+            Dim parsed As List(Of Dictionary(Of String, Object)) = New System.Web.Script.Serialization.JavaScriptSerializer().Deserialize(Of List(Of Dictionary(Of String, Object)))(hdnRmlExtra.Value)
+            If parsed Is Nothing Then Return empty
+            Return parsed
+        Catch
+            Return empty
+        End Try
+    End Function
+
+    Private Shared Function DictText(ByVal item As Dictionary(Of String, Object), ByVal key As String) As String
+        If item Is Nothing OrElse Not item.ContainsKey(key) OrElse item(key) Is Nothing Then Return String.Empty
+        Return Convert.ToString(item(key)).Trim()
+    End Function
+
+    Private Shared Function DictFlag(ByVal item As Dictionary(Of String, Object), ByVal key As String) As Boolean
+        If item Is Nothing OrElse Not item.ContainsKey(key) OrElse item(key) Is Nothing Then Return False
+        If TypeOf item(key) Is Boolean Then Return CBool(item(key))
+        Return String.Equals(Convert.ToString(item(key)), "true", StringComparison.OrdinalIgnoreCase)
     End Function
 
     Protected Sub btnReset_Click(sender As Object, e As EventArgs)

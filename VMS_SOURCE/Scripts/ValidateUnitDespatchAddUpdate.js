@@ -104,17 +104,20 @@ function validateGrid() {
         let hdnSkuRate = Grid.rows[rowno].cells[1].children[7].id;
         let hdnSkuGST = Grid.rows[rowno].cells[1].children[8].id;
             if (document.getElementById(chk).checked) {
-                if (ValidateRequired(txt, "Please Enter This Despatch")) {
-
+                // Modified-by MUKESH BHAGAT on 12-11-2026 : the mandatory check on "This Despatch" (quantity) and
+                // "Lot No" for each ticked SKU is switched OFF for now (commented, not removed). The total rate
+                // is still worked out below, and a blank quantity counts as 0 so it cannot turn the total into NaN.
+                //if (ValidateRequired(txt, "Please Enter This Despatch")) {
+                {
                     let qty = document.getElementById(txt).value;
                     let rate = document.getElementById(hdnSkuRate).value;
                     let gst = document.getElementById(hdnSkuGST).value;
-                    let totalAmt = parseFloat(qty) * parseFloat(rate);
-                   
-                    GridTotalRate = parseFloat(GridTotalRate) + parseFloat(totalAmt + (totalAmt * (parseFloat(gst) / 100)))
+                    let totalAmt = (parseFloat(qty) || 0) * (parseFloat(rate) || 0);
+
+                    GridTotalRate = parseFloat(GridTotalRate) + parseFloat(totalAmt + (totalAmt * ((parseFloat(gst) || 0) / 100)))
                 }
-                ValidateRequired(txtLot, "Invalid LOT")
-            check=true 
+                //ValidateRequired(txtLot, "Invalid LOT")
+            check=true
         }
 
     }

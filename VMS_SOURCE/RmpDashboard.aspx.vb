@@ -98,7 +98,7 @@ Partial Class RmpDashboard
         'Select current year/month for both users
         SelectCurrentYearMonth()
 
-        If String.Equals(userInfo.userDepartmentEntity.ToString(), Constant.Common.userDept, StringComparison.OrdinalIgnoreCase) Then
+        If CanPickVendor() Then
             'monthDiv.Visible = False
             'divYear.Visible = False
             'divDuration.Visible = False
@@ -194,7 +194,8 @@ Partial Class RmpDashboard
             Dim chartData As New List(Of Object)()
             For Each row As DataRow In ds.Tables(0).Rows
                 chartData.Add(New With {
-                .RawMaterialCode = row("fd_rawmaterial_code").ToString(),
+                .RawMaterialCode = If(ds.Tables(0).Columns.Contains("rawmaterial_name") AndAlso Not IsDBNull(row("rawmaterial_name")),
+                    row("rawmaterial_name").ToString(), row("fd_rawmaterial_code").ToString()),
                 .PurchasedQty = If(
                     IsDBNull(row("total_recv_qty")),
                     0D,
@@ -284,14 +285,23 @@ Partial Class RmpDashboard
 
     Private Function GetSelectedVendorCode() As String
 
-        'For Sysadmin / Unit login
-        If String.Equals(userInfo.userDepartmentEntity.ToString(), Constant.Common.userDept, StringComparison.OrdinalIgnoreCase) Then
+        'For Sysadmin / Head office login
+        If CanPickVendor() Then
             Return ddlvendor.SelectedValue
         End If
 
         'For Vendor login
         Return userInfo.userBranchEntity
 
+    End Function
+
+    ' Modified-by MUKESH BHAGAT on 11-11-2026 : head office users (group HO) choose a vendor like the system administrator;
+    ' before, they were treated as a vendor and the page used their branch code (009) as the vendor.
+    Private Function CanPickVendor() As Boolean
+        If String.Equals(userInfo.userDepartmentEntity.ToString(), Constant.Common.userDept, StringComparison.OrdinalIgnoreCase) Then
+            Return True
+        End If
+        Return String.Equals(userInfo.userGroupCodeEntity, "HO", StringComparison.OrdinalIgnoreCase)
     End Function
 
     Protected Function GetStatusCss(status As String) As String

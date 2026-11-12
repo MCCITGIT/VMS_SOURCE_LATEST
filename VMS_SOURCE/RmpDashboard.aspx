@@ -390,7 +390,7 @@
                                             <HeaderStyle HorizontalAlign="Right" />
                                             <ItemStyle HorizontalAlign="Right" Width="20%" />
                                         </asp:TemplateField>
-                                        <asp:TemplateField HeaderText="Dispatched Qty">
+                                        <asp:TemplateField HeaderText="Pending Qty">
                                             <ItemTemplate>
                                                 <asp:Label ID="lblPenQty" Text='<%# Eval("pen_qty") %>' runat="server" />
                                             </ItemTemplate>

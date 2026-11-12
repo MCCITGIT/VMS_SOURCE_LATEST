@@ -277,7 +277,7 @@
         .docu-grid-scroll {
             max-height: 440px;
             overflow-y: auto;
-            overscroll-behavior: contain;
+            overscroll-behavior: auto;
         }
     </style>
     <script type="text/javascript">

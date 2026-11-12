@@ -31,6 +31,136 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             Return SupportOverrideClass.GetInt(SupportOverrideClass.OCR_API_TIMEOUT_MS, 30000).ToString()
         End Get
     End Property
+
+    'Modified-by MUKESH BHAGAT on 12-11-2026 : a NEW challan must carry the invoice copy. Between 09-Sep and 12-Nov-2026 321
+    'challans were saved without one: a rejected bill and a page refresh clear the file box, and Submit used to go through with
+    'no file. IsNewChallan is false while an existing challan is being edited (the button then reads "Update").
+    Private submitHadInvoice As Boolean = False
+
+    'Modified-by MUKESH BHAGAT on 12-11-2026 : submit error handling.
+    'saveOk is True only after the transaction was really committed. Before this the page redirected to the challan
+    'list after every submit, even when the insert had been rolled back, so a failed save looked like a successful one.
+    Private saveOk As Boolean = False
+    Private saveErrorMsg As String = String.Empty
+
+    'Modified-by MUKESH BHAGAT on 12-11-2026 : the "This Despatch" box is filled by the system (pending load) and a
+    'cleared or odd value used to throw an InvalidCastException in InsertDetail. Blank / non-numeric now counts as 0,
+    'the same way the browser script treats it. No quantity rule is added here (switched off on request).
+    Private Function SafeQty(ByVal s As String) As Integer
+        Dim d As Double = 0
+        If Double.TryParse(If(s, String.Empty).Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.CurrentCulture, d) Then
+            If d > Integer.MaxValue Then Return Integer.MaxValue
+            If d < Integer.MinValue Then Return Integer.MinValue
+            Return CInt(d)
+        End If
+        Return 0
+    End Function
+
+    'Modified-by MUKESH BHAGAT on 12-11-2026 : server-side required-field checks. The browser script (ValidateSubmit) can be
+    'skipped (script off, direct post), and the server only re-checked site / PO / transporter / truck. Live data showed these
+    'fields are always filled in normal use, so the checks below reject only entries that bypassed the browser rules.
+    'Date text is accepted in exactly the two layouts FormatDate() understands (dd/MM/yyyy and yyyy-MM-dd).
+    Private Function ParseUiDate(ByVal s As String, ByRef d As DateTime) As Boolean
+        Return DateTime.TryParseExact(If(s, String.Empty).Trim(), New String() {"dd/MM/yyyy", "d/M/yyyy", "yyyy-MM-dd", "yyyy-M-d"},
+                                      System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, d)
+    End Function
+
+    'Returns the first problem found, or an empty string when everything required is present.
+    Private Function RequiredFieldsError() As String
+        Dim d As DateTime
+        If String.IsNullOrWhiteSpace(txtChallanDt.Text) OrElse Not ParseUiDate(txtChallanDt.Text, d) Then
+            Return "Please enter a valid Challan Date (dd/mm/yyyy)."
+        End If
+        If d.Date > DateTime.Today Then Return "Challan Date cannot be greater than today."
+
+        If String.IsNullOrWhiteSpace(txtCenvatNo.Text) Then
+            Return "Please enter the Vendor Invoice No."
+        End If
+        If String.IsNullOrWhiteSpace(txtCenvatDt.Text) OrElse Not ParseUiDate(txtCenvatDt.Text, d) Then
+            Return "Please enter a valid Vendor Invoice Date (dd/mm/yyyy)."
+        End If
+        If d.Date > DateTime.Today Then Return "Vendor Invoice Date cannot be greater than today."
+
+        'a value of 0 used to pass (it skipped the PO-rate check); the invoice value must be a real amount
+        Dim inv As Decimal = 0
+        If Not Decimal.TryParse(If(txtFinalInvoiceValue.Text, String.Empty).Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.CurrentCulture, inv) OrElse inv <= 0 Then
+            Return "Please enter the Final Invoice Value (After Tax). It must be greater than 0."
+        End If
+
+        Dim anyDepot As Boolean = False
+        For Each lstitm As ListItem In chkbxListLocation.Items
+            If lstitm.Selected Then anyDepot = True : Exit For
+        Next
+        If Not anyDepot Then Return "Please select the depot."
+        If String.IsNullOrEmpty(ddlDeliveryDepot.SelectedValue) Then Return "Please select the Invoicing Depot."
+        Return String.Empty
+    End Function
+
+    'Server copy of the browser limit check (CheckMaxLimit). It mirrors the browser rule exactly so it cannot reject anything the
+    'browser accepts: only ticked rows, only when the maximum-limit hidden value is a number, and only when pending load is not 0.
+    'Origin: commit 2beef17 (23-07-2026, subhrajitmukherjee) in VMS_SOURCE_UAT, missing from the new source.
+    Private Function DespatchLimitError() As String
+        'New challans only: in edit mode the pending load already excludes this challan's own quantity, and the browser only
+        'runs the check when the box is changed, so applying it on a plain edit could reject an unchanged line.
+        If Not IsNewChallan() Then Return String.Empty
+        Dim maxLimit As Double
+        If Not Double.TryParse(If(hdnMaxDespLimit.Value, String.Empty).Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, maxLimit) Then Return String.Empty
+        For i As Integer = 0 To gvSKUDetails.Rows.Count - 1
+            Dim chk As CheckBox = TryCast(gvSKUDetails.Rows(i).FindControl("chkSelect"), CheckBox)
+            Dim txt As TextBox = TryCast(gvSKUDetails.Rows(i).FindControl("txtThisDesp"), TextBox)
+            Dim lbl As Label = TryCast(gvSKUDetails.Rows(i).FindControl("lblPendingLoad"), Label)
+            If chk Is Nothing OrElse txt Is Nothing OrElse lbl Is Nothing OrElse Not chk.Checked Then Continue For
+            Dim pending As Double, entered As Double
+            If Not Double.TryParse(lbl.Text.Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, pending) Then Continue For
+            If Not Double.TryParse(txt.Text.Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, entered) Then Continue For
+            If entered < 0 Then Return "Despatch NOP cannot be negative."
+            If pending <> 0 AndAlso entered > pending + (pending * maxLimit / 100.0R) Then Return "Despatch NOP Exceeds Maximum Limit"
+        Next
+        Return String.Empty
+    End Function
+
+    'True when this challan already has a stored invoice copy. A lookup problem returns True so that a database hiccup can
+    'never block an edit; the rule only blocks when the lookup worked and found nothing.
+    Private Function ChallanHasInvoiceDocument() As Boolean
+        Try
+            Dim n As Long
+            If Not Long.TryParse(hdnChallanno.Value.Trim(), n) Then Return True
+            Dim DocObj As New UnitDespatchClassVr1
+            Dim ds As DataSet = DocObj.GetChallanTypedDocument(n, userInfo.userBranchEntity, "CHALLAN_DOC")
+            If ds Is Nothing OrElse ds.Tables.Count = 0 Then Return True
+            Return ds.Tables(0).Rows.Count > 0
+        Catch
+            Return True
+        End Try
+    End Function
+
+    'Shared message for an unexpected error while saving. The technical detail is added only when the site runs with
+    'compilation debug="true"; production shows the generic text.
+    Private Function SaveFailureText(ByVal ex As Exception) As String
+        Dim msg As String = "The challan was NOT saved because of an unexpected error. Nothing has been saved - please check the entries and click Submit again. If it keeps happening, contact support."
+        If HttpContext.Current IsNot Nothing AndAlso HttpContext.Current.IsDebuggingEnabled AndAlso ex IsNot Nothing Then
+            msg &= " [" & ex.GetType().Name & ": " & ex.Message & "]"
+        End If
+        Return msg
+    End Function
+
+    Private Function IsNewChallan() As Boolean
+        Return hdnChallanno.Value.Trim() = String.Empty AndAlso Not String.Equals(btnSubmit.Text, Constant.GeneralMessages.btnUpdate, StringComparison.OrdinalIgnoreCase)
+    End Function
+
+    Protected ReadOnly Property IsNewChallanJs() As String
+        Get
+            Return If(IsNewChallan(), "true", "false")
+        End Get
+    End Property
+
+    'A Submit that did not redirect failed a validation and the page is drawn again with an EMPTY file box (browsers never
+    'refill a file input). Tell the user, so the next Submit is not sent without the invoice.
+    Protected Sub Page_PreRender(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.PreRender
+        If IsPostBack AndAlso submitHadInvoice Then
+            ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "invReselect", "invoiceReselectNotice();", True)
+        End If
+    End Sub
     Dim Updatemode As Boolean = False
     Dim Aproved_yn As Boolean = False
     Dim userInfo As VMSUserEntity = New VMSUserEntity()
@@ -220,6 +350,37 @@ Partial Class UnitDespatchPlanAddUpdateVr1
 
             CheckLogin()
 
+            'Modified-by MUKESH BHAGAT on 12-11-2026 : a NEW challan cannot be saved without the invoice copy. This is the
+            'server-side rule behind the browser check, so it also holds when script is off or the file was lost on the way.
+            'hdnInvoiceSelected = "Y" means the user had chosen a file earlier (a rejected bill or a refresh cleared it).
+            Dim hasInvoice As Boolean = sch_fld1.HasFile AndAlso sch_fld1.PostedFile IsNot Nothing AndAlso sch_fld1.PostedFile.ContentLength > 0
+            submitHadInvoice = hasInvoice
+            If Not hasInvoice AndAlso IsNewChallan() Then
+                Dim noFileMsg As String = If(String.Equals(hdnInvoiceSelected.Value, "Y", StringComparison.OrdinalIgnoreCase),
+                    "The invoice file is no longer attached (a rejected bill or a page refresh clears it). Please select the invoice file again, then Submit.",
+                    "Please upload the invoice copy (PDF) before saving the challan.")
+                ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert(" & HttpUtility.JavaScriptStringEncode(noFileMsg, True) & ");", True)
+                ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
+                Exit Sub
+            End If
+
+            'Modified-by MUKESH BHAGAT on 12-11-2026 : editing a challan that has NO stored invoice copy needs the file too
+            '(the challans saved without a document could otherwise be re-saved without one). A challan that already has its
+            'copy can still be edited without a new file. If the lookup fails the edit is allowed.
+            If Not hasInvoice AndAlso Not IsNewChallan() AndAlso Not ChallanHasInvoiceDocument() Then
+                ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('This challan has no invoice copy on record. Please attach the invoice file (PDF) before saving.');", True)
+                ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
+                Exit Sub
+            End If
+
+            'Modified-by MUKESH BHAGAT on 12-11-2026 : server-side required fields (see RequiredFieldsError)
+            Dim requiredErr As String = RequiredFieldsError()
+            If Not String.IsNullOrEmpty(requiredErr) Then
+                ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert(" & HttpUtility.JavaScriptStringEncode(requiredErr, True) & ");", True)
+                ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
+                Exit Sub
+            End If
+
             ' Validation for Challan Date and Invoice Date
             'Dim challanDate As DateTime
             'Dim invoiceDate As DateTime
@@ -275,6 +436,14 @@ Partial Class UnitDespatchPlanAddUpdateVr1
                 Exit Sub
             End If
 
+            'Modified-by MUKESH BHAGAT on 12-11-2026 : server copy of the browser despatch-limit check (see DespatchLimitError)
+            Dim limitErr As String = DespatchLimitError()
+            If Not String.IsNullOrEmpty(limitErr) Then
+                ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert(" & HttpUtility.JavaScriptStringEncode(limitErr, True) & ");", True)
+                ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
+                Exit Sub
+            End If
+
             'Modified-by MUKESH BHAGAT on 17-09-2026 : freight. The bill total is SKU taxable + freight
             '+ GST (GST is charged on the freight too - verified on Soujanya bill DS2627102720: line items
             '1,033,524 + freight 15,708 = taxable 1,049,232, IGST 18% on that = 188,861.76, total
@@ -297,7 +466,13 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             If txtFinalInvoiceValue.Text = "" Then
                 FinalInvoiceValue = 0
             Else
-                FinalInvoiceValue = Convert.ToDecimal(txtFinalInvoiceValue.Text)
+                'Modified-by MUKESH BHAGAT on 12-11-2026 : was Convert.ToDecimal, which threw (error page) on text that is not a number
+                If Not Decimal.TryParse(txtFinalInvoiceValue.Text.Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.CurrentCulture, FinalInvoiceValue) Then
+                    ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('Final Invoice Value is not a valid number. Please correct it and click Submit again.');", True)
+                    txtFinalInvoiceValue.Focus()
+                    ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
+                    Exit Sub
+                End If
             End If
 
             'Modified-by MUKESH BHAGAT on 14-09-2026 : this whole check used to be three separate
@@ -418,7 +593,15 @@ Partial Class UnitDespatchPlanAddUpdateVr1
                     Else
                         UpdateDespatch()
                     End If
-                    Response.Redirect("UnitDespatchPlanListVr1.aspx")
+                    'Modified-by MUKESH BHAGAT on 12-11-2026 : go to the list only when the challan was really saved. A rolled
+                    'back or failed save now stays on this page with the reason, instead of redirecting as if it had worked.
+                    If saveOk Then
+                        Response.Redirect("UnitDespatchPlanListVr1.aspx")
+                    Else
+                        Dim failMsg As String = If(String.IsNullOrEmpty(saveErrorMsg), "The challan was NOT saved. Please check the entries and click Submit again.", saveErrorMsg)
+                        ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert(" & HttpUtility.JavaScriptStringEncode(failMsg, True) & ");", True)
+                        ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
+                    End If
                 Else
                     ScriptManager.RegisterStartupScript(Me.Page, Me.GetType(), "alert", "alert('Please select atleast one SKU');", True)
                     ScriptManager.RegisterStartupScript(Me, Page.GetType, "Script", "GridSummation();", True)
@@ -831,9 +1014,16 @@ Partial Class UnitDespatchPlanAddUpdateVr1
         Dim numRowsAffected, GetChallanId As Integer
         Dim sqlConn As New SqlConnection
         Dim sqlTrans As SqlTransaction
+        'Modified-by MUKESH BHAGAT on 12-11-2026 : submit error handling (see saveOk). Any error below rolls the
+        'transaction back, closes the connection and keeps the user on the page with a message. Before this an error
+        'left the transaction open (locks on despatch_hdr / despatch_dtl) and the page still redirected as if saved.
+        Dim committed As Boolean = False
+        saveOk = False
+        saveErrorMsg = String.Empty
 
         sqlConn = DBFactory.GetHelper.OpenConnection()
         sqlTrans = sqlConn.BeginTransaction()
+        Try
 
         Dim strLocationCode As String = String.Empty
 
@@ -906,20 +1096,52 @@ Partial Class UnitDespatchPlanAddUpdateVr1
         InsertDocument(GetChallanId, userInfo.userIDEntity, userInfo.userBranchEntity, sqlConn, sqlTrans)
         If (GetChallanId > 0) Then
             InsertDetail(GetChallanId, sqlConn, sqlTrans)
+            'InsertDetail rolls the transaction back itself on some failures ("Line num should not be blank"); a
+            'completed transaction has no Connection, and Commit() on it used to throw.
+            If sqlTrans.Connection Is Nothing Then
+                If String.IsNullOrEmpty(saveErrorMsg) Then saveErrorMsg = "The challan lines could not be saved. Nothing has been saved."
+                Exit Sub
+            End If
             sqlTrans.Commit()
+            committed = True
+            saveOk = True
             If sqlConn IsNot Nothing Then
                 sqlConn.Close()
             End If
             'Modified-by MUKESH BHAGAT on 24-08-2026 : optional E-Way bill document
             'Modified-by MUKESH BHAGAT on 26-08-2026 : moved after the commit - the E-Way bill
             'is optional and must never be able to roll back a challan that is already saved.
-            SaveEwayBillDocument(GetChallanId)
+            Try
+                SaveEwayBillDocument(GetChallanId)
+            Catch exEway As System.Threading.ThreadAbortException
+                Throw
+            Catch exEway As Exception
+                'challan is already committed; the optional e-way bill file must not turn this into a failed save
+            End Try
         Else
             sqlTrans.Rollback()
             If sqlConn IsNot Nothing Then
                 sqlConn.Close()
             End If
+            saveErrorMsg = "The challan could not be saved (no challan number was generated). Nothing has been saved."
         End If
+        Catch tae As System.Threading.ThreadAbortException
+            Throw
+        Catch ex As Exception
+            If Not committed Then
+                saveOk = False
+                saveErrorMsg = SaveFailureText(ex)
+            End If
+        Finally
+            Try
+                If sqlTrans IsNot Nothing AndAlso sqlTrans.Connection IsNot Nothing Then sqlTrans.Rollback()
+            Catch
+            End Try
+            Try
+                If sqlConn IsNot Nothing AndAlso sqlConn.State <> ConnectionState.Closed Then sqlConn.Close()
+            Catch
+            End Try
+        End Try
     End Sub
     Private Sub InsertDetail(ByVal ChallanId As Integer, ByVal sqlConn As SqlConnection, ByVal sqlTrans As SqlTransaction)
         CheckLogin()
@@ -974,7 +1196,8 @@ Partial Class UnitDespatchPlanAddUpdateVr1
                     dtlEntity.Srl = i + 1
                     dtlEntity.SkuCode = gvSKUDetails.Rows(i).Cells(3).Text.Trim
                     dtlEntity.SkuUom = hdnUom.Value
-                    dtlEntity.DespNop = CType(txt.Text.Trim, Integer)
+                    'Modified-by MUKESH BHAGAT on 12-11-2026 : was CType(txt.Text.Trim, Integer), which threw on a blank value
+                    dtlEntity.DespNop = SafeQty(txt.Text)
                     dtlEntity.SkuVol = hdnVol.Value
                     dtlEntity.AutoIndent = gvSKUDetails.Rows(i).Cells(6).Text.Trim
                     dtlEntity.DepotIndent = gvSKUDetails.Rows(i).Cells(7).Text.Trim
@@ -1181,9 +1404,15 @@ Partial Class UnitDespatchPlanAddUpdateVr1
         Dim numRowsAffected, GetChallanId As Integer
         Dim sqlConn As New SqlConnection
         Dim sqlTrans As SqlTransaction
+        'Modified-by MUKESH BHAGAT on 12-11-2026 : same submit error handling as InsertDespatch (rollback + close on any
+        'error, and saveOk so the page does not redirect as if the edit had been saved).
+        Dim committed As Boolean = False
+        saveOk = False
+        saveErrorMsg = String.Empty
 
         sqlConn = DBFactory.GetHelper.OpenConnection()
         sqlTrans = sqlConn.BeginTransaction()
+        Try
 
         Dim strLocationCode As String = String.Empty
 
@@ -1244,20 +1473,50 @@ Partial Class UnitDespatchPlanAddUpdateVr1
             'silently lost, and worse: the idle connection kept the open transaction and its
             'locks on despatch_hdr/despatch_dtl, blocking every other query on those tables
             'until the pooled connection was reset - pages appeared to hang forever.
+            If sqlTrans.Connection Is Nothing Then
+                If String.IsNullOrEmpty(saveErrorMsg) Then saveErrorMsg = "The challan lines could not be saved. Nothing has been changed."
+                Exit Sub
+            End If
             sqlTrans.Commit()
+            committed = True
+            saveOk = True
             If sqlConn IsNot Nothing Then
                 sqlConn.Close()
             End If
             'Modified-by MUKESH BHAGAT on 26-08-2026 : allow the E-Way bill to be attached
             '(or replaced) while editing an existing challan. Runs on its own connection
             'after the commit, so it cannot affect the challan update either way.
-            SaveEwayBillDocument(Convert.ToInt64(hdnChallanno.Value))
+            Try
+                SaveEwayBillDocument(Convert.ToInt64(hdnChallanno.Value))
+            Catch exEway As System.Threading.ThreadAbortException
+                Throw
+            Catch exEway As Exception
+                'challan is already committed; the optional e-way bill file must not turn this into a failed save
+            End Try
         Else
             sqlTrans.Rollback()
             If sqlConn IsNot Nothing Then
                 sqlConn.Close()
             End If
+            saveErrorMsg = "The challan could not be updated. Nothing has been changed."
         End If
+        Catch tae As System.Threading.ThreadAbortException
+            Throw
+        Catch ex As Exception
+            If Not committed Then
+                saveOk = False
+                saveErrorMsg = SaveFailureText(ex)
+            End If
+        Finally
+            Try
+                If sqlTrans IsNot Nothing AndAlso sqlTrans.Connection IsNot Nothing Then sqlTrans.Rollback()
+            Catch
+            End Try
+            Try
+                If sqlConn IsNot Nothing AndAlso sqlConn.State <> ConnectionState.Closed Then sqlConn.Close()
+            Catch
+            End Try
+        End Try
     End Sub
     Private Sub DeleteDetail(ByVal sqlConn As SqlConnection, ByVal sqlTrans As SqlTransaction)
         CheckLogin()

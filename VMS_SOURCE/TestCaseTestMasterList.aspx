@@ -156,7 +156,7 @@
             overflow-anchor: none;
         }
         .tcl-grid-scroll {
-            overscroll-behavior: contain;
+            overscroll-behavior: auto;
         }
     </style>
     <script type="text/javascript">

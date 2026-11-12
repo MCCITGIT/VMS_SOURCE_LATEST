@@ -425,6 +425,7 @@
         .rm-grid-scroll {
             max-height: 320px;
             overflow-y: auto;
+            overscroll-behavior: auto;
         }
 
         .mst-acc-header {

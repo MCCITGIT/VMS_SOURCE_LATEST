@@ -61,7 +61,7 @@
             }
 
             .pf input[type=text][readonly], .pf input[type=text][disabled], .pf select[disabled] {
-                background: #f1f3f5;
+                background: #f1f3f5 !important;
             }
 
         .pf .pf-num {
