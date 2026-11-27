@@ -61,7 +61,7 @@
             }
 
             .pf input[type=text][readonly], .pf input[type=text][disabled], .pf select[disabled] {
-                background: #f1f3f5;
+                background: #f1f3f5 !important;
             }
 
         .pf .pf-num {
@@ -342,41 +342,54 @@
             box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.12) !important;
         }
 
+        /* 02-11-2026 MUKESH BHAGAT: the fixed data (Vendor, Brand, SKU, Shade, Supplier) is picked once in .pf-fixed-block above the grid;
+           the grid / entry line only carry the raw material columns, so the page no longer needs a horizontal scroll bar. */
+        .pf-fixed-block {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 6px 12px;
+            align-items: start;
+            padding: 8px 10px 6px;
+            margin-bottom: 8px;
+            background: #fff;
+            border: 1px solid var(--pf-border);
+            border-radius: 6px;
+        }
+
+            .pf-fixed-block .pf-fixed-sku {
+                grid-column: span 2;
+            }
+
+            .pf-fixed-block .select2-container {
+                width: 100% !important;
+            }
+
+        .pf-mode-note {
+            margin: 0 0 8px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            background: #eaf0f4;
+            color: #2b4659;
+            border: 1px solid #cfdbe4;
+        }
+
+            .pf-mode-note.pf-warn {
+                background: #fff3cd;
+                color: #856404;
+                border-color: #ffe08a;
+            }
+
         /* one entry line: grid and entry table share these column widths */
         .pf-sku-table {
             table-layout: fixed;
-            min-width: 1000px;
+            min-width: 520px;
         }
 
             .pf-sku-table .pf-c-sn {
                 width: 40px;
                 text-align: center;
             }
-
-            .pf-sku-table .pf-c-brand {
-                width: 12%;
-            }
-
-            .pf-sku-table .pf-c-vendor {
-                width: 12%;
-            }
-
-        /* a vendor (UNIT) login works for its own unit only: the Vendor column is for HO and SYSADMIN */
-        .pf-hide-vendor .pf-c-vendor {
-            display: none;
-        }
-
-        .pf-sku-table .pf-c-sku {
-            width: 14%;
-        }
-
-        .pf-sku-table .pf-c-shade {
-            width: 10%;
-        }
-
-        .pf-sku-table .pf-c-supplier {
-            width: 13%;
-        }
 
         .pf-sku-table .pf-c-rm {
             width: auto;
@@ -413,28 +426,10 @@
             width: 90px;
         }
 
-        /* HO / Material Dept: two more columns -> give the table room so Raw Material does not collapse */
+        /* HO / Material Dept: two more columns (Nearest site cost, Suggested price) */
         .pf-has-internal .pf-sku-table {
-            min-width: 1500px;
+            min-width: 820px;
         }
-
-            /* with the two internal columns the fixed columns shrink a little so Raw Material keeps a readable width */
-            .pf-has-internal .pf-sku-table .pf-c-vendor,
-            .pf-has-internal .pf-sku-table .pf-c-brand {
-                width: 10%;
-            }
-
-            .pf-has-internal .pf-sku-table .pf-c-sku {
-                width: 12%;
-            }
-
-            .pf-has-internal .pf-sku-table .pf-c-shade {
-                width: 8%;
-            }
-
-            .pf-has-internal .pf-sku-table .pf-c-supplier {
-                width: 11%;
-            }
 
             .pf-has-internal .pf-sku-table .pf-c-site,
             .pf-has-internal .pf-sku-table .pf-c-mat {
@@ -719,6 +714,72 @@
             margin-top: 8px;
         }
 
+        /* 04-11-2026: a rate HO opened for revision (the only editable ones in a rate revision) */
+        .pf .pf-open {
+            background: #e6f4ea !important;
+            border-color: #28a745 !important;
+            box-shadow: 0 0 0 2px rgba(40, 167, 69, .18) !important;
+        }
+
+        /* SKU price breakup under the Price column: RM cost + loss = SKU price */
+        .pf-breakup {
+            min-width: 132px;
+            font-size: 11px;
+            font-weight: 500;
+            line-height: 1.5;
+            white-space: nowrap;
+        }
+
+            .pf-breakup > div {
+                display: flex;
+                justify-content: space-between;
+                gap: 8px;
+            }
+
+            .pf-breakup .pf-breakup-total {
+                margin-top: 2px;
+                padding-top: 2px;
+                border-top: 1px solid var(--pf-border);
+                font-weight: 700;
+            }
+
+        /* 02-11-2026: Processing fee, Margin % and Freight are common to every pack size - entered once, after the packs */
+        .pf-common {
+            margin-top: 10px;
+            padding: 8px 10px;
+            background: #fff;
+            border: 1px solid var(--pf-border);
+            border-left: 4px solid var(--pf-theme);
+            border-radius: 6px;
+        }
+
+            .pf-common h5 {
+                margin: 0 0 6px;
+                font-size: 12.5px;
+                font-weight: 700;
+                color: var(--pf-theme);
+            }
+
+        .pf-common-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 8px 14px;
+        }
+
+            .pf-common-grid .pf-md-cell {
+                margin-top: 3px;
+                padding: 3px 6px;
+                background: #fff8e6;
+                border-radius: 4px;
+                font-size: 11px;
+                color: #8a6d1f;
+            }
+
+                .pf-common-grid .pf-md-cell input {
+                    width: 90px;
+                    margin-left: 4px;
+                }
+
         .pf-summary {
             display: flex;
             justify-content: flex-end;
@@ -870,8 +931,68 @@
                 control.value = isNaN(numValue) ? "" : numValue.toFixed(2);
             }
 
+            /* 04-11-2026: approving a rate revision needs the effective date (today or later) */
+            function pfCheckEffective() {
+                var t = document.getElementById('txtEffectiveFrom');
+                if (!t) { return true; }                                   // not a rate revision: no date field on the page
+                var v = document.getElementById('valEffective'), val = (t.value || '').trim();
+                var today = new Date(); today.setHours(0, 0, 0, 0);
+                var picked = val ? new Date(val + 'T00:00:00') : null;
+                if (!picked) { t.classList.add('field-invalid'); if (v) { v.innerHTML = 'Enter the effective date of the revised rates.'; } t.focus(); return false; }
+                if (picked < today) { t.classList.add('field-invalid'); if (v) { v.innerHTML = 'The effective date cannot be in the past.'; } t.focus(); return false; }
+                t.classList.remove('field-invalid'); if (v) { v.innerHTML = ''; }
+                return true;
+            }
+
+            /* 02-11-2026: HO standard formulation mode (HO, new page): raw materials + percentage only, no vendor / supplier / price */
+            var PF_STD = <%= IsStdMode().ToString().ToLowerInvariant() %>;
+
+            function validateAddStdRow() {
+                var hasError = false;
+                clearFormulationValidation();
+                var lbl = document.getElementById('lblErrorMessage'); if (lbl) { lbl.innerHTML = ''; }
+                var b = document.getElementById('ddlBrand');
+                if (!b || b.value === '') { setFieldError('ddlBrand', 'valBrand', 'Please select Brand.', false); hasError = true; }
+                var hp = document.getElementById('hdnProductCode');
+                if (!hp || (hp.value || '').trim() === '') { setFieldError('txtProductSearch', 'valProduct', 'Please enter Product.', false); hasError = true; }
+                clearFieldValidation('ddlShade', 'valShade');
+                var sh = document.getElementById('ddlShade');
+                if (sh && sh.options.length > 1 && sh.value === '') { setFieldError('ddlShade', 'valShade', 'Please select Shade.', false); hasError = true; }
+                var tx = document.getElementById('txtSearchText'), id = document.getElementById('txtrawmatid');
+                if (!tx || (tx.value || '').trim() === '') { setFieldError('txtSearchText', 'valSearchText', 'Please enter Raw Material.', false); hasError = true; }
+                else if (!id || (id.value || '').trim() === '') { setFieldError('txtSearchText', 'valSearchText', 'Please select Raw Material from the list.', false); hasError = true; }
+                var tr = document.getElementById('txtRatio');
+                var ratio = parseFloat(((tr && tr.value) || '').trim());
+                if (!tr || (tr.value || '').trim() === '') { setFieldError('txtRatio', 'valRatio', 'Please enter the percentage.', false); hasError = true; }
+                else if (isNaN(ratio) || ratio <= 0) { setFieldError('txtRatio', 'valRatio', 'Percentage must be greater than 0.', false); hasError = true; }
+                else if (Math.round((getVendorRawMatGridRatioTotal() + ratio) * 100) / 100 > 100) { setFieldError('txtRatio', 'valRatio', 'Total percentage should not be greater than 100%.', false); hasError = true; }
+                if (hasError) { scrollToFirstInvalidField(); return false; }
+                return rmConfirmPostback('btnAdd', 'add');
+            }
+
+            function validateStdSave() {
+                var hasError = false;
+                clearFormulationValidation();
+                var lbl = document.getElementById('lblErrorMessage'); if (lbl) { lbl.innerHTML = ''; }
+                var b = document.getElementById('ddlBrand');
+                if (!b || b.value === '') { setFieldError('ddlBrand', 'valBrand', 'Please select Brand.', false); hasError = true; }
+                var hp = document.getElementById('hdnProductCode');
+                if (!hp || (hp.value || '').trim() === '') { setFieldError('txtProductSearch', 'valProduct', 'Please enter Product.', false); hasError = true; }
+                clearFieldValidation('ddlShade', 'valShade');
+                var sh = document.getElementById('ddlShade');
+                if (sh && sh.options.length > 1 && sh.value === '') { setFieldError('ddlShade', 'valShade', 'Please select Shade.', false); hasError = true; }
+                var rows = pfGridRows(), bad = false;
+                rows.forEach(function (x) { x.ratioEl.classList.remove('field-invalid'); if (x.ratio <= 0) { x.ratioEl.classList.add('field-invalid'); bad = true; } });
+                if (rows.length === 0) { setGridFieldError('Please add at least one raw material.'); hasError = true; }
+                else if (bad) { setGridFieldError('Every raw material needs a percentage greater than 0.'); hasError = true; }
+                else if (getVendorRawMatGridRatioTotal() !== 100) { setGridFieldError('Total percentage should be equal 100%.'); hasError = true; }
+                if (hasError) { scrollToFirstInvalidField(); return false; }
+                return rmConfirmPostback('btnSaveStd', 'submit');
+            }
+
             /* ---------- section 1 validation (wraps ValidateFormulationMstr.js) ---------- */
             function validateAddRow() {
+                if (PF_STD) { return validateAddStdRow(); }
                 var shadeEl = document.getElementById('ddlShade');
                 if (typeof clearFieldValidation === 'function') { clearFieldValidation('ddlShade', 'valShade'); }
                 if (shadeEl && shadeEl.options.length > 1 && shadeEl.value === '') { setFieldError('ddlShade', 'valShade', 'Please select Shade.', true); return false; }   // only products that have shades need one
@@ -895,22 +1016,30 @@
             /* ---------- section 2: live totals ---------- */
             function pfNum(el) { var v = parseFloat((el && el.value ? el.value : '').toString().replace(/[^0-9.]/g, '')); return isNaN(v) ? 0 : v; }
 
-            function pfRecalc(el) {
-                var pack = el.closest ? el.closest('.pf-pack') : null;
-                if (!pack) { return; }
+            /* 02-11-2026: Processing fee, Margin % and Freight are common to all packs (inputs below the packs).
+               pack total = (SKU price + packaging material + processing fee) x (1 + margin %) + freight rate x pack content (kg / litre, data-content) */
+            function pfCommonVals() {
+                return { proc: pfNum(document.getElementById('txtComProc')), pct: pfNum(document.getElementById('txtComMargin')), frt: pfNum(document.getElementById('txtComFreight')) };
+            }
+            function pfRecalcPack(pack) {
                 var skuPrice = parseFloat(document.getElementById('hdnSkuPrice').value) || 0;
+                var c = pfCommonVals();
                 var material = 0;
                 pack.querySelectorAll('input.pf-amt').forEach(function (i) { material += pfNum(i); });
-                var proc = pfNum(pack.querySelector('input.pf-proc'));
-                var lab = pfNum(pack.querySelector('input.pf-lab'));
-                var pct = pfNum(pack.querySelector('input.pf-mar'));
-                var base = skuPrice + material + proc + lab;
-                var marginAmt = Math.round(base * pct) / 100;
-                var total = Math.round((base + marginAmt) * 100) / 100;
+                var content = parseFloat(pack.getAttribute('data-content')) || 0;
+                var base = skuPrice + material + c.proc;
+                var marginAmt = Math.round(base * c.pct) / 100;
+                var freight = Math.round(c.frt * content * 100) / 100;
+                var total = Math.round((base + marginAmt + freight) * 100) / 100;
                 pack.querySelectorAll('.pf-material-amt').forEach(function (s) { s.innerText = material.toFixed(2); });
+                pack.querySelectorAll('.pf-proc-amt').forEach(function (s) { s.innerText = c.proc.toFixed(2); });
                 pack.querySelectorAll('.pf-margin-amt').forEach(function (s) { s.innerText = marginAmt.toFixed(2); });
+                pack.querySelectorAll('.pf-freight-amt').forEach(function (s) { s.innerText = freight.toFixed(2); });
                 pack.querySelectorAll('.pf-pack-total').forEach(function (s) { s.innerText = 'Total \u20B9 ' + total.toFixed(2); });
                 pack.querySelectorAll('.pf-total-amt').forEach(function (s) { s.innerText = total.toFixed(2); });
+            }
+            function pfRecalc(el) {       // any amount / common charge changed: every pack is recalculated (cheap, and the common values affect all of them)
+                document.querySelectorAll('.pf-pack').forEach(pfRecalcPack);
             }
 
             function pfToggle(cb, key) {
@@ -950,14 +1079,19 @@
                         if (nEmpty) { name.classList.add('field-invalid'); bad = true; }
                         if (aEmpty) { amt.classList.add('field-invalid'); bad = true; }
                     });
-                    var mar = pack.querySelector('input.pf-mar');
-                    if (pfNum(mar) > 100) { mar.classList.add('field-invalid'); bad = true; }
                     if (bad) { ok = false; if (!firstBad) { firstBad = pack; } }
                 });
+                var mar = document.getElementById('txtComMargin');
+                if (mar) { mar.classList.remove('field-invalid'); }
+                if (mar && pfNum(mar) > 100) {
+                    mar.classList.add('field-invalid'); mar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    rmFailValidation('Margin must be between 0 and 100 %.');
+                    return false;
+                }
                 if (!ok) {
                     var cb = firstBad.querySelector('input.pf-toggle'); if (cb) { cb.checked = true; }
                     firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    rmFailValidation('Packaging cost: please fill Cost name and Amount for every line (Margin must be 0-100 %).');
+                    rmFailValidation('Packaging cost: please fill Cost name and Amount for every line.');
                 }
                 return ok;
             }
@@ -966,8 +1100,8 @@
             function pfGridRows() {
                 var rows = [];
                 document.querySelectorAll('#gvVendorRawMat tbody tr.tlrowlight').forEach(function (tr) {
-                    var r = tr.querySelector('input.pf-row-ratio'), p = tr.querySelector('input.pf-row-rate');
-                    if (r && p) { rows.push({ tr: tr, ratio: pfNum(r), rate: pfNum(p), ratioEl: r, rateEl: p }); }
+                    var r = tr.querySelector('input.pf-row-ratio'), p = tr.querySelector('input.pf-row-rate');      // standard (HO) mode has no price column
+                    if (r) { rows.push({ tr: tr, ratio: pfNum(r), rate: p ? pfNum(p) : 0, ratioEl: r, rateEl: p }); }
                 });
                 return rows;
             }
@@ -977,14 +1111,19 @@
             function pfGridRecalc() {
                 var total = 0, sku = 0;
                 pfGridRows().forEach(function (x) { total += x.ratio; sku += x.rate; });
+                var rawSum = sku;                                 // raw material cost before loss
                 sku = sku * (1 + pfLoss() / 100);                 // process loss % is added to the SKU price
                 total = Math.round(total * 100) / 100; sku = Math.round(sku * 100) / 100;
                 var lt = document.getElementById('lblRatioTotal'), ls = document.getElementById('lblRatioStatus'), lp = document.getElementById('lblSkuPrice');
+                var raw = Math.round(rawSum * 100) / 100, lossAmt = Math.round((sku - raw) * 100) / 100, lr = document.getElementById('lblRmCost'), la = document.getElementById('lblLossAmt'), lx = document.getElementById('lblLossText');
+                if (lr) { lr.innerText = raw.toFixed(2); }
+                if (la) { la.innerText = lossAmt.toFixed(2); }
+                if (lx) { lx.innerText = pfLoss() > 0 ? '(' + pfLoss() + '%)' : ''; }
                 if (lt) { lt.innerText = total.toFixed(2) + '%'; }
                 if (ls) { ls.innerText = total > 100 ? 'Exceed 100%' : (total === 100 ? '= 100%' : 'Within 100%'); ls.className = total > 100 ? 'pf-status-bad' : 'pf-status-ok'; }
                 if (lp) { lp.innerText = sku.toFixed(2); }
                 document.getElementById('hdnSkuPrice').value = sku.toFixed(2);
-                document.querySelectorAll('.pf-pack').forEach(function (p) { var i = p.querySelector('input.pf-proc'); if (i) { pfRecalc(i); } });
+                pfRecalc();
             }
             function pfLoss() { var l = document.getElementById('txtLossPct'); return l ? pfNum(l) : 0; }
             function pfLossChanged(el) {
@@ -1028,9 +1167,10 @@
                     if (code) { s += code.value.trim() + '|' + f2(ratio ? ratio.value : '') + '|' + f2(rate ? rate.value : '') + ';'; }
                 });
                 var supSnap = document.getElementById('ddlSupplier');
-                s += 'L' + f2(pfLoss()) + 'S' + (supSnap ? (supSnap.value || '') : '') + '#';
+                var cp = document.getElementById('txtComProc'), cm = document.getElementById('txtComMargin'), cf = document.getElementById('txtComFreight');
+                s += 'L' + f2(pfLoss()) + 'S' + (supSnap ? (supSnap.value || '') : '') + 'F' + f2(cf ? cf.value : '') + '#';
                 document.querySelectorAll('.pf-pack').forEach(function (pack) {
-                    s += (pack.getAttribute('data-name') || '').trim() + '|' + f2(pack.querySelector('input.pf-proc').value) + '|' + f2('0') + '|' + f2(pack.querySelector('input.pf-mar').value) + '{';
+                    s += (pack.getAttribute('data-name') || '').trim() + '|' + f2(cp ? cp.value : '') + '|' + f2('0') + '|' + f2(cm ? cm.value : '') + '{';
                     pack.querySelectorAll('tr.pf-line').forEach(function (tr) {
                         var n = (tr.querySelector('input.pf-name').value || '').trim(), a = (tr.querySelector('input.pf-amt').value || '').trim();
                         if (n === '' && a === '') { return; }
@@ -1063,12 +1203,18 @@
                 var h = document.getElementById('hdnVendorUnit');
                 return h ? (h.value || '') : '';
             }
-            function setRawMatContext() {       // product search (vendor scope) and raw material search (manual items) both depend on the vendor
+            function currentBrandId() { var d = document.getElementById('ddlBrand'); return d ? (d.value || '') : ''; }
+            function setRawMatContext() {       // raw material search (manual items) depends on the vendor; product search on vendor + brand ("vendor|brandId")
                 if (typeof $find !== 'function') { return; }
                 var b = $find('bhvRawMat');
-                if (b) { b.set_contextKey(currentVendorUnit()); }
+                if (b) { b.set_contextKey(PF_STD ? 'STD' : currentVendorUnit()); }       // STD = HO standard entry: the whole raw material master
                 var p = $find('bhvProduct');
-                if (p) { p.set_contextKey(currentVendorUnit()); }
+                if (p) { p.set_contextKey((PF_STD ? 'STD' : currentVendorUnit()) + '|' + currentBrandId()); }
+            }
+            function onBrandChanged() {         // 30-10-2026: a product picked under another brand may not belong to this one - clear it (unless the row is locked)
+                setRawMatContext();
+                var t = document.getElementById('txtProductSearch'), h = document.getElementById('<%=hdnProductCode.ClientID%>');
+                if (t && h && !t.disabled && !t.readOnly && h.value !== '') { resetProductField(); }
             }
             function openNewRawMat() {
                 if (currentVendorUnit() === '') { setFieldError('ddlvendor', 'valVendor', 'Please select Vendor first.', false); return false; }
@@ -1107,8 +1253,12 @@
                 if (dv) {
                     if (window.jQuery) { window.jQuery(dv).on('change', setRawMatContext); } else { dv.addEventListener('change', setRawMatContext); }
                 }
+                var db = document.getElementById('ddlBrand');      // select2 fires jQuery change, not the native event
+                if (db) {
+                    if (window.jQuery) { window.jQuery(db).on('change', onBrandChanged); } else { db.addEventListener('change', onBrandChanged); }
+                }
                 if (window.Sys && Sys.Application) { Sys.Application.add_load(setRawMatContext); }
-                document.querySelectorAll('.pf-pack').forEach(function (p) { var i = p.querySelector('input.pf-proc'); if (i) { pfRecalc(i); } });
+                pfRecalc();
             });
     </script>
 
@@ -1159,8 +1309,59 @@
 
                 <!-- ================= 1. SKU formulation entry ================= -->
                 <div class="pf-section" id="pfSectionEntry" runat="server">
-                    <h4 class="pf-section-title">SKU formulation entry</h4>
-                    <p class="pf-section-sub">Add every raw material of the SKU in one line: Brand, Vendor, SKU, Shade and Supplier are fixed after the first line. Total consumption ratio must be exactly 100 %.</p>
+                    <h4 class="pf-section-title">
+                        <asp:Label ID="lblEntryTitle" runat="server" Text="SKU formulation entry"></asp:Label></h4>
+                    <p class="pf-section-sub">
+                        <asp:Label ID="lblEntrySub" runat="server" Text="The raw materials and their percentage are fixed by HO. Pick the fixed data below once, then enter your price for each raw material."></asp:Label></p>
+
+                    <%-- 02-11-2026 MUKESH BHAGAT: the data that is selected ONCE sits here on top; the grid below only carries the raw material lines
+                         (many lines can be added), so nothing needs a horizontal scroll bar. The controls keep their old ids. --%>
+                    <div class="pf-fixed-block">
+                        <div id="divFxVendor" runat="server">
+                            <label class="pf-label">Vendor <span class="mandatory">*</span></label>
+                            <asp:Panel ID="pnlVendorDdl" runat="server">
+                                <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlvendor_SelectedIndexChanged"
+                                    onchange="if(typeof clearVendorValidation==='function')clearVendorValidation();">
+                                </asp:DropDownList>
+                            </asp:Panel>
+                            <asp:Label ID="lblVendorFixed" runat="server" Visible="false" Style="display: block; padding: 6px 4px; font-weight: 600;"></asp:Label>
+                            <asp:Label ID="valVendor" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                        </div>
+                        <div>
+                            <label class="pf-label">Brand <span class="mandatory">*</span></label>
+                            <asp:DropDownList ID="ddlBrand" ClientIDMode="Static" CssClass="form-control select2" TabIndex="2" runat="server"
+                                onchange="if(typeof clearBrandValidation==='function')clearBrandValidation();">
+                            </asp:DropDownList>
+                            <asp:Label ID="valBrand" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                        </div>
+                        <div class="pf-fixed-sku">
+                            <label class="pf-label">SKU / Product <span class="mandatory">*</span></label>
+                            <div class="pf-input-group">
+                                <asp:TextBox ID="txtProductSearch" ClientIDMode="Static" CssClass="form-control" TabIndex="3" runat="server" AutoComplete="Off"
+                                    Placeholder="Type 3+ letters" onkeyup="clearProductSelection();"></asp:TextBox>
+                                <button type="button" id="btnResetProduct" class="pf-btn" onclick="return resetProductField();" title="Reset Product"><i class="fas fa-sync-alt fa-xs"></i></button>
+                            </div>
+                            <asp:AutoCompleteExtender ID="aceProductSearch" runat="server" TargetControlID="txtProductSearch" ServiceMethod="ProductSearch" UseContextKey="true" BehaviorID="bhvProduct" CompletionInterval="200" EnableCaching="false" CompletionSetCount="20" FirstRowSelected="true" OnClientItemSelected="onProductSelected"
+                                CompletionListCssClass="vmsAutoComplete" CompletionListItemCssClass="vmsAutoCompleteItem" CompletionListHighlightedItemCssClass="vmsAutoCompleteItemHighlight">
+                            </asp:AutoCompleteExtender>
+                            <asp:Label ID="valProduct" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                        </div>
+                        <div>
+                            <label class="pf-label">Shade <span class="mandatory">*</span></label>
+                            <asp:DropDownList ID="ddlShade" runat="server" ClientIDMode="Static" CssClass="form-control" TabIndex="4" AutoPostBack="true" OnSelectedIndexChanged="ddlShade_SelectedIndexChanged"></asp:DropDownList>
+                            <asp:Label ID="valShade" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                        </div>
+                        <div id="divFxSupplier" runat="server">
+                            <label class="pf-label">Supplier <span class="mandatory">*</span></label>
+                            <asp:DropDownList ID="ddlSupplier" runat="server" ClientIDMode="Static" CssClass="form-control select2" TabIndex="5"
+                                onchange="if(typeof clearFieldValidation==='function')clearFieldValidation('ddlSupplier','valSupplier');">
+                            </asp:DropDownList>
+                            <asp:Label ID="valSupplier" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                        </div>
+                    </div>
+                    <asp:Panel ID="pnlStdNote" runat="server" Visible="false" CssClass="pf-mode-note">
+                        <asp:Label ID="lblStdNote" runat="server"></asp:Label>
+                    </asp:Panel>
 
                     <div class="pf-table-wrap">
                         <asp:GridView ID="gvVendorRawMat" ClientIDMode="Static" runat="server" AutoGenerateColumns="False" CssClass="pf-table pf-sku-table"
@@ -1181,43 +1382,7 @@
                                     <ItemStyle CssClass="pf-c-sn" />
                                     <FooterStyle CssClass="pf-c-sn" />
                                 </asp:TemplateField>
-                                <asp:TemplateField HeaderText="Vendor *">
-                                    <ItemTemplate>
-                                        <asp:Label ID="lblVendorName" runat="server" Text='<%# Bind("vendor_name") %>'></asp:Label>
-                                    </ItemTemplate>
-                                    <HeaderStyle CssClass="pf-c-vendor" />
-                                    <ItemStyle CssClass="pf-c-vendor" />
-                                </asp:TemplateField>
-                                <asp:TemplateField HeaderText="Brand *">
-                                    <ItemTemplate>
-                                        <asp:Label ID="lblBrandName" runat="server" Text='<%# Bind("brand_name") %>'></asp:Label>
-                                    </ItemTemplate>
-                                    <HeaderStyle CssClass="pf-c-brand" />
-                                    <ItemStyle CssClass="pf-c-brand" />
-                                </asp:TemplateField>
-                                <asp:TemplateField HeaderText="SKU / Product *">
-                                    <ItemTemplate>
-                                        <asp:Label ID="lblProductName" runat="server" Text='<%# Bind("product_name") %>'></asp:Label>
-                                    </ItemTemplate>
-                                    <HeaderStyle CssClass="pf-c-sku" />
-                                    <ItemStyle CssClass="pf-c-sku" />
-                                </asp:TemplateField>
-                                <asp:TemplateField HeaderText="Shade *">
-                                    <ItemTemplate>
-                                        <asp:Label ID="lblShadeName" runat="server" Text='<%# Eval("shade_name") %>'></asp:Label>
-                                        <asp:HiddenField ID="hdnShadeCode" runat="server" Value='<%# Eval("shade_code") %>' />
-                                    </ItemTemplate>
-                                    <HeaderStyle CssClass="pf-c-shade" />
-                                    <ItemStyle CssClass="pf-c-shade" />
-                                </asp:TemplateField>
-                                <asp:TemplateField HeaderText="Supplier *">
-                                    <ItemTemplate>
-                                        <asp:Label ID="lblSupplierName" runat="server" Text='<%# Eval("supplier_name") %>'></asp:Label>
-                                        <asp:HiddenField ID="hdnSupplierCode" runat="server" Value='<%# Eval("supplier_code") %>' />
-                                    </ItemTemplate>
-                                    <HeaderStyle CssClass="pf-c-supplier" />
-                                    <ItemStyle CssClass="pf-c-supplier" />
-                                </asp:TemplateField>
+                                <%-- 02-11-2026: Vendor / Brand / SKU / Shade / Supplier columns removed - they are the fixed data block above the grid --%>
                                 <asp:TemplateField HeaderText="Raw Material *">
                                     <ItemTemplate>
                                         <asp:Label ID="lblRawMatName" runat="server" Text='<%# Bind("rawmat_name") %>'></asp:Label>
@@ -1238,11 +1403,11 @@
                                         <br />
                                         <asp:Label ID="lblRatioStatus" runat="server" ClientIDMode="Static" Text="Within 100%" Style="font-size: 11px;"></asp:Label>
                                         <%-- Modified-by MUKESH BHAGAT on 19-10-2026 : process loss %, added to the SKU price (sum of prices x (1 + loss/100)) --%>
-                                        <div class="pf-loss" style="margin-top: 5px; white-space: nowrap;">
+                                        <asp:Panel ID="pnlLoss" runat="server" CssClass="pf-loss" Style="margin-top: 5px; white-space: nowrap;">
                                             <span style="font-size: 11px; color: #555;">Loss %</span>
                                             <asp:TextBox ID="txtLossPct" runat="server" ClientIDMode="Static" CssClass="pf-num" Style="width: 62px; display: inline-block; margin-left: 4px;" Placeholder="0.00" AutoComplete="Off" MaxLength="6"
                                                 onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfLossChanged(this);" onblur="formatRateTwoDecimal(this); pfLossChanged(this);"></asp:TextBox>
-                                        </div>
+                                        </asp:Panel>
                                     </FooterTemplate>
                                     <HeaderStyle CssClass="pf-c-ratio pf-right" />
                                     <ItemStyle CssClass="pf-c-ratio pf-right" />
@@ -1250,14 +1415,16 @@
                                 </asp:TemplateField>
                                 <asp:TemplateField HeaderText="Price (&#8377;) *">
                                     <ItemTemplate>
-                                        <asp:TextBox ID="txtRowRate" runat="server" CssClass="pf-num pf-row-rate" Text='<%# Bind("rate") %>' AutoComplete="Off"
+                                        <asp:TextBox ID="txtRowRate" runat="server" CssClass="pf-num pf-row-rate" Text='<%# Bind("rate") %>' Placeholder="0.00" AutoComplete="Off"
                                             onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfGridRecalc();" onblur="formatRateTwoDecimal(this); pfGridRecalc();"></asp:TextBox>
                                     </ItemTemplate>
                                     <FooterTemplate>
-                                        <span style="font-size: 11px; color: #555;">SKU Price</span>
-                                        <br />
-                                        &#8377;
-                                        <asp:Label ID="lblSkuPrice" runat="server" ClientIDMode="Static" Text="0.00"></asp:Label>
+                                        <%-- 02-11-2026: breakup of the SKU price - raw material cost + loss amount = SKU price --%>
+                                        <div class="pf-breakup">
+                                            <div title="Sum of the raw material prices"><span>RM cost</span><span>&#8377; <asp:Label ID="lblRmCost" runat="server" ClientIDMode="Static" Text="0.00"></asp:Label></span></div>
+                                            <div title="Process loss % of the raw material cost"><span>Loss <asp:Label ID="lblLossText" runat="server" ClientIDMode="Static" Text=""></asp:Label></span><span>+ &#8377; <asp:Label ID="lblLossAmt" runat="server" ClientIDMode="Static" Text="0.00"></asp:Label></span></div>
+                                            <div class="pf-breakup-total"><span>SKU Price</span><span>&#8377; <asp:Label ID="lblSkuPrice" runat="server" ClientIDMode="Static" Text="0.00"></asp:Label></span></div>
+                                        </div>
                                     </FooterTemplate>
                                     <HeaderStyle CssClass="pf-c-price pf-right" />
                                     <ItemStyle CssClass="pf-c-price pf-right" />
@@ -1297,47 +1464,11 @@
                         </asp:GridView>
 
                         <%-- entry line - same column widths as the grid above --%>
-                        <table class="pf-table pf-sku-table" style="margin-top: -1px; border-top-left-radius: 0; border-top-right-radius: 0;">
+                        <table id="tblEntry" runat="server" class="pf-table pf-sku-table" style="margin-top: -1px; border-top-left-radius: 0; border-top-right-radius: 0;">
                             <tbody>
                                 <tr class="pf-entry-row">
                                     <td class="pf-c-sn pf-center">
                                         <asp:Label ID="lblNextSn" runat="server" Text="1" CssClass="pf-muted"></asp:Label></td>
-                                    <td class="pf-c-vendor" id="tdVendorEntry" runat="server">
-                                        <asp:Panel ID="pnlVendorDdl" runat="server">
-                                            <asp:DropDownList ID="ddlvendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="1" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlvendor_SelectedIndexChanged"
-                                                onchange="if(typeof clearVendorValidation==='function')clearVendorValidation();">
-                                            </asp:DropDownList>
-                                        </asp:Panel>
-                                        <asp:Label ID="lblVendorFixed" runat="server" Visible="false" Style="display: block; padding: 6px 4px; font-weight: 600;"></asp:Label>
-                                        <asp:Label ID="valVendor" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
-                                    </td>
-                                    <td class="pf-c-brand">
-                                        <asp:DropDownList ID="ddlBrand" ClientIDMode="Static" CssClass="form-control select2" TabIndex="2" runat="server"
-                                            onchange="if(typeof clearBrandValidation==='function')clearBrandValidation();">
-                                        </asp:DropDownList>
-                                        <asp:Label ID="valBrand" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
-                                    </td>
-                                    <td class="pf-c-sku">
-                                        <div class="pf-input-group">
-                                            <asp:TextBox ID="txtProductSearch" ClientIDMode="Static" CssClass="form-control" TabIndex="3" runat="server" AutoComplete="Off"
-                                                Placeholder="Type 3+ letters" onkeyup="clearProductSelection();"></asp:TextBox>
-                                            <button type="button" id="btnResetProduct" class="pf-btn" onclick="return resetProductField();" title="Reset Product"><i class="fas fa-sync-alt fa-xs"></i></button>
-                                        </div>
-                                        <asp:AutoCompleteExtender ID="aceProductSearch" runat="server" TargetControlID="txtProductSearch" ServiceMethod="ProductSearch" UseContextKey="true" BehaviorID="bhvProduct" CompletionInterval="200" EnableCaching="false" CompletionSetCount="20" FirstRowSelected="true" OnClientItemSelected="onProductSelected"
-                                            CompletionListCssClass="vmsAutoComplete" CompletionListItemCssClass="vmsAutoCompleteItem" CompletionListHighlightedItemCssClass="vmsAutoCompleteItemHighlight">
-                                        </asp:AutoCompleteExtender>
-                                        <asp:Label ID="valProduct" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
-                                    </td>
-                                    <td class="pf-c-shade">
-                                        <asp:DropDownList ID="ddlShade" runat="server" ClientIDMode="Static" CssClass="form-control" TabIndex="4" AutoPostBack="true" OnSelectedIndexChanged="ddlShade_SelectedIndexChanged"></asp:DropDownList>
-                                        <asp:Label ID="valShade" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
-                                    </td>
-                                    <td class="pf-c-supplier">
-                                        <asp:DropDownList ID="ddlSupplier" runat="server" ClientIDMode="Static" CssClass="form-control select2" TabIndex="5"
-                                            onchange="if(typeof clearFieldValidation==='function')clearFieldValidation('ddlSupplier','valSupplier');">
-                                        </asp:DropDownList>
-                                        <asp:Label ID="valSupplier" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
-                                    </td>
                                     <td class="pf-c-rm">
                                         <div class="pf-input-group">
                                             <asp:TextBox ID="txtSearchText" ClientIDMode="Static" CssClass="form-control" runat="server" AutoComplete="Off" onkeyup="clearRawMaterialSelection();"
@@ -1356,7 +1487,7 @@
                                             onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); if(typeof clearRatioValidation==='function')clearRatioValidation();"></asp:TextBox>
                                         <asp:Label ID="valRatio" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                                     </td>
-                                    <td class="pf-c-price">
+                                    <td class="pf-c-price" id="tdRateEntry" runat="server">
                                         <asp:TextBox ID="txtRate" ClientIDMode="Static" CssClass="form-control pf-num" runat="server" AutoComplete="Off" Placeholder="0.00"
                                             onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this);" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
                                         <asp:Label ID="valRate" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
@@ -1378,7 +1509,7 @@
                             <asp:Label ID="lblHoRemarksTitle" runat="server"></asp:Label></b>
                         <asp:Label ID="lblHoRemarks" runat="server"></asp:Label>
                     </asp:Panel>
-                    <div class="pf-head-grid pf-ver-grid" style="margin-top: 8px;">
+                    <div id="divVerGrid" runat="server" class="pf-head-grid pf-ver-grid" style="margin-top: 8px;">
                         <div>
                             <label class="pf-label">Version / Status</label>
                             <div style="min-height: 26px; line-height: 1.4; font-weight: 600; color: var(--pf-theme);">
@@ -1403,8 +1534,14 @@
                         <label class="pf-label">HO approval - remarks (mandatory to reject or to send a revised rate; e.g. the negotiated price)</label>
                         <asp:TextBox ID="txtHoRemarks" runat="server" TextMode="MultiLine" Rows="2" MaxLength="1000" Style="width: 100%;"></asp:TextBox>
                         <asp:Label ID="valHoRemarks" runat="server" CssClass="dispatch-field-error"></asp:Label>
+                        <%-- 04-11-2026 MUKESH BHAGAT: a RATE REVISION is approved with an effective date; until then the previous release stays in force --%>
+                        <div id="divEffective" runat="server" visible="false" style="margin-top: 8px;">
+                            <label class="pf-label">Effective date of the revised rates <span class="mandatory">*</span> <span class="pf-muted">- the current rates stay in force until this date</span></label>
+                            <asp:TextBox ID="txtEffectiveFrom" runat="server" ClientIDMode="Static" TextMode="Date" Style="width: 180px;" onchange="var v=document.getElementById('valEffective'); if(v){v.innerHTML='';}"></asp:TextBox>
+                            <asp:Label ID="valEffective" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
+                        </div>
                         <div class="pf-actions" style="margin-top: 6px;">
-                            <asp:Button ID="btnApprove" runat="server" Text="Approve" CssClass="pf-btn pf-btn-save" ClientIDMode="Static" OnClick="btnApprove_Click" OnClientClick="return rmConfirmPostback('btnApprove', 'approve');" />
+                            <asp:Button ID="btnApprove" runat="server" Text="Approve" CssClass="pf-btn pf-btn-save" ClientIDMode="Static" OnClick="btnApprove_Click" OnClientClick="return pfCheckEffective() && rmConfirmPostback('btnApprove', 'approve');" />
                             <asp:Button ID="btnReject" runat="server" Text="Reject" CssClass="pf-btn" Style="background: #dc3545; border-color: #dc3545; color: #fff; font-weight: 600;" ClientIDMode="Static" OnClick="btnReject_Click" OnClientClick="return rmConfirmPostback('btnReject', 'submit');" />
                             <asp:Button ID="btnRevise" runat="server" Text="Revise rate &amp; send to vendor" CssClass="pf-btn pf-btn-primary" ClientIDMode="Static" OnClick="btnRevise_Click" />
                             <asp:Button ID="btnForward" runat="server" Text="Send to Material Dept" CssClass="pf-btn" Style="background: #8a6d1f; border-color: #8a6d1f; color: #fff; font-weight: 600;" ClientIDMode="Static" OnClick="btnForward_Click" OnClientClick="return confirm('Send this revision to the Material Department for rate comparison?');" />
@@ -1434,7 +1571,7 @@
 
                     <%-- vendor side of a HO counter-offer --%>
                     <asp:Panel ID="pnlVendorAccept" runat="server" Visible="false" Style="margin-top: 10px; padding: 10px; border: 1px solid #17a2b8; background: #e8f7fa; border-radius: 6px;">
-                        <b>HO has revised the rate.</b> Accept it as-is to approve the formulation now, or change the figures above and submit a counter-proposal to HO.
+                        <b>HO has revised the rate.</b> Accept it as-is (for a rate revision HO then gives the final approval and the effective date), or change the opened rates above and submit a counter-proposal to HO.
                         <div class="pf-actions" style="margin-top: 6px;">
                             <asp:Button ID="btnAccept" runat="server" Text="Accept revised rate" CssClass="pf-btn pf-btn-save" ClientIDMode="Static" OnClick="btnAccept_Click" OnClientClick="return rmConfirmPostback('btnAccept', 'approve');" />
                         </div>
@@ -1443,25 +1580,26 @@
                     <div class="pf-actions">
                         <asp:Button ID="btnPropose" runat="server" Text="Propose change to this release" CssClass="pf-btn pf-btn-primary" ClientIDMode="Static" Visible="false" OnClick="btnPropose_Click" />
                         <asp:Button ID="btnSubmit" runat="server" Text="Submit" CssClass="pf-btn pf-btn-save" ClientIDMode="Static" Visible="false" OnClick="btnSubmit_Click" />
+                        <asp:Button ID="btnSaveStd" runat="server" Text="Save standard formulation" CssClass="pf-btn pf-btn-save" ClientIDMode="Static" Visible="false" OnClick="btnSaveStd_Click" OnClientClick="return validateStdSave();" />
                         <asp:Button ID="btnCancel" runat="server" Text="Back" CssClass="pf-btn" OnClick="btnCancel_Click1" />
                     </div>
                 </div>
 
                 <!-- ================= 2. Packaging cost (per pack size) ================= -->
-                <div class="pf-section">
+                <div class="pf-section" id="pfSectionPack" runat="server">
                     <h4 class="pf-section-title">Packaging cost</h4>
                     <p class="pf-section-sub">
-                        Per pack size: packaging material lines + Processing fee (labour included). Margin % is applied on
-                        (SKU price &#8377;
+                        Per pack size: the packaging material lines. Processing fee, Margin % and Freight are common to every pack and are entered once below the packs.
+                        Pack total = (SKU price &#8377;
                         <asp:Label ID="lblSkuPriceInfo" runat="server" Text="0.00"></asp:Label>
-                        + material + processing) and added to that pack's total.
+                        + packaging material + processing fee) + margin % + freight (rate per kg / litre x pack content).
                         The SKU formulation and all packs are saved together with the Submit button above.
                     </p>
 
                     <asp:Panel ID="pnlPackaging" runat="server">
                         <asp:Repeater ID="rptPack" runat="server" OnItemDataBound="rptPack_ItemDataBound" OnItemCommand="rptPack_ItemCommand">
                             <ItemTemplate>
-                                <div class="pf-pack" data-name='<%# Eval("pack_size") %>'>
+                                <div class="pf-pack" data-name='<%# Eval("pack_size") %>' data-content='<%# PackContentText(Eval("pack_size")) %>'>
                                     <asp:HiddenField ID="hdnPackKey" runat="server" Value='<%# Eval("pack_key") %>' />
                                     <asp:HiddenField ID="hdnPchId" runat="server" Value='<%# Eval("pch_id") %>' />
                                     <input type="checkbox" class="pf-toggle" id='pfPack<%# Eval("pack_key") %>' onchange='pfToggle(this, "<%# Eval("pack_key") %>")' <%# If(IsPackOpen(Eval("pack_key")), "checked='checked'", "") %> />
@@ -1530,34 +1668,8 @@
                                                                         OnClientClick="return validateNewLine(this);"></asp:LinkButton>
                                                                 </td>
                                                             </tr>
-                                                            <%-- fixed lines of every pack: processing fee (incl. labour), margin % --%>
-                                                            <tr class="pf-fixed-line">
-                                                                <td class="pf-col-sn"><i class="fas fa-cog" style="color: #888;"></i></td>
-                                                                <td>Processing fee <span class="pf-muted">(incl. labour)</span></td>
-                                                                <td class="pf-col-amt">
-                                                                    <asp:TextBox ID="txtProcessing" runat="server" CssClass="pf-num pf-proc" Text='<%# Eval("processing_fee") %>' Placeholder="0.00" AutoComplete="Off"
-                                                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
-                                                                </td>
-                                                                <td class="pf-col-amt pf-md" runat="server" visible='<%# ShowInternal %>'>
-                                                                    <asp:TextBox ID="txtMdProcessing" runat="server" CssClass="pf-num pf-md-in" Text='<%# Eval("md_processing") %>' Placeholder="-" AutoComplete="Off" ReadOnly="true"
-                                                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this);" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
-                                                                </td>
-                                                                <td class="pf-col-act"></td>
-                                                            </tr>
-                                                            <%-- Modified-by MUKESH BHAGAT on 19-10-2026 : the separate "Labour charge" line was removed - labour is part of the Processing fee (pch_labour_charge is saved as 0). --%>
-                                                            <tr class="pf-fixed-line">
-                                                                <td class="pf-col-sn"><i class="fas fa-percent" style="color: #888;"></i></td>
-                                                                <td>Margin (%) <span class="pf-muted">on SKU price &#8377; <%# SkuPriceText %> + material + processing</span></td>
-                                                                <td class="pf-col-amt">
-                                                                    <asp:TextBox ID="txtMarginPct" runat="server" CssClass="pf-num pf-mar" Text='<%# Eval("margin_pct") %>' Placeholder="0.00 %" AutoComplete="Off"
-                                                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
-                                                                </td>
-                                                                <td class="pf-col-amt pf-md" runat="server" visible='<%# ShowInternal %>'>
-                                                                    <asp:TextBox ID="txtMdMargin" runat="server" CssClass="pf-num pf-md-in" Text='<%# Eval("md_margin") %>' Placeholder="- %" AutoComplete="Off" ReadOnly="true"
-                                                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this);" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
-                                                                </td>
-                                                                <td class="pf-col-act"></td>
-                                                            </tr>
+                                                            <%-- 02-11-2026 MUKESH BHAGAT: Processing fee / Margin % / Freight are common to every pack - see "Common charges" below the packs.
+                                                                 (Labour is part of the processing fee since 19-10-2026; pch_labour_charge is saved as 0.) --%>
                                                         </tbody>
                                                         <tfoot>
                                                             <tr class="pf-sub">
@@ -1573,8 +1685,20 @@
                                                                 <td></td>
                                                             </tr>
                                                             <tr class="pf-sub">
-                                                                <td colspan="2" class="pf-right">Margin amount</td>
+                                                                <td colspan="2" class="pf-right">Processing fee <span class="pf-muted">(common)</span></td>
+                                                                <td class="pf-right">&#8377; <span class="pf-proc-amt">0.00</span></td>
+                                                                <td class="pf-md" runat="server" visible='<%# ShowInternal %>'></td>
+                                                                <td></td>
+                                                            </tr>
+                                                            <tr class="pf-sub">
+                                                                <td colspan="2" class="pf-right">Margin amount <span class="pf-muted">(common %)</span></td>
                                                                 <td class="pf-right">&#8377; <span class="pf-margin-amt">0.00</span></td>
+                                                                <td class="pf-md" runat="server" visible='<%# ShowInternal %>'></td>
+                                                                <td></td>
+                                                            </tr>
+                                                            <tr class="pf-sub" runat="server" visible='<%# FreightAllowed() %>'>
+                                                                <td colspan="2" class="pf-right">Freight <span class="pf-muted">(<%# PackContentText(Eval("pack_size")) %> kg / litre x common rate)</span></td>
+                                                                <td class="pf-right">&#8377; <span class="pf-freight-amt">0.00</span></td>
                                                                 <td class="pf-md" runat="server" visible='<%# ShowInternal %>'></td>
                                                                 <td></td>
                                                             </tr>
@@ -1601,7 +1725,38 @@
                             </div>
                             <asp:Button ID="btnAddPack" runat="server" Text="+ Add pack size" CssClass="pf-btn pf-btn-primary" ClientIDMode="Static" OnClientClick="return validateAddPack();" OnClick="btnAddPack_Click" />
                         </div>
-                        <p class="pf-hint">Pack sizes are the ones declared for this vendor on Vendor Scope (product + shade); cost names come from the packaging items (PKG) master.</p>
+                        <p class="pf-hint">Pack sizes are the ones declared for this vendor on Vendor Scope (product + shade); the packaging cost lines are picked from the packaging items the vendor created on Raw Material List (Type = Packaging).</p>
+                        <asp:Label ID="lblPkgNote" runat="server" CssClass="pf-mode-note pf-warn" Style="display: block;"></asp:Label>
+
+                        <%-- 02-11-2026 MUKESH BHAGAT: common to every pack size, entered after the packs (saved on every pack row; freight rate is saved on the formulation) --%>
+                        <div class="pf-common">
+                            <h5>Common charges <span class="pf-muted">- apply to every pack size above</span></h5>
+                            <div class="pf-common-grid">
+                                <div>
+                                    <label class="pf-label">Processing fee (&#8377; per pack) <span class="pf-muted">labour included</span></label>
+                                    <asp:TextBox ID="txtComProc" runat="server" ClientIDMode="Static" CssClass="pf-num" Placeholder="0.00" AutoComplete="Off"
+                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
+                                    <div class="pf-md-cell" id="divMdComProc" runat="server">Suggested <span class="pf-muted">Material Dept</span>
+                                        <asp:TextBox ID="txtMdComProc" runat="server" ClientIDMode="Static" CssClass="pf-num pf-md-in" Placeholder="-" AutoComplete="Off" ReadOnly="true"
+                                            onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this);" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="pf-label">Margin (%) <span class="pf-muted">on SKU price + material + processing</span></label>
+                                    <asp:TextBox ID="txtComMargin" runat="server" ClientIDMode="Static" CssClass="pf-num" Placeholder="0.00 %" AutoComplete="Off"
+                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
+                                    <div class="pf-md-cell" id="divMdComMargin" runat="server">Suggested <span class="pf-muted">Material Dept</span>
+                                        <asp:TextBox ID="txtMdComMargin" runat="server" ClientIDMode="Static" CssClass="pf-num pf-md-in" Placeholder="- %" AutoComplete="Off" ReadOnly="true"
+                                            onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this);" onblur="formatRateTwoDecimal(this);"></asp:TextBox>
+                                    </div>
+                                </div>
+                                <div id="divFreight" runat="server">
+                                    <label class="pf-label">Freight (&#8377; per kg / litre) <span class="pf-muted">x pack content, added after margin</span></label>
+                                    <asp:TextBox ID="txtComFreight" runat="server" ClientIDMode="Static" CssClass="pf-num" Placeholder="0.00" AutoComplete="Off"
+                                        onkeypress="return allowRateTwoDecimal(event, this);" oninput="sanitizeRateTwoDecimal(this); pfRecalc(this);" onblur="formatRateTwoDecimal(this); pfRecalc(this);"></asp:TextBox>
+                                </div>
+                            </div>
+                        </div>
                         <asp:Label ID="valPack" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                     </asp:Panel>
                 </div>

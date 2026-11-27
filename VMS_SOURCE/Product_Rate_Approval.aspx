@@ -6,7 +6,7 @@
         .pra-kv { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 16px; font-size: 12.5px; }
         .pra-kv b { color: #375973; }
         .pra-badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap; }
-        .pra-APPROVED { background: #28a745; } .pra-INACTIVE { background: #6c757d; } .pra-PENDING { background: #e0a800; }
+        .pra-APPROVED { background: #28a745; } .pra-INACTIVE { background: #6c757d; } .pra-SCHEDULED { background: #17a2b8; } .pra-PENDING { background: #e0a800; }
         .pra-REJECTED { background: #dc3545; } .pra-SUPERSEDED { background: #adb5bd; } .pra-PENDING_VENDOR { background: #17a2b8; } .pra-PENDING_MATERIAL { background: #8a6d1f; } .pra-PENDING_HO { background: #b8860b; }
         .pra-row-active td { background: #eaf7ee !important; }
         .pra-small { font-size: 11px; color: #666; }

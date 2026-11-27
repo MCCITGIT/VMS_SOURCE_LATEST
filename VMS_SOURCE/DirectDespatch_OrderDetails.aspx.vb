@@ -388,8 +388,12 @@ Partial Class DirectDespatch_OrderDetails
             cell.SetCellValue(GetReportColumnString(dt.Rows(i), "non_delivered_reason"))
             cell.CellStyle = styleDelayedReason
 
+            cell = row.CreateCell(21)
+            cell.SetCellValue(Convert.ToString(dt.Rows(i)("DespatchStatus")))
+            cell.CellStyle = styleleft
+
             'Template seems to rely on borders (gridlines off). Ensure all columns have bordered cells.
-            For col As Integer = 0 To 20
+            For col As Integer = 0 To 21
                 Dim gridCell As HSSFCell = row.GetCell(col)
                 If gridCell Is Nothing Then
                     gridCell = row.CreateCell(col)

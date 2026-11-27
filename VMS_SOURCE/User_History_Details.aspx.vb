@@ -10,6 +10,7 @@
 
 '*************************************************************
 Imports System.Data
+Imports System.Collections.Generic
 Imports VMS.Web
 Imports System.Data.SqlClient
 
@@ -181,18 +182,25 @@ Partial Class User_History
                 If ddlSearchFor.SelectedValue = "Detail" Then
                     gvUserHistory.Visible = True
                     gvUserHistoryCount.Visible = False
-                    gvUserHistory.DataSource = UserSet.Tables(0)
+                    gvUserHistory.DataSource = FirstHistoryPage(UserSet.Tables(0), gvUserHistory.PageSize)
                     gvUserHistory.DataBind()
+                    hdnHistoryMode.Value = "Detail"
+                    hdnHistoryPage.Value = "0"
+                    hdnHistoryPageSize.Value = gvUserHistory.PageSize.ToString()
                 Else
                     gvUserHistory.Visible = False
                     gvUserHistoryCount.Visible = True
                     gvUserHistoryCount.DataSource = UserSet.Tables(0)
                     gvUserHistoryCount.DataBind()
+                    hdnHistoryMode.Value = "Summary"
+                    hdnHistoryPage.Value = gvUserHistoryCount.PageIndex.ToString()
+                    hdnHistoryPageSize.Value = gvUserHistoryCount.PageSize.ToString()
                 End If
 
             Else
                 gvUserHistory.Visible = False
                 gvUserHistoryCount.Visible = False
+                hdnHistoryMode.Value = String.Empty
             End If
         Catch ex As Exception
             Dim returnUrl As String = "~/ExceptionPage.aspx"
@@ -201,6 +209,60 @@ Partial Class User_History
         End Try
     End Sub
 #End Region
+
+    Private Function FirstHistoryPage(ByVal dt As DataTable, ByVal pageSize As Integer) As DataTable
+        If pageSize <= 0 Then pageSize = 15
+        Dim pageDt As DataTable = dt.Clone()
+        Dim take As Integer = Math.Min(pageSize, dt.Rows.Count)
+        For i As Integer = 0 To take - 1
+            pageDt.ImportRow(dt.Rows(i))
+        Next
+        Return pageDt
+    End Function
+
+    <System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreUserHistory(pageIndex As Integer, pageSize As Integer, userGroup As String, userId As String, fromDate As String, toDate As String, searchType As String) As Object
+        Dim rows As New List(Of Object)
+        Dim total As Integer = 0
+        If pageSize <= 0 Then pageSize = 15
+        If String.IsNullOrEmpty(fromDate) Then fromDate = Constant.Common.FromDate
+        If String.IsNullOrEmpty(toDate) Then toDate = Constant.Common.Todate
+        If String.IsNullOrEmpty(searchType) Then searchType = "Detail"
+
+        Dim company As String = String.Empty
+        Dim sessionUser = System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo)
+        If sessionUser IsNot Nothing Then
+            company = CType(sessionUser, VMSUserEntity).userCompanyEntity
+        End If
+
+        Dim userSet As DataSet = New UserProfile().User_History_Get(company, If(userGroup, String.Empty), If(userId, String.Empty), fromDate, toDate, searchType)
+        If userSet IsNot Nothing AndAlso userSet.Tables.Count > 0 AndAlso userSet.Tables(0) IsNot Nothing Then
+            Dim dt As DataTable = userSet.Tables(0)
+            total = dt.Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            For i As Integer = start To last
+                Dim r As DataRow = dt.Rows(i)
+                If searchType = "Detail" Then
+                    rows.Add(New With {
+                        .uh_userid = Convert.ToString(r("uh_userid")),
+                        .uh_user_group = Convert.ToString(r("uh_user_group")),
+                        .logdate = Convert.ToString(r("logdate")),
+                        .logtime = Convert.ToString(r("logtime"))
+                    })
+                Else
+                    rows.Add(New With {
+                        .uh_userid = Convert.ToString(r("uh_userid")),
+                        .fromDate = Convert.ToString(r("fromDate")),
+                        .toDate = Convert.ToString(r("toDate")),
+                        .totalCount = Convert.ToString(r("totalCount"))
+                    })
+                End If
+            Next
+        End If
+
+        Return New With {.rows = rows, .total = total}
+    End Function
 
 #Region "Date Format"
 
@@ -248,10 +310,10 @@ Partial Class User_History
 
 #Region "Grid Page Index Changed"
     ' Event Handler for Page Changing
-    Protected Sub gvUserProfile_PageIndexChanging(ByVal sender As Object, ByVal e As GridViewPageEventArgs)
-        gvUserHistory.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub gvUserProfile_PageIndexChanging(ByVal sender As Object, ByVal e As GridViewPageEventArgs)
+    '    gvUserHistory.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
 #End Region
     Protected Sub gvUserHistoryCount_PageIndexChanging(ByVal sender As Object, ByVal e As GridViewPageEventArgs)
         gvUserHistoryCount.PageIndex = e.NewPageIndex
@@ -316,6 +378,7 @@ Partial Class User_History
     Protected Sub btnClear_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnClear.Click
         gvUserHistory.Visible = False
         gvUserHistoryCount.Visible = False
+        hdnHistoryMode.Value = String.Empty
         txtFromDate.Text = ""
         txtFromDate.Text = ""
         ddlUserId.Items.Clear()
@@ -350,31 +413,31 @@ Partial Class User_History
 #End Region
 #Region "Row Bound event for User Histroy Details Grid"
     Protected Sub gvUserHistory_RowDataBound(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewRowEventArgs) Handles gvUserHistory.RowDataBound
-        If (e.Row.RowType = DataControlRowType.Pager) Then
-            Dim row As TableRow = New TableRow
-            row = e.Row.Controls(0).Controls(0).Controls(0)
-            For Each cell As TableCell In row.Cells
-                Dim lb As Control = cell.Controls(0)
+        'If (e.Row.RowType = DataControlRowType.Pager) Then
+        '    Dim row As TableRow = New TableRow
+        '    row = e.Row.Controls(0).Controls(0).Controls(0)
+        '    For Each cell As TableCell In row.Cells
+        '        Dim lb As Control = cell.Controls(0)
 
 
-                If (TypeOf (lb) Is Label) Then
+        '        If (TypeOf (lb) Is Label) Then
 
-                    'CType(lb, Label).ForeColor = System.Drawing.Color.Red
-                    CType(lb, Label).CssClass = "lblpager"
-                    'CType(lb, Label).Width = 20
-                    'CType(lb, Label).Height = 15
-                    'set current pager
+        '            'CType(lb, Label).ForeColor = System.Drawing.Color.Red
+        '            CType(lb, Label).CssClass = "lblpager"
+        '            'CType(lb, Label).Width = 20
+        '            'CType(lb, Label).Height = 15
+        '            'set current pager
 
-                ElseIf (TypeOf (lb) Is LinkButton) Then
+        '        ElseIf (TypeOf (lb) Is LinkButton) Then
 
-                    CType(lb, LinkButton).CssClass = "lnkpager"
-                    'CType(lb, LinkButton).Width = 20
-                    'CType(lb, LinkButton).Height = 15
-                    'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
-                End If
+        '            CType(lb, LinkButton).CssClass = "lnkpager"
+        '            'CType(lb, LinkButton).Width = 20
+        '            'CType(lb, LinkButton).Height = 15
+        '            'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
+        '        End If
 
-            Next
-        End If
+        '    Next
+        'End If
     End Sub
 
 #End Region

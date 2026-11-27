@@ -14,6 +14,7 @@ Imports VMS.Web
 Imports System.Data
 Imports System.Data.SqlTypes
 Imports System.Data.SqlClient
+Imports System.Collections.Generic
 Imports VMS.DataAccess
 Partial Class TokenRequisitionList
     Inherits System.Web.UI.Page
@@ -118,11 +119,15 @@ Partial Class TokenRequisitionList
             End If
 
             If (Not (dsProductSet Is Nothing) AndAlso dsProductSet.Tables.Count > 0 AndAlso Not (dsProductSet.Tables(0) Is Nothing) AndAlso dsProductSet.Tables(0).Rows.Count > 0) Then
-                gvRequistionList.DataSource = dsProductSet.Tables(0)
+                gvRequistionList.PageIndex = 0
+                gvRequistionList.DataSource = FirstTokenReqPage(dsProductSet.Tables(0))
                 gvRequistionList.DataBind()
+                hdnTokenReqHasData.Value = "1"
+                hdnTokenReqPageSize.Value = gvRequistionList.PageSize.ToString()
             Else
                 gvRequistionList.DataSource = Nothing
                 gvRequistionList.DataBind()
+                hdnTokenReqHasData.Value = "0"
             End If
         Catch ex As Exception
             Dim returnUrl As String = "~/ExceptionPage.aspx"
@@ -200,10 +205,10 @@ Partial Class TokenRequisitionList
     End Sub
 #End Region
 
-    Protected Sub gvProductList_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvRequistionList.PageIndexChanging
-        gvRequistionList.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub gvProductList_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvRequistionList.PageIndexChanging
+    '    gvRequistionList.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
 
     Protected Sub gvProductList_RowDataBound(sender As Object, e As GridViewRowEventArgs) Handles gvRequistionList.RowDataBound
         If (e.Row.RowType = DataControlRowType.DataRow) Then
@@ -303,4 +308,75 @@ Partial Class TokenRequisitionList
     Protected Sub imgbtnAdd_Click(sender As Object, e As EventArgs)
         Response.Redirect("TokenVendorRequisitionAddUpdate.aspx", False)
     End Sub
+
+    Private Function FirstTokenReqPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvRequistionList.PageSize
+        If pageSize <= 0 Then pageSize = 20
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreTokenRequisitions(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal unit As String, ByVal tokenVendor As String, ByVal requisitionId As String, ByVal status As String) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        Dim userInfo As VMSUserEntity = CType(System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
+        If pageSize <= 0 Then pageSize = 20
+        If pageIndex < 0 Then pageIndex = 0
+        Dim unitValue As String = If(unit, String.Empty)
+        If userInfo.userGroupCodeEntity.Equals("UNIT") Then unitValue = userInfo.userIDEntity
+        Dim reqId As Integer = 0
+        Integer.TryParse(If(requisitionId, "0"), reqId)
+        Dim ds As DataSet = New TokenVendorRequisitionClass().GetRequistionList(userInfo.userIDEntity, userInfo.userGroupCodeEntity, unitValue, If(tokenVendor, String.Empty), reqId, If(status, String.Empty))
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                rows.Add(New With {
+                    .id = dr("trh_id").ToString(),
+                    .unit = dr("trh_unit").ToString(),
+                    .vendor = dr("trh_token_vendor").ToString(),
+                    .site = dr("trh_site_name").ToString(),
+                    .desc = dr("trh_desc").ToString(),
+                    .items = dr("items").ToString(),
+                    .qty = dr("totalQty").ToString(),
+                    .status = dr("trh_status").ToString()
+                })
+            Next
+        End If
+        Return New With {.rows = rows, .total = total}
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function RejectTokenRequisition(ByVal requisitionId As Integer) As String
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return "error"
+        Dim sqlConn As SqlConnection = Nothing
+        Dim sqlTrans As SqlTransaction = Nothing
+        Try
+            sqlConn = DBFactory.GetHelper.OpenConnection()
+            sqlTrans = sqlConn.BeginTransaction()
+            Dim recordInserted As Integer = New TokenVendorRequisitionClass().TokenRequisitionReject(requisitionId, Constant.Common.Token_Req_Status_Rejected, sqlConn, sqlTrans)
+            If recordInserted > 0 Then
+                sqlTrans.Commit()
+                Return "ok"
+            End If
+            sqlTrans.Rollback()
+        Catch
+            If sqlTrans IsNot Nothing Then sqlTrans.Rollback()
+        Finally
+            If sqlConn IsNot Nothing Then sqlConn.Close()
+        End Try
+        Return "error"
+    End Function
 End Class

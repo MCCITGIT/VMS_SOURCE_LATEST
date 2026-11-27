@@ -46,7 +46,7 @@ Public Class VendorUnit
         Try
             sqlConn = DBFactory.GetHelper.OpenConnection()
             sqlTrans = sqlConn.BeginTransaction()
-            Dim sqlParams(16) As SqlParameter
+            Dim sqlParams(17) As SqlParameter
 
             sqlParams(0) = New SqlParameter()
             sqlParams(0).ParameterName = "@Vend_Company"
@@ -153,6 +153,12 @@ Public Class VendorUnit
             sqlParams(16).DbType = DbType.String
             sqlParams(16).Direction = Data.ParameterDirection.Input
             sqlParams(16).Value = Vendor.ActiveStatus
+
+            sqlParams(17) = New SqlParameter()
+            sqlParams(17).ParameterName = "@unit_freight_yn"
+            sqlParams(17).DbType = DbType.String
+            sqlParams(17).Direction = Data.ParameterDirection.Input
+            sqlParams(17).Value = If(String.IsNullOrEmpty(Vendor.FreightYn), "N", Vendor.FreightYn)
 
 
             'sqlCmd is the object instance of the SqlCommand 
@@ -194,7 +200,7 @@ Public Class VendorUnit
             sqlConn = DBFactory.GetHelper.OpenConnection()
             sqlTrans = sqlConn.BeginTransaction()
 
-            Dim sqlParams(16) As SqlParameter
+            Dim sqlParams(17) As SqlParameter
 
             sqlParams(0) = New SqlParameter()
             sqlParams(0).ParameterName = "@Vend_Company"
@@ -301,6 +307,12 @@ Public Class VendorUnit
             sqlParams(16).DbType = DbType.String
             sqlParams(16).Direction = Data.ParameterDirection.Input
             sqlParams(16).Value = Vendor.ActiveStatus
+
+            sqlParams(17) = New SqlParameter()
+            sqlParams(17).ParameterName = "@unit_freight_yn"
+            sqlParams(17).DbType = DbType.String
+            sqlParams(17).Direction = Data.ParameterDirection.Input
+            sqlParams(17).Value = If(String.IsNullOrEmpty(Vendor.FreightYn), "N", Vendor.FreightYn)
 
             'sqlCmd is the object instance of the SqlCommand 
             Dim sqlCmd As New SqlCommand()

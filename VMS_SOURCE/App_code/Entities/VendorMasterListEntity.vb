@@ -24,6 +24,7 @@ Namespace VMS.Web
         Private Deleted_user As String
         Private Deleted_date As String
         Private Active As String
+        Private Freight_Yn As String
 
         Public Sub New()
             Vend_company = String.Empty
@@ -48,6 +49,7 @@ Namespace VMS.Web
             Deleted_user = String.Empty
             Deleted_date = String.Empty
             Active = String.Empty
+            Freight_Yn = "N"
         End Sub
         Public Property Vendcompany() As String
             'Gets and Sets Company
@@ -234,6 +236,14 @@ Namespace VMS.Web
             End Get
             Set(ByVal value As String)
                 Active = value
+            End Set
+        End Property
+        Public Property FreightYn() As String
+            Get
+                Return Freight_Yn
+            End Get
+            Set(ByVal value As String)
+                Freight_Yn = value
             End Set
         End Property
 

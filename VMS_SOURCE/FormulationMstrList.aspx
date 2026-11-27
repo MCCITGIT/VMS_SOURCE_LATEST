@@ -97,6 +97,7 @@
                                         <asp:ListItem Value="ALL" Text="Everything (full history)" Selected="True"></asp:ListItem>
                                         <asp:ListItem Value="ACTIVE" Text="Active releases (in force)"></asp:ListItem>
                                         <asp:ListItem Value="NEGOTIATION" Text="Under negotiation (pending / rejected)"></asp:ListItem>
+                                        <asp:ListItem Value="STANDARD" Text="Standard formulations (HO)"></asp:ListItem>
                                     </asp:DropDownList>
                                 </div>
                             </div>
@@ -152,6 +153,89 @@
                                 </div>
                             </div>
                         </div>--%>
+                    </div>
+                </div>
+
+                <%-- 04-11-2026 MUKESH BHAGAT: second view "Standard formulations (HO)" - one row per active standard (brand + product + shade).
+                     HO opens it to edit (a new version); a vendor opens it to enter its rates (the raw materials and percentages arrive locked). --%>
+                <div class="card" runat="server" id="trStd" visible="false">
+                    <div class="mst-panel-header">
+                        <div class="mst-panel-header-left">
+                            <span class="mst-panel-icon"><i class="fas fa-flask"></i></span>
+                            <div>
+                                <h5 class="mst-panel-title">Standard formulations</h5>
+                                <p class="mst-panel-subtitle"><asp:Label ID="lblStdSub" runat="server"></asp:Label></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive rm-grid-scroll">
+                            <asp:GridView ID="gvStandardList" runat="server" AutoGenerateColumns="False" BorderWidth="1"
+                                CssClass="table table-hover upgradDataGrid" EmptyDataText="No standard formulation has been defined yet."
+                                AllowPaging="true" PageSize="10" PagerSettings-Mode="NumericFirstLast" PagerSettings-PageButtonCount="5"
+                                PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last">
+                                <RowStyle CssClass="tlrowlight" />
+                                <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
+                                <HeaderStyle CssClass="headerGrid" />
+                                <FooterStyle CssClass="footerGrid" />
+                                <Columns>
+                                    <asp:TemplateField HeaderText="Srl No">
+                                        <ItemTemplate><%# (gvStandardList.PageIndex * gvStandardList.PageSize) + Container.DataItemIndex + 1 %></ItemTemplate>
+                                        <HeaderStyle HorizontalAlign="Center" />
+                                        <ItemStyle HorizontalAlign="Center" Width="5%" />
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Brand">
+                                        <ItemTemplate><%# Eval("brand_name") %></ItemTemplate>
+                                        <HeaderStyle HorizontalAlign="Center" />
+                                        <ItemStyle HorizontalAlign="Left" Width="12%" />
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Product">
+                                        <ItemTemplate><%# Eval("product_name") %></ItemTemplate>
+                                        <HeaderStyle HorizontalAlign="Center" />
+                                        <ItemStyle HorizontalAlign="Left" Width="24%" />
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Shade">
+                                        <ItemTemplate><%# Eval("shade_name") %></ItemTemplate>
+                                        <HeaderStyle HorizontalAlign="Center" />
+                                        <ItemStyle HorizontalAlign="Left" Width="10%" />
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Version">
+                                        <ItemTemplate><%# Eval("ssf_version") %></ItemTemplate>
+                                        <HeaderStyle HorizontalAlign="Center" />
+                                        <ItemStyle HorizontalAlign="Center" Width="6%" />
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Raw materials">
+                                        <ItemTemplate><%# Eval("rawmat_count") %></ItemTemplate>
+                                        <HeaderStyle HorizontalAlign="Center" />
+                                        <ItemStyle HorizontalAlign="Center" Width="8%" />
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Total %">
+                                        <ItemTemplate><%# String.Format("{0:0.00}", Eval("ssf_total_ratio_pct")) %></ItemTemplate>
+                                        <HeaderStyle HorizontalAlign="Center" />
+                                        <ItemStyle HorizontalAlign="Right" Width="7%" />
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Saved by">
+                                        <ItemTemplate><%# Eval("created_by") %><br /><span class="text-muted" style="font-size: 11px;"><%# String.Format("{0:dd/MM/yyyy}", Eval("created_on")) %></span></ItemTemplate>
+                                        <HeaderStyle HorizontalAlign="Center" />
+                                        <ItemStyle HorizontalAlign="Center" Width="10%" />
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Vendors priced">
+                                        <ItemTemplate><%# StandardUsageText(Eval("vendors_used"), Eval("vendor_has_formulation")) %></ItemTemplate>
+                                        <HeaderStyle HorizontalAlign="Center" />
+                                        <ItemStyle HorizontalAlign="Center" Width="10%" />
+                                    </asp:TemplateField>
+                                    <asp:TemplateField HeaderText="Action">
+                                        <ItemTemplate>
+                                            <asp:LinkButton ID="btnOpenStd" runat="server" CommandName="OpenStd" CommandArgument='<%# Eval("ssf_id") %>' CssClass="text-primary" ToolTip='<%# If(IsUnitUser(), "Enter your rates on this standard", "Open this standard (edit saves a new version)") %>'>
+                                                <i class='<%# If(IsUnitUser(), "fa fa-pen", "fa fa-eye") %>'></i> <%# If(IsUnitUser(), "Enter rates", "Open") %>
+                                            </asp:LinkButton>
+                                        </ItemTemplate>
+                                        <HeaderStyle HorizontalAlign="Center" />
+                                        <ItemStyle HorizontalAlign="Center" Width="12%" />
+                                    </asp:TemplateField>
+                                </Columns>
+                            </asp:GridView>
+                        </div>
                     </div>
                 </div>
 
@@ -240,7 +324,7 @@
                                             </asp:TemplateField>
                                             <asp:TemplateField HeaderText="Status">
                                                 <ItemTemplate>
-                                                    <span style='font-weight: 600; color: <%# If(Eval("sf_status").ToString() = "APPROVED", "#28a745", If(Eval("sf_status").ToString() = "REJECTED", "#dc3545", If(Eval("sf_status").ToString() = "PENDING_VENDOR", "#17a2b8", If(Eval("sf_status").ToString() = "PENDING", "#e0a800", "#6c757d")))) %>'><%# Eval("sf_status") %></span>
+                                                    <span style='font-weight: 600; color: <%# If(Eval("sf_status").ToString() = "APPROVED", "#28a745", If(Eval("sf_status").ToString() = "REJECTED", "#dc3545", If(Eval("sf_status").ToString() = "PENDING_VENDOR" OrElse Eval("sf_status").ToString() = "SCHEDULED", "#17a2b8", If(Eval("sf_status").ToString() = "PENDING", "#e0a800", "#6c757d")))) %>'><%# Eval("sf_status") %></span>
                                                 </ItemTemplate>
                                                 <HeaderStyle HorizontalAlign="Center" />
                                                 <ItemStyle HorizontalAlign="Center" Width="7%" />
@@ -383,7 +467,7 @@
             function statusColor(status) {
                 if (status === 'APPROVED') return '#28a745';
                 if (status === 'REJECTED') return '#dc3545';
-                if (status === 'PENDING_VENDOR') return '#17a2b8';
+                if (status === 'PENDING_VENDOR' || status === 'SCHEDULED') return '#17a2b8';
                 if (status === 'PENDING') return '#e0a800';
                 return '#6c757d';
             }

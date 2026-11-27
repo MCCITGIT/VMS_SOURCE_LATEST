@@ -5,6 +5,7 @@ Imports System.IO
 Imports VMS.DataAccess
 Imports System.Data.SqlClient
 Imports System.Security.Permissions
+Imports System.Collections.Generic
 Imports Microsoft.Win32
 
 Partial Class VendorChallanList
@@ -13,6 +14,8 @@ Partial Class VendorChallanList
 
 #Region "Page Load Event"
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+        Dim sm As ScriptManager = ScriptManager.GetCurrent(Me.Page)
+        If sm IsNot Nothing Then sm.RegisterPostBackControl(btnVclDownload)
         If Not IsPostBack Then
             btnAprove.Enabled = False
             CheckLogin()
@@ -126,65 +129,7 @@ Partial Class VendorChallanList
                 Dim lbl As Label = CType(row.FindControl("lblName"), Label)
 
                 If ddlStatus.SelectedValue = "A" And ddlType.SelectedValue = "Direct" Then
-                    txtInvoiceNo.ReadOnly = False
-                    txtInvoiceDate.Enabled = True
-                    txtTransporterName.ReadOnly = False
-                    txtLorryNo.ReadOnly = False
-                    txtWayBill.ReadOnly = False
-                    'btnSave.Visible = True
-
-                    hdn_dispatchAssignHdr.Value = String.Empty
-                    txtInvoiceNo.Text = String.Empty
-                    'CalendarExtender.StartDate = DateTime.Now
-                    txtInvoiceDate.Text = String.Empty
-                    txtTransporterName.Text = String.Empty
-                    txtLorryNo.Text = String.Empty
-                    txtWayBill.Text = String.Empty
-
-                    Dim ddrd_hdr_req_id As String = Convert.ToString(hdnChallanId.Value)
-
-                    Dim ds As DataSet = New DataSet()
-                    Dim Obj As VendorDispatchClass = New VendorDispatchClass()
-                    ds = Obj.GetVendorDispatchAssignDetailsList(ddrd_hdr_req_id)
-
-                    If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
-                        hdn_dispatchAssignHdr.Value = ddrd_hdr_req_id
-                        gvDispatchAssignDtls.DataSource = ds.Tables(0)
-                        gvDispatchAssignDtls.DataBind()
-                    End If
-
-                    Dim total As Decimal = 0
-                    For i As Integer = 0 To gvDispatchAssignDtls.Rows.Count - 1
-                        Dim lblTotalRate As Label = gvDispatchAssignDtls.Rows(i).FindControl("lblTotalRate")
-
-                        If (lblTotalRate.Text = "") Then
-                            total = total + Convert.ToDecimal(0)
-                        Else
-                            total = total + Convert.ToDecimal(lblTotalRate.Text)
-                        End If
-                    Next
-
-                    lbltotalrateincgst.Text = total.ToString()
-
-                    If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(1) Is Nothing) AndAlso ds.Tables(1).Rows.Count > 0) Then
-                        txtTransporterName.Text = ds.Tables(1).Rows(0)("tm_transporter_name").ToString()
-                        txtpono.Text = ds.Tables(1).Rows(0)("ddrh_po_no").ToString()
-                    End If
-                    If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(2) Is Nothing) AndAlso ds.Tables(2).Rows.Count > 0) Then
-                        txtInvoiceNo.Text = Convert.ToString(ds.Tables(2).Rows(0)("ddah_vendor_invoice_no"))
-                        txtInvoiceDate.Text = Convert.ToString(ds.Tables(2).Rows(0)("ddah_vendor_invoice_date"))
-                        txtTransporterName.Text = Convert.ToString(ds.Tables(2).Rows(0)("ddah_transporter_name"))
-                        txtLorryNo.Text = Convert.ToString(ds.Tables(2).Rows(0)("ddah_vehicle_no"))
-                        txtWayBill.Text = Convert.ToString(ds.Tables(2).Rows(0)("ddah_waybill_no"))
-                        'btnSave.Visible = False
-                        txtInvoiceNo.ReadOnly = True
-                        txtInvoiceDate.Enabled = False
-                        txtTransporterName.ReadOnly = True
-                        txtLorryNo.ReadOnly = True
-                        txtWayBill.ReadOnly = True
-                    End If
-
-                    ModalPopupExtender2.Show()
+                    ShowDirectDispatchModal(Convert.ToString(hdnChallanId.Value))
                 Else
 
                     'btnViewDetails.Visible = False
@@ -410,10 +355,10 @@ Partial Class VendorChallanList
         BindGrid()
     End Sub
 
-    Protected Sub gvChallanDetails_IndexChanging(ByVal sender As Object, ByVal e As GridViewPageEventArgs) Handles gvChallanDetails.PageIndexChanging
-        gvChallanDetails.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub gvChallanDetails_IndexChanging(ByVal sender As Object, ByVal e As GridViewPageEventArgs) Handles gvChallanDetails.PageIndexChanging
+    '    gvChallanDetails.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
 
     Protected Sub gvChallanDetails_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles gvChallanDetails.SelectedIndexChanged
 
@@ -652,6 +597,7 @@ Partial Class VendorChallanList
         End If
     End Sub
     Private Sub BindGrid()
+        CheckLogin()
         Dim DespatchDS As DataSet
         Dim DespatchObj As New UnitDespatchClassVr1
         'Modified-by MUKESH BHAGAT on 18-09-2026 : the search period comes from the From / To date
@@ -664,6 +610,7 @@ Partial Class VendorChallanList
             gvChallanDetails.DataSource = Nothing
             gvChallanDetails.DataBind()
             btnAprove.Enabled = False
+            hdnVclHasData.Value = "0"
             Return
         End If
         lblSearchError.Text = String.Empty
@@ -674,14 +621,26 @@ Partial Class VendorChallanList
         'Vendor Invoice No. (partial match done inside the SP)
         DespatchDS = DespatchObj.GetChallanDetails_Vr4(ddlUnit.SelectedValue, ddlLocation.SelectedValue, fromDate, toDate, txtSearchInvoiceNo.Text, "A", userInfo.userIDEntity, ddlType.SelectedValue)
         If (Not (DespatchDS Is Nothing) AndAlso DespatchDS.Tables.Count > 0 AndAlso Not (DespatchDS.Tables(0) Is Nothing) AndAlso DespatchDS.Tables(0).Rows.Count > 0) Then
-            gvChallanDetails.DataSource = DespatchDS
+            gvChallanDetails.PageIndex = 0
+            gvChallanDetails.DataSource = FirstChallanPage(DespatchDS.Tables(0))
             gvChallanDetails.DataBind()
             btnAprove.Enabled = True
+            hdnVclHasData.Value = "1"
+            hdnVclPageSize.Value = gvChallanDetails.PageSize.ToString()
         Else
             gvChallanDetails.DataSource = Nothing
             gvChallanDetails.DataBind()
             btnAprove.Enabled = False
+            hdnVclHasData.Value = "0"
         End If
+        hdnVclUnit.Value = ddlUnit.SelectedValue
+        hdnVclDepot.Value = ddlLocation.SelectedValue
+        hdnVclFrom.Value = fromDate.ToString("yyyy-MM-dd")
+        hdnVclTo.Value = toDate.ToString("yyyy-MM-dd")
+        hdnVclInvoice.Value = txtSearchInvoiceNo.Text
+        hdnVclType.Value = ddlType.SelectedValue
+        hdnVclStatus.Value = ddlStatus.SelectedValue
+        hdnVclHidePrint.Value = If(ddlType.SelectedValue = "Direct", "1", "0")
     End Sub
 
 
@@ -911,4 +870,149 @@ z:
         PopulateDepotName()
     End Sub
 
+    Private Sub ShowDirectDispatchModal(ByVal challanId As String)
+        txtInvoiceNo.ReadOnly = False
+        txtInvoiceDate.Enabled = True
+        txtTransporterName.ReadOnly = False
+        txtLorryNo.ReadOnly = False
+        txtWayBill.ReadOnly = False
+
+        hdn_dispatchAssignHdr.Value = String.Empty
+        txtInvoiceNo.Text = String.Empty
+        txtInvoiceDate.Text = String.Empty
+        txtTransporterName.Text = String.Empty
+        txtLorryNo.Text = String.Empty
+        txtWayBill.Text = String.Empty
+
+        Dim ds As DataSet = New VendorDispatchClass().GetVendorDispatchAssignDetailsList(challanId)
+
+        If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
+            hdn_dispatchAssignHdr.Value = challanId
+            gvDispatchAssignDtls.DataSource = ds.Tables(0)
+            gvDispatchAssignDtls.DataBind()
+        End If
+
+        Dim total As Decimal = 0
+        For i As Integer = 0 To gvDispatchAssignDtls.Rows.Count - 1
+            Dim lblTotalRate As Label = gvDispatchAssignDtls.Rows(i).FindControl("lblTotalRate")
+            If (lblTotalRate.Text = "") Then
+                total = total + Convert.ToDecimal(0)
+            Else
+                total = total + Convert.ToDecimal(lblTotalRate.Text)
+            End If
+        Next
+        lbltotalrateincgst.Text = total.ToString()
+
+        If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(1) Is Nothing) AndAlso ds.Tables(1).Rows.Count > 0) Then
+            txtTransporterName.Text = ds.Tables(1).Rows(0)("tm_transporter_name").ToString()
+            txtpono.Text = ds.Tables(1).Rows(0)("ddrh_po_no").ToString()
+        End If
+        If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(2) Is Nothing) AndAlso ds.Tables(2).Rows.Count > 0) Then
+            txtInvoiceNo.Text = Convert.ToString(ds.Tables(2).Rows(0)("ddah_vendor_invoice_no"))
+            txtInvoiceDate.Text = Convert.ToString(ds.Tables(2).Rows(0)("ddah_vendor_invoice_date"))
+            txtTransporterName.Text = Convert.ToString(ds.Tables(2).Rows(0)("ddah_transporter_name"))
+            txtLorryNo.Text = Convert.ToString(ds.Tables(2).Rows(0)("ddah_vehicle_no"))
+            txtWayBill.Text = Convert.ToString(ds.Tables(2).Rows(0)("ddah_waybill_no"))
+            txtInvoiceNo.ReadOnly = True
+            txtInvoiceDate.Enabled = False
+            txtTransporterName.ReadOnly = True
+            txtLorryNo.ReadOnly = True
+            txtWayBill.ReadOnly = True
+        End If
+
+        ModalPopupExtender2.Show()
+    End Sub
+
+    Private Function FirstChallanPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvChallanDetails.PageSize
+        If pageSize <= 0 Then pageSize = 15
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    Protected Sub btnVclView_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnVclView.Click
+        If hdnVclViewId.Value <> "" Then ShowDirectDispatchModal(hdnVclViewId.Value)
+    End Sub
+
+    Protected Sub btnVclDownload_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnVclDownload.Click
+        CheckLogin()
+        If hdnVclDlName.Value = "" Then Exit Sub
+        Dim genReportPath As String
+        If hdnVclType.Value = "Direct" Then
+            genReportPath = ConfigurationManager.AppSettings.Get("UPLOAD_DOCS_FOLDER_ABS_PATH") & userInfo.userCompanyEntity & "\" & "Direct_Despatch_Docs" & "\"
+        Else
+            genReportPath = ConfigurationManager.AppSettings.Get("UPLOAD_DOCS_FOLDER_ABS_PATH") & userInfo.userCompanyEntity & "\" & "Challan_Docs" & "\"
+        End If
+        DownloadDocument(genReportPath, hdnVclDlPath.Value & "\" & hdnVclDlName.Value, hdnVclDlName.Value)
+    End Sub
+
+    <System.Web.Script.Services.ScriptMethod()>
+    <System.Web.Services.WebMethod(EnableSession:=True)>
+    Public Shared Function GetMoreVendorChallans(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal unit As String, ByVal depot As String, ByVal fromDate As String, ByVal toDate As String, ByVal invoiceNo As String, ByVal despatchType As String) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        Dim userInfo As VMSUserEntity = CType(System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
+        If pageSize <= 0 Then pageSize = 15
+        If pageIndex < 0 Then pageIndex = 0
+        If userInfo.userGroupCodeEntity = "UNIT" Then unit = userInfo.userBranchEntity
+        Dim fromValue As Date
+        Dim toValue As Date
+        If Not Date.TryParseExact(If(fromDate, String.Empty), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, fromValue) Then Return New With {.rows = rows, .total = 0}
+        If Not Date.TryParseExact(If(toDate, String.Empty), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, toValue) Then Return New With {.rows = rows, .total = 0}
+        Dim ds As DataSet = New UnitDespatchClassVr1().GetChallanDetails_Vr4(If(unit, String.Empty), If(depot, String.Empty), fromValue, toValue, If(invoiceNo, String.Empty), "A", userInfo.userIDEntity, If(despatchType, String.Empty))
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                rows.Add(New With {
+                    .serial = (i + 1).ToString(),
+                    .despatchType = Convert.ToString(dr("despatch_type")),
+                    .region = Convert.ToString(dr("region")),
+                    .depot = Convert.ToString(dr("desph_desp_depot")),
+                    .depotName = Convert.ToString(dr("depotName")),
+                    .challanNo = Convert.ToString(dr("desph_challan_no")),
+                    .challanDate = Convert.ToString(dr("desph_challan_date")),
+                    .sku = Convert.ToString(dr("skuList")),
+                    .invoiceNo = Convert.ToString(dr("vendor_invoice_no")),
+                    .invoiceDate = Convert.ToString(dr("vendor_invoice_dt")),
+                    .grnNo = Convert.ToString(dr("GRN_No")),
+                    .grnDate = Convert.ToString(dr("GRN_Date")),
+                    .skuNop = Convert.ToString(dr("sku_nop")),
+                    .approved = Convert.ToString(dr("desph_approved_yn")),
+                    .year = Convert.ToString(dr("desph_challan_fin_year")),
+                    .month = Convert.ToString(dr("desph_process_month")),
+                    .unit = Convert.ToString(dr("desph_desp_unit")),
+                    .docPath = Convert.ToString(dr("doc_path")),
+                    .orgName = Convert.ToString(dr("org_filename"))
+                })
+            Next
+        End If
+        Return New With {.rows = rows, .total = total}
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod()>
+    <System.Web.Services.WebMethod(EnableSession:=True)>
+    Public Shared Function PrepareVendorChallanPrint(ByVal unit As String, ByVal depot As String, ByVal year As String, ByVal challanNo As String) As Boolean
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return False
+        Dim challan As Integer
+        If Not Integer.TryParse(challanNo, challan) Then challan = 0
+        Dim ReportViewer As New ReportViewer_DC
+        ReportViewer.ReportFileName = AppDomain.CurrentDomain.BaseDirectory + Constant.ReportView.ReportFileLoc + Constant.ReportView.ReportName.Despatched_Advice_Report
+        ReportViewer.ReportCase = Constant.ReportView.ReportCase.DespatchedAdviceRptCase
+        ReportViewer.DsptchdAdviceUnit = If(unit, String.Empty)
+        ReportViewer.DsptchdAdviceDepot = If(depot, String.Empty)
+        ReportViewer.DsptchdAdviceFinYear = If(year, String.Empty)
+        ReportViewer.DsptchdAdviceChlnNo = challan
+        ReportViewer.Active = Constant.Common.ActiveStatus
+        Return True
+    End Function
 End Class

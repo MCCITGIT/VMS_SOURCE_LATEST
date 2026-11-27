@@ -14,6 +14,7 @@ Imports VMS.Web
 Imports System.Data
 Imports System.Data.SqlTypes
 Imports System.Data.SqlClient
+Imports System.Collections.Generic
 Imports VMS.DataAccess
 Partial Class TokenVendorRequisitionList
     Inherits System.Web.UI.Page
@@ -99,7 +100,7 @@ Partial Class TokenVendorRequisitionList
     End Sub
 #End Region
 #Region "Date Format"
-    Public Function FormatDate(ByVal stringdate As String) As SqlDateTime
+    Public Shared Function FormatDate(ByVal stringdate As String) As SqlDateTime
 
         If (stringdate.Equals(String.Empty)) Then
             Return SqlDateTime.MinValue
@@ -140,11 +141,15 @@ Partial Class TokenVendorRequisitionList
             End If
 
             If (Not (dsProductSet Is Nothing) AndAlso dsProductSet.Tables.Count > 0 AndAlso Not (dsProductSet.Tables(0) Is Nothing) AndAlso dsProductSet.Tables(0).Rows.Count > 0) Then
-                gvRequistionList.DataSource = dsProductSet.Tables(0)
+                gvRequistionList.PageIndex = 0
+                gvRequistionList.DataSource = FirstVendorReqPage(dsProductSet.Tables(0))
                 gvRequistionList.DataBind()
+                hdnVendorReqHasData.Value = "1"
+                hdnVendorReqPageSize.Value = gvRequistionList.PageSize.ToString()
             Else
                 gvRequistionList.DataSource = Nothing
                 gvRequistionList.DataBind()
+                hdnVendorReqHasData.Value = "0"
             End If
         Catch ex As Exception
             Dim returnUrl As String = "~/ExceptionPage.aspx"
@@ -232,10 +237,10 @@ Partial Class TokenVendorRequisitionList
     End Sub
 #End Region
 
-    Protected Sub gvProductList_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvRequistionList.PageIndexChanging
-        gvRequistionList.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub gvProductList_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvRequistionList.PageIndexChanging
+    '    gvRequistionList.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
     Protected Sub gvProductList_RowDataBound(sender As Object, e As GridViewRowEventArgs) Handles gvRequistionList.RowDataBound
         If (e.Row.RowType = DataControlRowType.DataRow) Then
             Dim label As Label = CType(e.Row.FindControl("lblRequistionId"), Label)
@@ -245,7 +250,7 @@ Partial Class TokenVendorRequisitionList
 
 
 
-   
+
     Protected Sub gvTokenVendorList_RowCommand(sender As Object, e As GridViewCommandEventArgs) Handles gvRequistionList.RowCommand
         CheckLogin()
         If (e.CommandName.Equals("EditRequisition")) Then
@@ -262,4 +267,56 @@ Partial Class TokenVendorRequisitionList
     Protected Sub imgbtnSearch_Click(sender As Object, e As EventArgs) Handles imgbtnSearch.Click
         BindGrid()
     End Sub
+
+    Private Function FirstVendorReqPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvRequistionList.PageSize
+        If pageSize <= 0 Then pageSize = 20
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreVendorTokenReqs(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal unit As String, ByVal tokenVendor As String, ByVal requisitionId As String, ByVal fromDate As String, ByVal toDate As String) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        Dim userInfo As VMSUserEntity = CType(System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
+        If pageSize <= 0 Then pageSize = 20
+        If pageIndex < 0 Then pageIndex = 0
+        Dim vendorValue As String = If(tokenVendor, String.Empty)
+        If userInfo.userGroupCodeEntity.Equals("VENDOR") Then vendorValue = userInfo.userIDEntity
+        Dim reqId As Integer = 0
+        Integer.TryParse(If(requisitionId, "0"), reqId)
+        Dim total As Integer = 0
+        Try
+            Dim ds As DataSet = New TokenVendorRequisitionListClass().GetRequistionListForVendor(userInfo.userIDEntity, userInfo.userGroupCodeEntity, If(unit, String.Empty), vendorValue, reqId, FormatDate(If(fromDate, String.Empty).Trim()), FormatDate(If(toDate, String.Empty).Trim()))
+            If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+                total = ds.Tables(0).Rows.Count
+                Dim start As Integer = pageIndex * pageSize
+                Dim last As Integer = Math.Min(start + pageSize, total) - 1
+                Dim i As Integer
+                For i = start To last
+                    Dim dr As DataRow = ds.Tables(0).Rows(i)
+                    rows.Add(New With {
+                        .id = dr("trh_id").ToString(),
+                        .created = dr("created_date").ToString(),
+                        .unit = dr("trh_unit").ToString(),
+                        .vendor = dr("VendorName").ToString(),
+                        .site = dr("trh_site_name").ToString(),
+                        .desc = dr("trh_desc").ToString(),
+                        .items = dr("items").ToString(),
+                        .qty = dr("totalQty").ToString()
+                    })
+                Next
+            End If
+        Catch
+            Return New With {.rows = rows, .total = 0}
+        End Try
+        Return New With {.rows = rows, .total = total}
+    End Function
 End Class

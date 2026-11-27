@@ -17,6 +17,10 @@
             background: #28a745;
         }
 
+        .pra-SCHEDULED {
+            background: #17a2b8;
+        }
+
         .pra-INACTIVE {
             background: #6c757d;
         }

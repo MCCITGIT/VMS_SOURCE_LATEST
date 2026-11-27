@@ -5,6 +5,7 @@ Imports System.IO
 Imports VMS.DataAccess
 Imports System.Data.SqlClient
 Imports System.Security.Permissions
+Imports System.Collections.Generic
 Imports Microsoft.Win32
 Partial Class UnitDespatchPlanListVr1
     Inherits System.Web.UI.Page
@@ -12,6 +13,8 @@ Partial Class UnitDespatchPlanListVr1
 
 #Region "Page Load Event"
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+        Dim sm As ScriptManager = ScriptManager.GetCurrent(Me.Page)
+        If sm IsNot Nothing Then sm.RegisterPostBackControl(btnUdpDownload)
         If Not IsPostBack Then
             btnAprove.Enabled = False
             CheckLogin()
@@ -235,31 +238,31 @@ Partial Class UnitDespatchPlanListVr1
             e.Row.Cells(5).Text = "<a href='UnitDespatchPlanAddUpdateVr1.aspx?" & Constant.SessionKeys.Challan_No & "=" & rowView("desph_challan_no").ToString & "&" & Constant.SessionKeys.Process_Year & "=" & rowView("desph_challan_fin_year") & "&" & Constant.SessionKeys.UnitCode & "=" & rowView("desph_desp_unit") & "'class='gridlink'>" & rowView("desph_challan_no") & "</a>"
         End If
 
-        If (e.Row.RowType = DataControlRowType.Pager) Then
-            Dim row As TableRow = New TableRow
-            'row = e.Row.Controls(0).Controls(0).Controls(0)
-            For Each cell As TableCell In row.Cells
-                Dim lb As Control = cell.Controls(0)
+        'If (e.Row.RowType = DataControlRowType.Pager) Then
+        '    Dim row As TableRow = New TableRow
+        '    'row = e.Row.Controls(0).Controls(0).Controls(0)
+        '    For Each cell As TableCell In row.Cells
+        '        Dim lb As Control = cell.Controls(0)
 
 
-                If (TypeOf (lb) Is Label) Then
+        '        If (TypeOf (lb) Is Label) Then
 
-                    'CType(lb, Label).ForeColor = System.Drawing.Color.Red
-                    CType(lb, Label).CssClass = "lblpager"
-                    'CType(lb, Label).Width = 20
-                    'CType(lb, Label).Height = 15
-                    'set current pager
+        '            'CType(lb, Label).ForeColor = System.Drawing.Color.Red
+        '            CType(lb, Label).CssClass = "lblpager"
+        '            'CType(lb, Label).Width = 20
+        '            'CType(lb, Label).Height = 15
+        '            'set current pager
 
-                ElseIf (TypeOf (lb) Is LinkButton) Then
+        '        ElseIf (TypeOf (lb) Is LinkButton) Then
 
-                    CType(lb, LinkButton).CssClass = "lnkpager"
-                    'CType(lb, LinkButton).Width = 20
-                    'CType(lb, LinkButton).Height = 15
-                    'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
-                End If
+        '            CType(lb, LinkButton).CssClass = "lnkpager"
+        '            'CType(lb, LinkButton).Width = 20
+        '            'CType(lb, LinkButton).Height = 15
+        '            'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
+        '        End If
 
-            Next
-        End If
+        '    Next
+        'End If
     End Sub
 
     Protected Sub btnAprove_Click(ByVal sender As Object, ByVal e As System.EventArgs) Handles btnAprove.Click
@@ -391,15 +394,166 @@ Partial Class UnitDespatchPlanListVr1
         End If
         DespatchDS = DespatchObj.GetChallanDetails(ddlUnit.SelectedValue, ddlLocation.SelectedValue, ddlYear.SelectedValue, ddlMonth.SelectedValue, chalanNo, ddlStatus.SelectedValue, userInfo.userIDEntity)
         If (Not (DespatchDS Is Nothing) AndAlso DespatchDS.Tables.Count > 0 AndAlso Not (DespatchDS.Tables(0) Is Nothing) AndAlso DespatchDS.Tables(0).Rows.Count > 0) Then
-            gvChallanDetails.DataSource = DespatchDS
+            gvChallanDetails.PageIndex = 0
+            gvChallanDetails.DataSource = FirstChallanPage(DespatchDS.Tables(0))
             gvChallanDetails.DataBind()
             btnAprove.Enabled = True
+            hdnUdpHasData.Value = "1"
+            hdnUdpPageSize.Value = gvChallanDetails.PageSize.ToString()
         Else
             gvChallanDetails.DataSource = DespatchDS
             gvChallanDetails.DataBind()
             btnAprove.Enabled = False
+            hdnUdpHasData.Value = "0"
+        End If
+        hdnUdpUnit.Value = ddlUnit.SelectedValue
+        hdnUdpDepot.Value = ddlLocation.SelectedValue
+        hdnUdpYear.Value = ddlYear.SelectedValue
+        hdnUdpMonth.Value = ddlMonth.SelectedValue
+        hdnUdpChallan.Value = chalanNo.ToString()
+        hdnUdpStatus.Value = ddlStatus.SelectedValue
+        hdnUdpApprove.Value = ""
+    End Sub
+
+    Private Function FirstChallanPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvChallanDetails.PageSize
+        If pageSize <= 0 Then pageSize = 15
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    Private Sub ApproveExtraChallans()
+        Dim extra As String = hdnUdpApprove.Value
+        hdnUdpApprove.Value = ""
+        If String.IsNullOrEmpty(extra) Then Exit Sub
+        Dim DespatchObj As New UnitDespatchClass
+        Dim item As String
+        For Each item In extra.Split(";"c)
+            Dim parts As String() = item.Split("|"c)
+            Dim challanNo As Integer
+            If parts.Length < 5 OrElse Not Integer.TryParse(parts(0), challanNo) Then Continue For
+            Dim sqlConn As SqlConnection = Nothing
+            Dim sqlTrans As SqlTransaction = Nothing
+            Try
+                sqlConn = DBFactory.GetHelper.OpenConnection()
+                sqlTrans = sqlConn.BeginTransaction()
+                Dim numRowsAffected As Integer = DespatchObj.AproveChallan(sqlConn, sqlTrans, challanNo, parts(1), parts(2), parts(3), Constant.Common.ActiveStatus, userInfo.userCompanyEntity)
+                If numRowsAffected > 0 Then
+                    sqlTrans.Commit()
+                Else
+                    sqlTrans.Rollback()
+                End If
+            Catch ex As Exception
+                If sqlTrans IsNot Nothing Then sqlTrans.Rollback()
+            Finally
+                If sqlConn IsNot Nothing Then sqlConn.Close()
+            End Try
+        Next
+    End Sub
+
+    Protected Sub btnUdpDownload_Click(ByVal sender As Object, ByVal e As EventArgs) Handles btnUdpDownload.Click
+        CheckLogin()
+        If hdnUdpDlName.Value <> "" Then
+            Dim genReportPath As String = ConfigurationManager.AppSettings.Get("UPLOAD_DOCS_FOLDER_ABS_PATH") & userInfo.userCompanyEntity & "\" & "Challan_Docs" & "\"
+            DownloadDocument(genReportPath, hdnUdpDlPath.Value & "\" & hdnUdpDlName.Value, hdnUdpDlName.Value)
         End If
     End Sub
+
+    <System.Web.Script.Services.ScriptMethod()>
+    <System.Web.Services.WebMethod(EnableSession:=True)>
+    Public Shared Function GetMoreUnitDespatch(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal unit As String, ByVal depot As String, ByVal year As String, ByVal month As String, ByVal challanNo As String, ByVal status As String) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        Dim userInfo As VMSUserEntity = CType(System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
+        If pageSize <= 0 Then pageSize = 15
+        If pageIndex < 0 Then pageIndex = 0
+        If userInfo.userGroupCodeEntity = "UNIT" Then unit = userInfo.userBranchEntity
+        Dim challan As Integer
+        If Not Integer.TryParse(challanNo, challan) Then challan = Integer.MinValue
+        Dim ds As DataSet = New UnitDespatchClassVr1().GetChallanDetails(If(unit, String.Empty), If(depot, String.Empty), If(year, String.Empty), If(month, String.Empty), challan, If(status, String.Empty), userInfo.userIDEntity)
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                Dim ewayName As String = ""
+                Dim ewayPath As String = ""
+                If dr.Table.Columns.Contains("eway_org_filename") Then ewayName = Convert.ToString(dr("eway_org_filename"))
+                If dr.Table.Columns.Contains("eway_doc_path") Then ewayPath = Convert.ToString(dr("eway_doc_path"))
+                rows.Add(New With {
+                    .serial = (i + 1).ToString(),
+                    .region = Convert.ToString(dr("region")),
+                    .depot = Convert.ToString(dr("desph_desp_depot")),
+                    .depotName = Convert.ToString(dr("depotName")),
+                    .challanNo = Convert.ToString(dr("desph_challan_no")),
+                    .challanDate = Convert.ToString(dr("desph_challan_date")),
+                    .sku = Convert.ToString(dr("skuList")),
+                    .approved = Convert.ToString(dr("desph_approved_yn")),
+                    .year = Convert.ToString(dr("desph_challan_fin_year")),
+                    .month = Convert.ToString(dr("desph_process_month")),
+                    .unit = Convert.ToString(dr("desph_desp_unit")),
+                    .docPath = Convert.ToString(dr("doc_path")),
+                    .orgName = Convert.ToString(dr("org_filename")),
+                    .ewayPath = ewayPath,
+                    .ewayName = ewayName
+                })
+            Next
+        End If
+        Return New With {.rows = rows, .total = total}
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod()>
+    <System.Web.Services.WebMethod(EnableSession:=True)>
+    Public Shared Function PrepareDespatchPrint(ByVal unit As String, ByVal depot As String, ByVal year As String, ByVal challanNo As String) As Boolean
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return False
+        Dim challan As Integer
+        If Not Integer.TryParse(challanNo, challan) Then challan = 0
+        Dim ReportViewer As New ReportViewer_DC
+        ReportViewer.ReportFileName = AppDomain.CurrentDomain.BaseDirectory + Constant.ReportView.ReportFileLoc + Constant.ReportView.ReportName.Despatched_Advice_Report
+        ReportViewer.ReportCase = Constant.ReportView.ReportCase.DespatchedAdviceRptCase
+        ReportViewer.DsptchdAdviceUnit = If(unit, String.Empty)
+        ReportViewer.DsptchdAdviceDepot = If(depot, String.Empty)
+        ReportViewer.DsptchdAdviceFinYear = If(year, String.Empty)
+        ReportViewer.DsptchdAdviceChlnNo = challan
+        ReportViewer.Active = Constant.Common.ActiveStatus
+        Return True
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod()>
+    <System.Web.Services.WebMethod(EnableSession:=True)>
+    Public Shared Function DeleteAppendedChallan(ByVal year As String, ByVal challanNo As Integer) As Boolean
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return False
+        Dim userInfo As VMSUserEntity = CType(System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
+        Dim sqlConn As SqlConnection = Nothing
+        Dim sqlTrans As SqlTransaction = Nothing
+        Try
+            sqlConn = DBFactory.GetHelper.OpenConnection()
+            sqlTrans = sqlConn.BeginTransaction()
+            Dim hdrEntity As New DespatchHeaderEntity
+            hdrEntity.DespUnit = userInfo.userBranchEntity
+            hdrEntity.ChallanFinYear = If(year, String.Empty)
+            hdrEntity.ChallanNo = challanNo
+            Dim numRowsAffected As Integer = New UnitDespatchClass().DeleteChallan(sqlConn, sqlTrans, hdrEntity)
+            If numRowsAffected > 0 Then
+                sqlTrans.Commit()
+                Return True
+            End If
+            sqlTrans.Rollback()
+        Catch ex As Exception
+            If sqlTrans IsNot Nothing Then sqlTrans.Rollback()
+        Finally
+            If sqlConn IsNot Nothing Then sqlConn.Close()
+        End Try
+        Return False
+    End Function
 
 
     Private Sub ChallanAprove()
@@ -457,6 +611,7 @@ Partial Class UnitDespatchPlanListVr1
                     End If
                 End Try
             Next
+            ApproveExtraChallans()
             'sqlTrans.Commit()
         Catch ex As Exception
             'If Not sqlTrans Is Nothing Then
@@ -613,16 +768,16 @@ z:
     'Estimation_Data_Despatched_Status.aspx. PageIndex is reset when the size changes so the
     'grid cannot be left sitting on a page number that no longer exists under the new size.
 #Region "Paging"
-    Protected Sub ddlPageSize_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles ddlPageSize.SelectedIndexChanged
-        gvChallanDetails.PageSize = Convert.ToInt32(ddlPageSize.SelectedValue)
-        gvChallanDetails.PageIndex = 0
-        BindGrid()
-    End Sub
+    'Protected Sub ddlPageSize_SelectedIndexChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles ddlPageSize.SelectedIndexChanged
+    '    gvChallanDetails.PageSize = Convert.ToInt32(ddlPageSize.SelectedValue)
+    '    gvChallanDetails.PageIndex = 0
+    '    BindGrid()
+    'End Sub
 
-    Protected Sub gvChallanDetails_PageIndexChanging(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewPageEventArgs) Handles gvChallanDetails.PageIndexChanging
-        gvChallanDetails.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub gvChallanDetails_PageIndexChanging(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewPageEventArgs) Handles gvChallanDetails.PageIndexChanging
+    '    gvChallanDetails.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
 #End Region
 
 End Class

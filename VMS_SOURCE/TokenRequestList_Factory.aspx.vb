@@ -153,13 +153,20 @@ Partial Class TokenRequestList_Factory
             ds = ms.GetTokenRequisitionSessionDetails(ddlFactory.SelectedValue, ddlVendor.SelectedValue, ddlStatus.SelectedValue)
             If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0) Then
                 If (Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
-                    gvTokenRequisitionList.DataSource = ds.Tables(0)
+                    gvTokenRequisitionList.PageIndex = 0
+                    gvTokenRequisitionList.DataSource = FirstFactoryTokenPage(ds.Tables(0))
                     gvTokenRequisitionList.DataBind()
+                    hdnFactoryTokHasData.Value = "1"
+                    hdnFactoryTokPageSize.Value = gvTokenRequisitionList.PageSize.ToString()
                 Else
                     gvTokenRequisitionList.DataSource = Nothing
                     gvTokenRequisitionList.DataBind()
+                    hdnFactoryTokHasData.Value = "0"
                 End If
             End If
+            hdnFactoryTokFactory.Value = ddlFactory.SelectedValue
+            hdnFactoryTokVendor.Value = ddlVendor.SelectedValue
+            hdnFactoryTokStatus.Value = ddlStatus.SelectedValue
         Catch ex As Exception
             Dim returnUrl As String = "~/ExceptionPage.aspx"
             Session(Constant.SessionKeys.ErrMessage) = Constant.ErrorMessages.GeneralError
@@ -168,10 +175,10 @@ Partial Class TokenRequestList_Factory
 
     End Sub
 
-    Protected Sub gvTokenRequisitionList_PageIndexChanging(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewPageEventArgs) Handles gvTokenRequisitionList.PageIndexChanging
-        gvTokenRequisitionList.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub gvTokenRequisitionList_PageIndexChanging(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewPageEventArgs) Handles gvTokenRequisitionList.PageIndexChanging
+    '    gvTokenRequisitionList.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
 
     Protected Sub gvTokenRequisitionList_RowDataBound(ByVal sender As Object, ByVal e As System.Web.UI.WebControls.GridViewRowEventArgs) Handles gvTokenRequisitionList.RowDataBound
 
@@ -194,28 +201,28 @@ Partial Class TokenRequestList_Factory
 
         End If
 
-        If (e.Row.RowType = DataControlRowType.Pager) Then
-            Dim row As TableRow = New TableRow
-            row = e.Row.Controls(0).Controls(0).Controls(0)
-            For Each cell As TableCell In row.Cells
-                Dim lb As Control = cell.Controls(0)
+        'If (e.Row.RowType = DataControlRowType.Pager) Then
+        '    Dim row As TableRow = New TableRow
+        '    row = e.Row.Controls(0).Controls(0).Controls(0)
+        '    For Each cell As TableCell In row.Cells
+        '        Dim lb As Control = cell.Controls(0)
 
-                If (TypeOf (lb) Is Label) Then
-                    'CType(lb, Label).ForeColor = System.Drawing.Color.Red
-                    CType(lb, Label).CssClass = "lblpager"
-                    'CType(lb, Label).Width = 20
-                    'CType(lb, Label).Height = 15
-                    'set current pager
+        '        If (TypeOf (lb) Is Label) Then
+        '            'CType(lb, Label).ForeColor = System.Drawing.Color.Red
+        '            CType(lb, Label).CssClass = "lblpager"
+        '            'CType(lb, Label).Width = 20
+        '            'CType(lb, Label).Height = 15
+        '            'set current pager
 
-                ElseIf (TypeOf (lb) Is LinkButton) Then
+        '        ElseIf (TypeOf (lb) Is LinkButton) Then
 
-                    CType(lb, LinkButton).CssClass = "lnkpager"
-                    'CType(lb, LinkButton).Width = 20
-                    'CType(lb, LinkButton).Height = 15
-                    'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
-                End If
-            Next
-        End If
+        '            CType(lb, LinkButton).CssClass = "lnkpager"
+        '            'CType(lb, LinkButton).Width = 20
+        '            'CType(lb, LinkButton).Height = 15
+        '            'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
+        '        End If
+        '    Next
+        'End If
 
     End Sub
 
@@ -236,5 +243,45 @@ Partial Class TokenRequestList_Factory
     Protected Sub imgbtnAdd_Click(sender As Object, e As EventArgs) Handles imgbtnAdd.Click
         Response.Redirect("~/TokenRequestAddUpdate_Factory.aspx")
     End Sub
+
+    Private Function FirstFactoryTokenPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvTokenRequisitionList.PageSize
+        If pageSize <= 0 Then pageSize = 20
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreFactoryTokenReqs(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal factory As String, ByVal vendor As String, ByVal status As String) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        If pageSize <= 0 Then pageSize = 20
+        If pageIndex < 0 Then pageIndex = 0
+        Dim ds As DataSet = New TokenRequestAddUpdateMstr().GetTokenRequisitionSessionDetails(If(factory, String.Empty), If(vendor, String.Empty), If(status, String.Empty))
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                rows.Add(New With {
+                    .sessionId = dr("ts_session_id").ToString(),
+                    .factory = dr("FactoryName").ToString(),
+                    .vendor = dr("VendorName").ToString(),
+                    .status = dr("TokenStatus").ToString(),
+                    .reqDate = dr("RequisitionDate").ToString()
+                })
+            Next
+        End If
+        Return New With {.rows = rows, .total = total}
+    End Function
 
 End Class

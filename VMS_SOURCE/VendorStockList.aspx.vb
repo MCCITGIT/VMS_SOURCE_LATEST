@@ -6,6 +6,7 @@ Imports NPOI.HSSF.UserModel
 Imports NPOI.SS.UserModel
 Imports NPOI.HSSF.Util
 Imports System.Globalization
+Imports System.Collections.Generic
 Imports NPOI.SS.Util
 
 Partial Class VendorStockList
@@ -117,11 +118,14 @@ Partial Class VendorStockList
 
             If (Not (StockList.Tables(0) Is Nothing) AndAlso StockList.Tables(0).Rows.Count > 0) Then
 
-                gvVendorStockDetails.DataSource = StockList
+                gvVendorStockDetails.PageIndex = 0
+                gvVendorStockDetails.DataSource = FirstStockPage(StockList.Tables(0))
 
                 gvVendorStockDetails.DataBind()
 
                 Div_Vendor_Stock_List_Grid.Visible = False
+                hdnVstHasData.Value = "1"
+                hdnVstPageSize.Value = gvVendorStockDetails.PageSize.ToString()
 
             Else
 
@@ -130,10 +134,15 @@ Partial Class VendorStockList
                 gvVendorStockDetails.DataBind()
 
                 Div_Vendor_Stock_List_Grid.Visible = True
+                hdnVstHasData.Value = "0"
 
                 'gvVendorStockDetails.Visible = True
 
             End If
+
+            hdnVstVendor.Value = VendorId
+            hdnVstFrom.Value = AsOnDate
+            hdnVstTo.Value = AsOnDateto
 
         End If
 
@@ -273,7 +282,7 @@ Partial Class VendorStockList
 
                 alignCenter.Alignment = 2
 
-                bgWhite.FillBackgroundColor = NPOI.HSSF.Util.HSSFColor.WHITE.index
+                bgWhite.FillBackgroundColor = NPOI.HSSF.Util.HSSFColor.White.Index
 
                 Row = ReportSheet.GetRow(1)
 
@@ -537,7 +546,7 @@ Partial Class VendorStockList
 
                 alignCenter.Alignment = 2
 
-                bgWhite.FillBackgroundColor = NPOI.HSSF.Util.HSSFColor.WHITE.index
+                bgWhite.FillBackgroundColor = NPOI.HSSF.Util.HSSFColor.White.Index
 
                 Row = ReportSheet.GetRow(1)
 
@@ -876,12 +885,51 @@ Partial Class VendorStockList
 
 
     End Sub
-    Protected Sub gvVendorStockDetails_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvVendorStockDetails.PageIndexChanging
+    'Protected Sub gvVendorStockDetails_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvVendorStockDetails.PageIndexChanging
 
-        gvVendorStockDetails.PageIndex = e.NewPageIndex
+    '    gvVendorStockDetails.PageIndex = e.NewPageIndex
 
-        VendorStockListLoadBatchWise()
+    '    VendorStockListLoadBatchWise()
 
-    End Sub
+    'End Sub
+
+    Private Function FirstStockPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvVendorStockDetails.PageSize
+        If pageSize <= 0 Then pageSize = 20
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod()>
+    <System.Web.Services.WebMethod(EnableSession:=True)>
+    Public Shared Function GetMoreVendorStock(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal vendor As String, ByVal fromDate As String, ByVal toDate As String) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        If pageSize <= 0 Then pageSize = 20
+        If pageIndex < 0 Then pageIndex = 0
+        Dim ds As DataSet = New QualityControlClass().GetVendorStockList(If(vendor, String.Empty), If(fromDate, String.Empty), If(toDate, String.Empty))
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                rows.Add(New With {
+                    .serial = (i + 1).ToString(),
+                    .vendor = dr("vendor_name").ToString(),
+                    .asOnDate = dr("ason_date").ToString(),
+                    .volume = dr("volume").ToString()
+                })
+            Next
+        End If
+        Return New With {.rows = rows, .total = total}
+    End Function
 
 End Class

@@ -2,6 +2,7 @@
 Imports System.Data
 Imports System.Data.SqlTypes
 Imports System.Data.SqlClient
+Imports System.Collections.Generic
 Imports VMS.DataAccess
 Partial Class UnitTokenReceivedList
     Inherits System.Web.UI.Page
@@ -139,32 +140,26 @@ Partial Class UnitTokenReceivedList
                     dsProductSet = obj.GetDespatchListForReceive(ddlVendorUnit.SelectedValue, ddlTokenVendor.SelectedValue, ddlVendorRequisition.SelectedValue, ddlDespatchId.SelectedValue, ddlStatus.SelectedValue)
 
                     If (Not (dsProductSet Is Nothing) AndAlso dsProductSet.Tables.Count > 0 AndAlso Not (dsProductSet.Tables(0) Is Nothing) AndAlso dsProductSet.Tables(0).Rows.Count > 0) Then
-                        gvRequistionList.DataSource = dsProductSet.Tables(0)
-                        gvRequistionList.DataBind()
+                        BindReceivedPage(dsProductSet.Tables(0))
                     Else
-                        gvRequistionList.DataSource = Nothing
-                        gvRequistionList.DataBind()
+                        BindReceivedPage(Nothing)
                     End If
                 Else
                     dsProductSet = obj.GetDespatchListForReceive(ddlVendorUnit.SelectedValue, ddlTokenVendor.SelectedValue, ddlVendorRequisition.SelectedValue, 0, ddlStatus.SelectedValue)
 
                     If (Not (dsProductSet Is Nothing) AndAlso dsProductSet.Tables.Count > 0 AndAlso Not (dsProductSet.Tables(0) Is Nothing) AndAlso dsProductSet.Tables(0).Rows.Count > 0) Then
-                        gvRequistionList.DataSource = dsProductSet.Tables(0)
-                        gvRequistionList.DataBind()
+                        BindReceivedPage(dsProductSet.Tables(0))
                     Else
-                        gvRequistionList.DataSource = Nothing
-                        gvRequistionList.DataBind()
+                        BindReceivedPage(Nothing)
                     End If
                 End If
             Else
                 dsProductSet = obj.GetDespatchListForReceive(ddlVendorUnit.SelectedValue, ddlTokenVendor.SelectedValue, 0, 0, ddlStatus.SelectedValue)
 
                 If (Not (dsProductSet Is Nothing) AndAlso dsProductSet.Tables.Count > 0 AndAlso Not (dsProductSet.Tables(0) Is Nothing) AndAlso dsProductSet.Tables(0).Rows.Count > 0) Then
-                    gvRequistionList.DataSource = dsProductSet.Tables(0)
-                    gvRequistionList.DataBind()
+                    BindReceivedPage(dsProductSet.Tables(0))
                 Else
-                    gvRequistionList.DataSource = Nothing
-                    gvRequistionList.DataBind()
+                    BindReceivedPage(Nothing)
                 End If
             End If
 
@@ -203,14 +198,14 @@ Partial Class UnitTokenReceivedList
 
     End Sub
 #End Region
-    Protected Sub ddlVendorUnit_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlVendorUnit.SelectedIndexChanged
-        gvRequistionList.PageIndex = 0
-        BindGrid()
-    End Sub
-    Protected Sub gvProductList_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvRequistionList.PageIndexChanging
-        gvRequistionList.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub ddlVendorUnit_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ddlVendorUnit.SelectedIndexChanged
+    '    gvRequistionList.PageIndex = 0
+    '    BindGrid()
+    'End Sub
+    'Protected Sub gvProductList_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvRequistionList.PageIndexChanging
+    '    gvRequistionList.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
     Protected Sub gvTokenVendorList_RowCommand(sender As Object, e As GridViewCommandEventArgs) Handles gvRequistionList.RowCommand
         CheckLogin()
         If (e.CommandName.Equals("EditRequisition")) Then
@@ -257,5 +252,73 @@ Partial Class UnitTokenReceivedList
             End If
         End If
     End Sub
+
+    Private Sub BindReceivedPage(ByVal table As DataTable)
+        If table IsNot Nothing AndAlso table.Rows.Count > 0 Then
+            gvRequistionList.PageIndex = 0
+            gvRequistionList.DataSource = FirstReceivedPage(table)
+            gvRequistionList.DataBind()
+            hdnUnitRecvHasData.Value = "1"
+            hdnUnitRecvPageSize.Value = gvRequistionList.PageSize.ToString()
+        Else
+            gvRequistionList.DataSource = Nothing
+            gvRequistionList.DataBind()
+            hdnUnitRecvHasData.Value = "0"
+        End If
+    End Sub
+
+    Private Function FirstReceivedPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvRequistionList.PageSize
+        If pageSize <= 0 Then pageSize = 10
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreUnitTokenReceived(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal unit As String, ByVal vendor As String, ByVal requisitionId As String, ByVal despatchId As String, ByVal status As String) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        Dim userInfo As VMSUserEntity = CType(System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
+        If pageSize <= 0 Then pageSize = 10
+        If pageIndex < 0 Then pageIndex = 0
+        Dim unitValue As String = If(unit, String.Empty)
+        If userInfo.userGroupCodeEntity.Equals("UNIT") Then unitValue = userInfo.userIDEntity
+        Dim reqId As Integer = 0
+        Dim despId As Integer = 0
+        Dim parsed As Integer = 0
+        If Integer.TryParse(If(requisitionId, String.Empty), parsed) Then
+            reqId = parsed
+            If Integer.TryParse(If(despatchId, String.Empty), parsed) Then despId = parsed
+        End If
+        Dim ds As DataSet = New UnitTokenReceivedClass().GetDespatchListForReceive(unitValue, If(vendor, String.Empty), reqId, despId, If(status, String.Empty))
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                rows.Add(New With {
+                    .requisitionId = dr("tdh_requisition_id").ToString(),
+                    .despatchId = dr("tdh_despatch_id").ToString(),
+                    .receiveId = dr("treh_recieve_id").ToString(),
+                    .tokenVendor = dr("tdh_token_vendor").ToString(),
+                    .unit = dr("unit_name").ToString(),
+                    .courier = dr("tdh_transporter").ToString(),
+                    .challanNo = dr("tdh_vendor_challan_no").ToString(),
+                    .challanDate = dr("tdh_vendor_challan_date").ToString(),
+                    .roadPermit = dr("tdh_road_permit").ToString()
+                })
+            Next
+        End If
+        Return New With {.rows = rows, .total = total}
+    End Function
 
 End Class

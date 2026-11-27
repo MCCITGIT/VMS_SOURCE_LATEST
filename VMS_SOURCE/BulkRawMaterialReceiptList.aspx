@@ -350,7 +350,7 @@
                                         <ItemStyle HorizontalAlign="Center" VerticalAlign="Middle" Width="8%" />
                                     </asp:TemplateField>
 
-                                    <asp:TemplateField HeaderText="RM Vendor">
+                                    <asp:TemplateField HeaderText="Supplier">
                                         <ItemTemplate>
                                             <asp:Label ID="lblRmVendor" runat="server" Text='<%# Bind("rawmat_vendor_name") %>'></asp:Label>
                                             <asp:HiddenField ID="hdnRmVendorId" runat="server" Value='<%# Bind("rawmat_vendor_code") %>' />

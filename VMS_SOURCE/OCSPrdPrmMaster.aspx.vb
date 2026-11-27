@@ -79,9 +79,13 @@ Partial Class OCSPrdPrmMaster
         End If
         ds = Obj.GetPrdPrmDtls(Params)
         If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
-            gvParamsList.DataSource = ds
+            gvParamsList.PageIndex = 0
+            gvParamsList.DataSource = FirstOcsPage(ds.Tables(0))
             gvParamsList.DataBind()
+            hdnOcsHasData.Value = "1"
+            hdnOcsPageSize.Value = gvParamsList.PageSize.ToString()
         Else
+            hdnOcsHasData.Value = "0"
             gvParamsList.DataSource = ds
             gvParamsList.DataBind()
         End If
@@ -306,8 +310,117 @@ Partial Class OCSPrdPrmMaster
             PopulateOCSPrdPrmHeaders()
         End Try
     End Sub
-    Protected Sub gvParamsList_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvParamsList.PageIndexChanging
-        gvParamsList.PageIndex = e.NewPageIndex
-        PopulateOCSPrdPrmHeaders()
-    End Sub
+    'Protected Sub gvParamsList_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvParamsList.PageIndexChanging
+    '    gvParamsList.PageIndex = e.NewPageIndex
+    '    PopulateOCSPrdPrmHeaders()
+    'End Sub
+
+    Private Function FirstOcsPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvParamsList.PageSize
+        If pageSize <= 0 Then pageSize = 15
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    Private Shared Function CurrentOcsUser() As VMSUserEntity
+        Dim sessionUser As Object = System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo)
+        If sessionUser Is Nothing Then Return Nothing
+        Return CType(sessionUser, VMSUserEntity)
+    End Function
+
+    Private Shared Function LovOptions(ByVal lovType As String) As List(Of Object)
+        Dim options As New List(Of Object)
+        options.Add(New With {.code = "", .name = Constant.Common.Selec})
+        Dim ds As DataSet = New Common().GetLovDetails("BERGER", lovType, "Y")
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            For Each dr As DataRow In ds.Tables(0).Rows
+                options.Add(New With {.code = dr("lov_code").ToString(), .name = dr("lov_value").ToString()})
+            Next
+        End If
+        Return options
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreOcsParams(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal productCode As String) As Object
+        Dim rows As New List(Of Object)
+        If CurrentOcsUser() Is Nothing Then Return New With {.rows = rows, .total = 0, .products = New List(Of Object), .frequencies = New List(Of Object)}
+        If pageSize <= 0 Then pageSize = 15
+        If pageIndex < 0 Then pageIndex = 0
+        Dim ds As DataSet = New OCSPrdPrmClass().GetPrdPrmDtls(If(productCode, String.Empty))
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                rows.Add(New With {
+                    .id = dr("opph_id").ToString(),
+                    .productCode = dr("product_code").ToString(),
+                    .productName = dr("product_name").ToString(),
+                    .params = dr("params").ToString(),
+                    .frequency = dr("frequency").ToString(),
+                    .frequencyCode = dr("frequencycode").ToString(),
+                    .active = dr("active").ToString(),
+                    .numericYn = dr("numericYN").ToString(),
+                    .minValue = dr("min_value").ToString(),
+                    .maxValue = dr("max_value").ToString(),
+                    .dropdownYn = dr("dropdownYN").ToString(),
+                    .dropParams = dr("DrpDwnParams").ToString()
+                })
+            Next
+        End If
+        Dim products As New List(Of Object)
+        Dim frequencies As New List(Of Object)
+        If pageIndex = 1 Then
+            products = LovOptions("OCS_PRODUCTS")
+            frequencies = LovOptions("OCS_FREQUENCY")
+        End If
+        Return New With {.rows = rows, .total = total, .products = products, .frequencies = frequencies}
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function SaveOcsParam(ByVal id As String, ByVal productCode As String, ByVal params As String, ByVal frequency As String, ByVal active As String, ByVal numericYn As String, ByVal dropdownYn As String, ByVal dropParams As String, ByVal minValue As String, ByVal maxValue As String) As String
+        Dim userInfo As VMSUserEntity = CurrentOcsUser()
+        If userInfo Is Nothing Then Return "Please login again."
+        If productCode = String.Empty OrElse frequency = String.Empty OrElse params Is Nothing OrElse params.Trim() = String.Empty Then Return "Some Error Occured."
+        Dim sqlConn As SqlConnection = Nothing
+        Dim sqlTrans As SqlTransaction = Nothing
+        Try
+            sqlConn = DBFactory.GetHelper.OpenConnection()
+            sqlTrans = sqlConn.BeginTransaction()
+            Dim entity As New OCSPrmPrdEntity
+            entity.PrmPrd_Id = id
+            entity.Product_Code = productCode
+            entity.Paramss = params.Trim()
+            entity.PFrequency = frequency
+            entity.Status = active
+            entity.modifieduser = userInfo.userIDEntity
+            entity.Dropdown_YN = dropdownYn
+            entity.Numeric_YN = numericYn
+            entity.DropDown_Param = If(dropParams, String.Empty)
+            entity.Min_Value = If(minValue, String.Empty)
+            entity.Max_Value = If(maxValue, String.Empty)
+            Dim affected As Integer = New OCSPrdPrmClass().InsertUpdatePrmPrd(entity, sqlConn, sqlTrans)
+            If affected > 0 Then
+                sqlTrans.Commit()
+                Return "ok"
+            End If
+            sqlTrans.Rollback()
+            Return "Some Error Occured."
+        Catch ex As Exception
+            If sqlTrans IsNot Nothing Then sqlTrans.Rollback()
+            Return "Some Error Occured."
+        Finally
+            If sqlConn IsNot Nothing Then sqlConn.Close()
+        End Try
+    End Function
 End Class

@@ -9,6 +9,7 @@ Imports NPOI.HSSF.Util
 Imports NPOI.SS.UserModel
 Imports System.Globalization
 Imports System.IO
+Imports System.Collections.Generic
 Imports NPOI.SS.Util
 Partial Class VendorInvoiceAc_ReleaseDtls
     Inherits System.Web.UI.Page
@@ -124,12 +125,22 @@ Partial Class VendorInvoiceAc_ReleaseDtls
             ds = obj.GetVendorInvoice_ReleaseList_vr1(ddlUnit.SelectedValue, ddlStatus.SelectedValue, FromDate, ToDate, ddldepot.SelectedValue, ddltype.SelectedValue)
 
             If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
-                gvVendorInvoiceDtls.DataSource = ds.Tables(0)
+                gvVendorInvoiceDtls.PageIndex = 0
+                gvVendorInvoiceDtls.DataSource = FirstInvoicePage(ds.Tables(0))
                 gvVendorInvoiceDtls.DataBind()
+                hdnVirHasData.Value = "1"
+                hdnVirPageSize.Value = gvVendorInvoiceDtls.PageSize.ToString()
             Else
                 gvVendorInvoiceDtls.DataSource = Nothing
                 gvVendorInvoiceDtls.DataBind()
+                hdnVirHasData.Value = "0"
             End If
+            hdnVirVendor.Value = ddlUnit.SelectedValue
+            hdnVirStatus.Value = ddlStatus.SelectedValue
+            hdnVirFrom.Value = txtFromDate.Text
+            hdnVirTo.Value = txtTodate.Text
+            hdnVirDepot.Value = ddldepot.SelectedValue
+            hdnVirType.Value = ddltype.SelectedValue
         Catch ex As Exception
             Dim returnUrl As String = "~/ExceptionPage.aspx"
             Session(Constant.SessionKeys.ErrMessage) = Constant.ErrorMessages.GeneralError
@@ -147,13 +158,13 @@ Partial Class VendorInvoiceAc_ReleaseDtls
         BindGrid()
     End Sub
 
-    Private Sub gvVendorInvoiceDtls_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvVendorInvoiceDtls.PageIndexChanging
-        gvVendorInvoiceDtls.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Private Sub gvVendorInvoiceDtls_PageIndexChanging(sender As Object, e As GridViewPageEventArgs) Handles gvVendorInvoiceDtls.PageIndexChanging
+    '    gvVendorInvoiceDtls.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
 
 #Region "Date Format"
-    Public Function FormatDate(ByVal stringdate As String) As SqlDateTime
+    Public Shared Function FormatDate(ByVal stringdate As String) As SqlDateTime
         'Modified-by MUKESH BHAGAT on 20-08-2026 : ported robust parser from UAT source (NEW had reverted to the old Split("/") version which fails on dd-MM-yyyy input)
         ' --- Original implementation (kept for reference) ---
         'If Not (stringdate = String.Empty) Then
@@ -446,4 +457,57 @@ Partial Class VendorInvoiceAc_ReleaseDtls
         Response.WriteFile(genReportPath & file_name)
         Response.AppendHeader("content-disposition", "attachment; filename=" & file_name)
     End Sub
+
+    Private Function FirstInvoicePage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvVendorInvoiceDtls.PageSize
+        If pageSize <= 0 Then pageSize = 10
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod()>
+    <System.Web.Services.WebMethod(EnableSession:=True)>
+    Public Shared Function GetMoreVendorInvoices(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal vendor As String, ByVal status As String, ByVal fromDate As String, ByVal toDate As String, ByVal depot As String, ByVal invoiceType As String) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        Dim userInfo As VMSUserEntity = CType(System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo), VMSUserEntity)
+        If pageSize <= 0 Then pageSize = 10
+        If pageIndex < 0 Then pageIndex = 0
+        If userInfo.userGroupCodeEntity = "UNIT" Then vendor = userInfo.userBranchEntity
+        If userInfo.userGroupCodeEntity = Constant.UserFormAccess.DEPOT Then depot = userInfo.userBranchEntity
+        Dim ds As DataSet = New VendorInvoice_ReleaseClass().GetVendorInvoice_ReleaseList_vr1(If(vendor, String.Empty), If(status, String.Empty), FormatDate(If(fromDate, String.Empty)), FormatDate(If(toDate, String.Empty)), If(depot, String.Empty), If(invoiceType, String.Empty))
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                Dim despatchDate As String = Convert.ToString(dr("InvoiceUploadDate"))
+                rows.Add(New With {
+                    .type = Convert.ToString(dr("Type")),
+                    .depot = Convert.ToString(dr("depot_name")),
+                    .despatchDate = despatchDate,
+                    .invoiceNo = Convert.ToString(dr("Invoice_No")),
+                    .invoiceDate = Convert.ToString(dr("Invoice_Date")),
+                    .invoiceValue = Convert.ToString(dr("Invoice_Value")),
+                    .releaseNo = Convert.ToString(dr("Release_No")),
+                    .releaseDate = Convert.ToString(dr("Release_Date")),
+                    .grnNo = Convert.ToString(dr("GRN_No")),
+                    .grnDate = Convert.ToString(dr("GRN_Date")),
+                    .voucherNo = Convert.ToString(dr("Voucher_No")),
+                    .amountPaid = Convert.ToString(dr("Payment_Status")),
+                    .amountDue = Convert.ToString(dr("PendingAmount")),
+                    .missingDespatch = String.IsNullOrEmpty(despatchDate)
+                })
+            Next
+        End If
+        Return New With {.rows = rows, .total = total}
+    End Function
 End Class

@@ -809,7 +809,10 @@
                     <div class="form-group" style="display: flex; align-items: flex-start; gap: 30px;">
                         <div style="width: 48%">
                             <label class="form-control-label">Upload Actual Invoice Copy:<span class="mandatory">*</span><span id="Span4" class="mandatory" runat="server"></span></label>
-                            <asp:UpdatePanel ID="UpdatePanel12" runat="server">
+                            <%-- Modified-by MUKESH BHAGAT on 12-11-2026 : UpdateMode="Conditional". The default (Always) redrew this panel on
+                                 EVERY partial postback (Site, PO No, Delivery depot, Indent, transporter tick) and an empty file box replaced the
+                                 chosen invoice, silently. Nothing inside this panel posts back, so it now keeps the file. --%>
+                            <asp:UpdatePanel ID="UpdatePanel12" runat="server" UpdateMode="Conditional">
                                 <ContentTemplate>
                                     <asp:FileUpload ID="sch_fld1" runat="server" CssClass="form-control" />
                                 </ContentTemplate>
@@ -825,6 +828,9 @@
                              and this message area / the panel below appear only when the bill fails. --%>
                             <div id="divInvoiceOcrMessage" style="margin-top: 5px; font-size: 12px;"></div>
                             <asp:HiddenField ID="hdnOcrVerified" runat="server" Value="N" />
+                            <%-- Modified-by MUKESH BHAGAT on 12-11-2026 : "Y" once the user has chosen an invoice file. It travels with every postback,
+                                 so after a rejected bill or a reload the page can say "select the invoice file again" instead of saving without it. --%>
+                            <asp:HiddenField ID="hdnInvoiceSelected" runat="server" Value="" />
                             <%-- Modified-by MUKESH BHAGAT on 17-09-2026 : freight read off the bill by OCR
                              (tax.freight_amount). Not a form field - used only by the server-side Total Rate
                              vs Final Invoice Value check, since bill total = SKU taxable + freight + GST and
@@ -1695,12 +1701,58 @@
         var OCR_API_TIMEOUT_MS = <%= OcrApiTimeoutMsJs %>;
         var ocrPassThrough = false;
 
+        // Modified-by MUKESH BHAGAT on 12-11-2026 : a NEW challan must carry the invoice copy.
+        // 321 challans were saved without one between 09-Sep and 12-Nov-2026: a rejected bill and a page
+        // refresh clear the file box, and Submit used to go through with no file. Now Submit is blocked
+        // (the server enforces the same rule) and the message says when the file was cleared.
+        var IS_NEW_CHALLAN = <%= IsNewChallanJs %>;
+        var invoiceWasSelected = false;     // the user chose an invoice file at some point (kept in hdnInvoiceSelected across reloads)
+
+        function invoiceFileSelected() {
+            var fu = ocrEl('<%= sch_fld1.ClientID %>');
+            return !!(fu && fu.files && fu.files.length > 0);
+        }
+        function invoiceMarkSelected(on) {
+            invoiceWasSelected = on;
+            var hs = ocrEl('<%= hdnInvoiceSelected.ClientID %>');
+            if (hs) { hs.value = on ? 'Y' : ''; }
+        }
+        function invoiceReselectText() {
+            return 'The invoice file is no longer attached (a rejected bill or a page refresh clears it). Please select the invoice file again, then Submit.';
+        }
+        // called by the server after a Submit failed validation and the page was drawn again with an empty file box
+        function invoiceReselectNotice() {
+            invoiceWasSelected = true;
+            ocrMsg(invoiceReselectText(), 'danger');
+        }
+        function invoiceBindTracking() {
+            var fu = ocrEl('<%= sch_fld1.ClientID %>');
+            if (fu && !fu.getAttribute('data-inv-bound')) {
+                fu.setAttribute('data-inv-bound', '1');
+                fu.addEventListener('change', function () {
+                    if (fu.files && fu.files.length > 0) { invoiceMarkSelected(true); ocrMsg('', ''); }
+                });
+            }
+        }
+
         function bindInvoiceUploadExtract() {
+            invoiceBindTracking();
             var btn = ocrEl('<%= btnSubmit.ClientID %>');
             if (btn && !btn.getAttribute('data-ocr-bound')) {
                 btn.setAttribute('data-ocr-bound', '1');
                 btn.addEventListener('click', function (e) {
                     if (ocrPassThrough) { ocrPassThrough = false; return; }   // continuing after a passed check
+
+                    // new challan + no file chosen (never chosen, or cleared by a rejected bill / refresh) -> do not save
+                    if (IS_NEW_CHALLAN && !invoiceFileSelected()) {
+                        e.preventDefault();
+                        var noFileMsg = invoiceWasSelected ? invoiceReselectText() : 'Please upload the invoice copy (PDF) before saving the challan.';
+                        ocrMsg(noFileMsg, 'danger');
+                        alert(noFileMsg);
+                        var fuNone = ocrEl('<%= sch_fld1.ClientID %>');
+                        if (fuNone) { try { fuNone.focus(); } catch (x) { } }
+                        return;
+                    }
 
                     var h = ocrEl('<%= hdnOcrVerified.ClientID %>');
                     if (h && h.value === 'Y') { return; }                     // already validated, nothing changed
@@ -1932,7 +1984,8 @@
                 ocrSetVerified(false);
                 fileUpload.value = '';
                 ocrEl('divInvoiceOcrPanel').style.display = '';
-                ocrMsg('Bill rejected: ' + errors.concat(unreadable).join(' ') + ' Please correct the details and upload the correct bill.', 'danger');
+                invoiceWasSelected = true;   // the box was just cleared: Submit stays blocked until the invoice file is chosen again
+                ocrMsg('Bill rejected: ' + errors.concat(unreadable).join(' ') + ' Please correct the details and select the correct invoice file again. The challan cannot be saved without it.', 'danger');
                 return;
             }
 
@@ -1977,6 +2030,8 @@
 
         document.addEventListener('DOMContentLoaded', function () {
             ocrBindConfirmModal();
+            var hsInit = ocrEl('<%= hdnInvoiceSelected.ClientID %>');
+            invoiceWasSelected = !!(hsInit && hsInit.value === 'Y');     // a file was chosen before this page view was drawn
             bindInvoiceUploadExtract();
         });
 
@@ -1988,6 +2043,8 @@
                 var panel = ocrEl('divInvoiceOcrPanel');
                 if (panel) { panel.style.display = 'none'; }
                 ocrSetVerified(false);
+                // Modified-by MUKESH BHAGAT on 12-11-2026 : a file was chosen but the refresh removed it -> say so
+                if (invoiceWasSelected && !invoiceFileSelected()) { ocrMsg(invoiceReselectText(), 'danger'); }
             });
         }
 

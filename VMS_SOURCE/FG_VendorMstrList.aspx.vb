@@ -1,4 +1,5 @@
 ﻿Imports System.Data
+Imports System.Collections.Generic
 Imports VMS.Web
 Imports System.Data.SqlClient
 Partial Class FG_VendorMstrList
@@ -72,18 +73,18 @@ Partial Class FG_VendorMstrList
 
             End If
         End If
-        If (e.Row.RowType = DataControlRowType.Pager) Then
-            Dim row As TableRow = New TableRow
-            row = e.Row.Controls(0).Controls(0).Controls(0)
-            For Each cell As TableCell In row.Cells
-                Dim lb As Control = cell.Controls(0)
-                If (TypeOf (lb) Is Label) Then
-                    CType(lb, Label).CssClass = "lblpager"
-                ElseIf (TypeOf (lb) Is LinkButton) Then
-                    CType(lb, LinkButton).CssClass = "lnkpager"
-                End If
-            Next
-        End If
+        'If (e.Row.RowType = DataControlRowType.Pager) Then
+        '    Dim row As TableRow = New TableRow
+        '    row = e.Row.Controls(0).Controls(0).Controls(0)
+        '    For Each cell As TableCell In row.Cells
+        '        Dim lb As Control = cell.Controls(0)
+        '        If (TypeOf (lb) Is Label) Then
+        '            CType(lb, Label).CssClass = "lblpager"
+        '        ElseIf (TypeOf (lb) Is LinkButton) Then
+        '            CType(lb, LinkButton).CssClass = "lnkpager"
+        '        End If
+        '    Next
+        'End If
     End Sub
 #End Region
 
@@ -166,11 +167,16 @@ Partial Class FG_VendorMstrList
 
             If (Not (VendorSet Is Nothing) AndAlso VendorSet.Tables.Count > 0 AndAlso Not (VendorSet.Tables(0) Is Nothing) AndAlso VendorSet.Tables(0).Rows.Count > 0) Then
                 gvVendorProfile.Visible = True
-                gvVendorProfile.DataSource = VendorSet.Tables(0)
+                gvVendorProfile.PageIndex = 0
+                gvVendorProfile.DataSource = FirstVendorPage(VendorSet.Tables(0))
                 gvVendorProfile.DataBind()
+                hdnFgmHasData.Value = "1"
+                hdnFgmPageSize.Value = gvVendorProfile.PageSize.ToString()
             Else
                 gvVendorProfile.Visible = False
+                hdnFgmHasData.Value = "0"
             End If
+            hdnFgmVendor.Value = ddlVendor.SelectedValue
         Catch ex As Exception
             Dim returnUrl As String = "~/ExceptionPage.aspx"
             Session(Constant.SessionKeys.ErrMessage) = Constant.ErrorMessages.ErrorBindingGrid
@@ -181,11 +187,56 @@ Partial Class FG_VendorMstrList
 
 #Region "Grid Page Index Changed"
     ' Event Handler for Page Changing
-    Protected Sub gvVendorProfile_IndexChanging(ByVal sender As Object, ByVal e As GridViewPageEventArgs)
-        gvVendorProfile.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub gvVendorProfile_IndexChanging(ByVal sender As Object, ByVal e As GridViewPageEventArgs)
+    '    gvVendorProfile.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
 #End Region
+
+    Private Function FirstVendorPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvVendorProfile.PageSize
+        If pageSize <= 0 Then pageSize = 10
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod()>
+    <System.Web.Services.WebMethod(EnableSession:=True)>
+    Public Shared Function GetMoreFgVendors(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal unit As String) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        If pageSize <= 0 Then pageSize = 10
+        If pageIndex < 0 Then pageIndex = 0
+        Dim ds As DataSet = New OPC_VendorClass().Vendor_List_Get(If(unit, String.Empty))
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            Dim table As DataTable = ds.Tables(0)
+            total = table.Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = table.Rows(i)
+                Dim isActive As Boolean = String.Equals(Convert.ToString(dr("active")).Trim(), Constant.Common.ActiveStatus, StringComparison.OrdinalIgnoreCase)
+                rows.Add(New With {
+                    .serial = (i + 1).ToString(),
+                    .code = Convert.ToString(dr("unit_code")),
+                    .name = Convert.ToString(dr("unit_name")),
+                    .status = If(isActive, Constant.Common.Active, Constant.Common.InActive),
+                    .createdUser = Convert.ToString(dr("created_user")),
+                    .createdDate = Convert.ToString(dr("created_date")),
+                    .oracleId = Convert.ToString(dr("oracle_id")),
+                    .inactive = Not isActive
+                })
+            Next
+        End If
+        Return New With {.rows = rows, .total = total}
+    End Function
 
 #Region "Add Click Event"
     Protected Sub ImgbtnAdd_Click(sender As Object, e As EventArgs)

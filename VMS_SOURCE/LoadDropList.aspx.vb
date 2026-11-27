@@ -1,4 +1,5 @@
 ﻿Imports System.Data
+Imports System.Collections.Generic
 Imports VMS.Web
 Imports System.Data.SqlClient
 Partial Class LoadDropList
@@ -78,31 +79,31 @@ Partial Class LoadDropList
             'e.Row.Cells(2).Text = "<a href='User_Profile_Add.aspx?" + Constant.SessionKeys.UserId + "=" + rowView("usp_user_id") + "'class='hl'>" + rowView("usp_user_id") + "</a>"
             e.Row.Cells(2).Text = "<a href='LoadDropAddUpdate.aspx?" + Constant.SessionKeys.DEPT + "=" + rowView("depot_code") + "&Vendor=" + rowView("vend_unit") + "'class='gridlink'>" + rowView("depot_name") + "</a>"
         End If
-        If (e.Row.RowType = DataControlRowType.Pager) Then
-            Dim row As TableRow = New TableRow
-            row = e.Row.Controls(0).Controls(0).Controls(0)
-            For Each cell As TableCell In row.Cells
-                Dim lb As Control = cell.Controls(0)
+        'If (e.Row.RowType = DataControlRowType.Pager) Then
+        '    Dim row As TableRow = New TableRow
+        '    row = e.Row.Controls(0).Controls(0).Controls(0)
+        '    For Each cell As TableCell In row.Cells
+        '        Dim lb As Control = cell.Controls(0)
 
 
-                If (TypeOf (lb) Is Label) Then
+        '        If (TypeOf (lb) Is Label) Then
 
-                    'CType(lb, Label).ForeColor = System.Drawing.Color.Red
-                    CType(lb, Label).CssClass = "lblpager"
-                    'CType(lb, Label).Width = 20
-                    'CType(lb, Label).Height = 15
-                    'set current pager
+        '            'CType(lb, Label).ForeColor = System.Drawing.Color.Red
+        '            CType(lb, Label).CssClass = "lblpager"
+        '            'CType(lb, Label).Width = 20
+        '            'CType(lb, Label).Height = 15
+        '            'set current pager
 
-                ElseIf (TypeOf (lb) Is LinkButton) Then
+        '        ElseIf (TypeOf (lb) Is LinkButton) Then
 
-                    CType(lb, LinkButton).CssClass = "lnkpager"
-                    'CType(lb, LinkButton).Width = 20
-                    'CType(lb, LinkButton).Height = 15
-                    'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
-                End If
+        '            CType(lb, LinkButton).CssClass = "lnkpager"
+        '            'CType(lb, LinkButton).Width = 20
+        '            'CType(lb, LinkButton).Height = 15
+        '            'CType(lb, LinkButton).ForeColor = Drawing.Color.Black
+        '        End If
 
-            Next
-        End If
+        '    Next
+        'End If
     End Sub
 
 #Region "Load Search Criteria"
@@ -191,12 +192,16 @@ Partial Class LoadDropList
             ds = hepler.GetDropLoadList(ddlBranch.SelectedValue, txtSearchUserName.Text, ddlVendor.SelectedValue)
             If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then
                 gvLoadDrop.Visible = True
-                gvLoadDrop.DataSource = ds.Tables(0)
+                gvLoadDrop.PageIndex = 0
+                gvLoadDrop.DataSource = FirstLoadDropPage(ds.Tables(0))
                 gvLoadDrop.DataBind()
                 Div_User_List_Grid.Visible = False
+                hdnLoadDropHasData.Value = "1"
+                hdnLoadDropPageSize.Value = gvLoadDrop.PageSize.ToString()
             Else
                 gvLoadDrop.Visible = False
                 Div_User_List_Grid.Visible = True
+                hdnLoadDropHasData.Value = "0"
                 'ddlWeekSelect.SelectedValue = Session(Constant.SessionKeys.CurrentWeek)
             End If
         Catch ex As Exception
@@ -225,11 +230,50 @@ Partial Class LoadDropList
 
 #Region "Grid Page Index Changed"
     ' Event Handler for Page Changing
-    Protected Sub gvLoadDrop_IndexChanging(ByVal sender As Object, ByVal e As GridViewPageEventArgs)
-        gvLoadDrop.PageIndex = e.NewPageIndex
-        BindGrid()
-    End Sub
+    'Protected Sub gvLoadDrop_IndexChanging(ByVal sender As Object, ByVal e As GridViewPageEventArgs)
+    '    gvLoadDrop.PageIndex = e.NewPageIndex
+    '    BindGrid()
+    'End Sub
 #End Region
 
+    Private Function FirstLoadDropPage(ByVal table As DataTable) As DataTable
+        Dim pageSize As Integer = gvLoadDrop.PageSize
+        If pageSize <= 0 Then pageSize = 15
+        If table.Rows.Count <= pageSize Then Return table
+        Dim page As DataTable = table.Clone()
+        Dim i As Integer
+        For i = 0 To pageSize - 1
+            page.ImportRow(table.Rows(i))
+        Next
+        Return page
+    End Function
+
+    <System.Web.Script.Services.ScriptMethod(),
+    System.Web.Services.WebMethod()>
+    Public Shared Function GetMoreLoadDrops(ByVal pageIndex As Integer, ByVal pageSize As Integer, ByVal depot As String, ByVal skuCode As String, ByVal vendor As String) As Object
+        Dim rows As New List(Of Object)
+        If System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo) Is Nothing Then Return New With {.rows = rows, .total = 0}
+        If pageSize <= 0 Then pageSize = 15
+        If pageIndex < 0 Then pageIndex = 0
+        Dim ds As DataSet = New LoadDropAddUpdateClass().GetDropLoadList(If(depot, String.Empty), If(skuCode, String.Empty), If(vendor, String.Empty))
+        Dim total As Integer = 0
+        If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0) IsNot Nothing Then
+            total = ds.Tables(0).Rows.Count
+            Dim start As Integer = pageIndex * pageSize
+            Dim last As Integer = Math.Min(start + pageSize, total) - 1
+            Dim i As Integer
+            For i = start To last
+                Dim dr As DataRow = ds.Tables(0).Rows(i)
+                rows.Add(New With {
+                    .vendorName = dr("vendor_name").ToString(),
+                    .depotName = dr("depot_name").ToString(),
+                    .depotHref = "LoadDropAddUpdate.aspx?" & Constant.SessionKeys.DEPT & "=" & dr("depot_code").ToString() & "&Vendor=" & dr("vend_unit").ToString(),
+                    .sku = dr("sku_code").ToString(),
+                    .skuDesc = dr("SkuDescription").ToString()
+                })
+            Next
+        End If
+        Return New With {.rows = rows, .total = total}
+    End Function
 
 End Class

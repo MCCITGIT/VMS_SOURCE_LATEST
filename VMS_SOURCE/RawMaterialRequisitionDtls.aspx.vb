@@ -191,6 +191,15 @@ Partial Class RawMaterialRequisitionDtls
         Dim txtReqDate As TextBox = TryCast(e.Row.FindControl("txtReqDate"), TextBox)
         Dim txtQuantity As TextBox = TryCast(e.Row.FindControl("txtQuantity"), TextBox)
         Dim txtRemarks As TextBox = TryCast(e.Row.FindControl("txtRemarks"), TextBox)
+        Dim hdnPendingQty As HiddenField = TryCast(e.Row.FindControl("hdnPendingQty"), HiddenField)
+
+        If hdnPendingQty IsNot Nothing Then
+            If rowView.Row.Table.Columns.Contains("pending_qty") Then
+                hdnPendingQty.Value = Convert.ToString(rowView("pending_qty")).Trim()
+            Else
+                hdnPendingQty.Value = "0"
+            End If
+        End If
 
         If txtQuantity IsNot Nothing AndAlso rowView.Row.Table.Columns.Contains("quantity") Then
             txtQuantity.Text = FormatQuantityValue(rowView("quantity"))
@@ -225,6 +234,13 @@ Partial Class RawMaterialRequisitionDtls
                 reqDateValue = Convert.ToDateTime(rowView("req_date")).ToString("yyyy-MM-dd")
             End If
 
+            Dim minDate As String = DateTime.Today.ToString("yyyy-MM-dd")
+            If reqDateValue <> "" AndAlso reqDateValue < minDate Then
+                minDate = reqDateValue
+            End If
+
+            txtReqDate.Attributes("data-saved-date") = reqDateValue
+            txtReqDate.Attributes("min") = minDate
             txtReqDate.Text = reqDateValue
         End If
     End Sub
@@ -448,6 +464,10 @@ Partial Class RawMaterialRequisitionDtls
             isValid = False
         End If
 
+        If Not ValidateDeliveryDateNotBackDate() Then
+            isValid = False
+        End If
+
         Dim dtDetails As DataTable = BuildRequisitionDetailTable()
         If dtDetails.Rows.Count = 0 Then
             AppendInlineValidation("Grid", "Please enter Quantity greater than 0 for at least one Raw Material.")
@@ -486,6 +506,42 @@ Partial Class RawMaterialRequisitionDtls
 
         If Not isValid Then
             AppendInlineValidation("Grid", "Quantity Required cannot be greater than Pending Quantity.")
+        End If
+
+        Return isValid
+    End Function
+
+    Private Function ValidateDeliveryDateNotBackDate() As Boolean
+        Dim isValid As Boolean = True
+        Dim today As Date = Date.Today
+
+        For Each gridRow As GridViewRow In gvVendorRawMat.Rows
+            If gridRow.RowType <> DataControlRowType.DataRow Then
+                Continue For
+            End If
+
+            Dim txtReqDate As TextBox = TryCast(gridRow.FindControl("txtReqDate"), TextBox)
+            Dim parsedDate As DateTime
+            If txtReqDate Is Nothing OrElse String.IsNullOrWhiteSpace(txtReqDate.Text) Then
+                Continue For
+            End If
+
+            If Not DateTime.TryParse(txtReqDate.Text.Trim(), parsedDate) Then
+                Continue For
+            End If
+
+            Dim savedDateText As String = Convert.ToString(txtReqDate.Attributes("data-saved-date")).Trim()
+            Dim savedDate As DateTime
+            Dim isSavedDate As Boolean = DateTime.TryParse(savedDateText, savedDate) AndAlso savedDate.Date = parsedDate.Date
+
+            If parsedDate.Date < today AndAlso Not isSavedDate Then
+                txtReqDate.CssClass = "form-control form-control-sm field-invalid"
+                isValid = False
+            End If
+        Next
+
+        If Not isValid AndAlso String.IsNullOrWhiteSpace(valGrid.Text) Then
+            AppendInlineValidation("Grid", "Required Delivery Date cannot be a back date.")
         End If
 
         Return isValid

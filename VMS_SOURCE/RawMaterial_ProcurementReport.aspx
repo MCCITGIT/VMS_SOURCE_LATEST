@@ -48,7 +48,7 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label class="form-control-label">RM Vendor:</label>
+                                    <label class="form-control-label">Supplier:</label>
                                     <asp:DropDownList ID="ddlVendor" ClientIDMode="Static" CssClass="form-control select2" TabIndex="2" runat="server"></asp:DropDownList>
                                 </div>
                             </div>

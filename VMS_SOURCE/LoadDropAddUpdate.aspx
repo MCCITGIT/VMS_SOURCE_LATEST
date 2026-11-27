@@ -191,7 +191,7 @@
                             </Columns>
                         </asp:GridView>
                     </div>
-                    <div class="row">
+                    <div class="row mt-2">
                         <div class="col-md-12 text-center">
                             <asp:UpdatePanel ID="UpdatePanel2" runat="server">
                                 <ContentTemplate>

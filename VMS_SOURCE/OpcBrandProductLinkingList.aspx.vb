@@ -35,7 +35,7 @@ Partial Class OpcBrandProductLinkingList
 
     Private Sub PopulateVendorList()
         Dim obj As New POLinkingRequestClass()
-        Dim ds As DataSet = obj.GetBrandProductList()
+        Dim ds As DataSet = obj.GetBrandProductLinkBrands()
 
         ddlBrand.Items.Clear()
         If (Not (ds Is Nothing) AndAlso ds.Tables.Count > 0 AndAlso Not (ds.Tables(0) Is Nothing) AndAlso ds.Tables(0).Rows.Count > 0) Then

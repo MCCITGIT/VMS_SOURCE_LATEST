@@ -33,12 +33,55 @@ Partial Class Product_Formulation
         End If
         hdnSnapshot.Value = Convert.ToString(ViewState(SnapshotKey))
         ' raw material search shows the manual items of this vendor unit only (HO: the vendor selected on the page; the browser keeps it in sync when the dropdown changes)
-        aceRawMaterialSearch.ContextKey = If(userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT, Convert.ToString(userInfo.userBranchEntity).Trim(), ddlvendor.SelectedValue)
-        aceProductSearch.ContextKey = CurrentVendor()      ' product search = the products declared for this vendor on Vendor Scope
+        aceRawMaterialSearch.ContextKey = If(IsStdMode(), "STD", If(userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT, Convert.ToString(userInfo.userBranchEntity).Trim(), ddlvendor.SelectedValue))
+        aceProductSearch.ContextKey = ProductSearchContext()      ' product search = vendor's scope, limited to the selected brand's links
         hdnVendorUnit.Value = CurrentVendor()              ' the browser reads the vendor from here when the Vendor dropdown is not on the page (UNIT login)
         If IsPostBack AndAlso userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT Then HideVendorColumn()
-        If Not CanSeeInternal() Then HideInternalColumns()      ' Material Dept figures are never rendered for a vendor
-        If CanSeeInternal() Then pfSectionEntry.Attributes("class") = "pf-section pf-has-internal"      ' room for the two internal columns
+        If Not CanSeeInternal() OrElse IsStdMode() Then HideInternalColumns()      ' Material Dept figures are never rendered for a vendor (nor in the HO standard entry)
+        If CanSeeInternal() AndAlso Not IsStdMode() Then pfSectionEntry.Attributes("class") = "pf-section pf-has-internal"      ' room for the two internal columns
+        divMdComProc.Visible = CanSeeInternal() : divMdComMargin.Visible = CanSeeInternal()      ' Material Dept suggestion of the common charges
+        divFreight.Visible = FreightAllowed()          ' freight only for vendors onboarded with freight = Y
+        ApplyModeUi()
+    End Sub
+
+    ''' <summary>HO standard formulation mode (02-11-2026): an HO / SYSADMIN user on the page without ?id (the old "new formulation" entry).
+    ''' HO enters brand + product + shade and the raw materials with their percentage once; no vendor, price, supplier or packaging.
+    ''' A vendor never sees this mode: its page is pre-filled from the standard and only prices and packaging are typed.</summary>
+    Protected Function IsStdMode() As Boolean
+        If Not IsHoUser() Then Return False
+        Dim id As Integer = ParseInteger(hdnId.Value)
+        If id = 0 AndAlso Not IsPostBack Then id = ParseInteger(Convert.ToString(Request.QueryString("id")))
+        Return id = 0
+    End Function
+
+    ''' <summary>What the page shows in each mode. Runs in PreRender, after every event has been handled.</summary>
+    Private Sub ApplyModeUi()
+        Dim std As Boolean = IsStdMode()
+        Dim isNew As Boolean = ParseInteger(hdnId.Value) = 0
+        For Each col As DataControlField In gvVendorRawMat.Columns
+            If col.HeaderText.StartsWith("Price") Then col.Visible = Not std            ' the standard has no price
+        Next
+        tdRateEntry.Visible = Not std
+        tblEntry.Visible = std                       ' raw materials are added by HO in the standard only; a vendor works on the lines HO defined
+        btnNewRawMat.Visible = False                 ' no vendor-private raw materials in a formulation any more
+        If gvVendorRawMat.FooterRow IsNot Nothing Then
+            Dim pnlLoss As Panel = TryCast(gvVendorRawMat.FooterRow.FindControl("pnlLoss"), Panel)
+            If pnlLoss IsNot Nothing Then pnlLoss.Visible = Not std
+        End If
+        If std Then
+            divFxVendor.Visible = False : divFxSupplier.Visible = False
+            pfSectionPack.Visible = False : divVerGrid.Visible = False
+            btnSubmit.Visible = False
+            btnSaveStd.Visible = GetGridTable().Rows.Count > 0
+            lblEntryTitle.Text = "Standard formulation (HO)"
+            lblEntrySub.Text = "Pick Brand, Product and Shade, then add the raw materials with their percentage. Total must be exactly 100 %. Vendors see these lines locked and only enter their price and packaging."
+        Else
+            btnSaveStd.Visible = False
+            lblEntryTitle.Text = "SKU formulation"
+            lblEntrySub.Text = If(isNew, "Raw materials and percentages are fixed by HO. Pick the fixed data below once, then enter your price for each raw material and the packaging cost.",
+                                         "Raw materials and percentages are fixed by HO; only the prices and the packaging cost can be changed.")
+            If userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT Then divFxVendor.Visible = False
+        End If
     End Sub
 
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
@@ -66,9 +109,11 @@ Partial Class Product_Formulation
                     Exit Sub
                 End Try
             Else
-                BindRawMatGrid()
+                Dim stdRow As DataRow = ApplyStandardFromQuery()      ' ?std= (from the "Standard formulations" list): brand + product preselected
                 BindPacks()
                 BindScopeLookups()
+                If stdRow IsNot Nothing AndAlso ddlShade.Items.FindByValue(Convert.ToString(stdRow("ssf_shade_code")).Trim()) IsNot Nothing Then ddlShade.SelectedValue = Convert.ToString(stdRow("ssf_shade_code")).Trim()
+                ReloadStandardRows()      ' the standard's lines (vendor: locked, price empty; HO: editable), or the "pick Brand, Product and Shade" note
             End If
         End If
     End Sub
@@ -89,9 +134,16 @@ Partial Class Product_Formulation
         If String.IsNullOrWhiteSpace(prefixText) OrElse prefixText.Trim().Length < 3 OrElse String.IsNullOrWhiteSpace(contextKey) Then
             Return productDetails.ToArray()
         End If
+        ' contextKey = "vendor|brandId" (30-10-2026: the brand limits the list to its Brand Product Linking; a bare vendor still works)
+        Dim ctx() As String = contextKey.Split("|"c)
+        Dim vendorCode As String = ctx(0).Trim()
+        Dim brandId As Integer = 0
+        If ctx.Length > 1 Then Integer.TryParse(ctx(1).Trim(), brandId)
+        If vendorCode = "" Then Return productDetails.ToArray()
         Try
             Dim obj As New OPC_VendorClass()
-            Dim ds As DataSet = obj.GetScopeProductSearch(contextKey.Trim(), prefixText.Trim())   ' only the products declared for this vendor on Vendor Scope
+            ' "STD" in place of the vendor = HO standard formulation entry (02-11-2026): every product of the brand, no vendor scope
+            Dim ds As DataSet = If(vendorCode = "STD", obj.GetStdProductSearch(prefixText.Trim(), brandId), obj.GetScopeProductSearch(vendorCode, prefixText.Trim(), brandId))   ' vendor: products declared on Vendor Scope, within the brand's links
             If Not ds Is Nothing AndAlso ds.Tables.Count > 0 AndAlso Not ds.Tables(0) Is Nothing Then
                 For Each dr As DataRow In ds.Tables(0).Rows
                     Dim productCode As String = Convert.ToString(dr("product_code")).Trim()
@@ -117,7 +169,8 @@ Partial Class Product_Formulation
         End If
         Try
             Dim obj As New OPC_VendorClass()
-            Dim ds As DataSet = obj.SearchRawMaterialForFormulation(prefixText.Trim(), contextKey)
+            ' "STD" = HO standard formulation entry: the whole raw material master, any vendor unit (02-11-2026)
+            Dim ds As DataSet = If(Convert.ToString(contextKey).Trim() = "STD", obj.SearchStdRawMaterial(prefixText.Trim()), obj.SearchRawMaterialForFormulation(prefixText.Trim(), contextKey))
             If Not ds Is Nothing AndAlso ds.Tables.Count > 0 AndAlso Not ds.Tables(0) Is Nothing Then
                 For Each dr As DataRow In ds.Tables(0).Rows
                     Dim rawMaterialId As String = Convert.ToString(dr("Raw_Mat_Code")).Trim()
@@ -133,6 +186,48 @@ Partial Class Product_Formulation
         Return rawMaterialDetails.ToArray()
     End Function
 #End Region
+
+    ''' <summary>Freight rate (Rs per kg / litre) of the common charges; pack freight = rate x pack content (02-11-2026).</summary>
+    Private Function FreightRate() As Decimal
+        If Not FreightAllowed() Then Return 0D          ' vendor onboarded without freight: never saved, whatever the box holds
+        Return Math.Max(0D, ParseDecimal(txtComFreight.Text))
+    End Function
+
+    ''' <summary>True when the vendor of this formulation was onboarded with freight = Y (Vendor Unit menu, vendor_mstr.unit_freight_yn).
+    ''' Empty or N: the Freight field and the pack freight line are hidden and freight is saved as 0. Looked up once per vendor per request.</summary>
+    Private _freightVendor As String = Nothing
+    Private _freightAllowed As Boolean = False
+    Protected Function FreightAllowed() As Boolean
+        Dim v As String = CurrentVendor()
+        If _freightVendor Is Nothing OrElse _freightVendor <> v Then
+            _freightVendor = v
+            Try
+                _freightAllowed = New OPC_VendorClass().IsVendorFreightAllowed(v)
+            Catch
+                _freightAllowed = False          ' a failed lookup hides freight rather than letting it through
+            End Try
+        End If
+        Return _freightAllowed
+    End Function
+
+    ''' <summary>Content of a pack in kg / litre from its text ("50 K", "20 L", "500 ML", "250 G"); anything else = 0. Mirrors dbo.fn_opc_pack_content.</summary>
+    Private Shared Function PackContent(ByVal packSize As String) As Decimal
+        Dim s As String = Convert.ToString(packSize).Trim()
+        Dim sp As Integer = s.IndexOf(" "c)
+        If sp <= 0 Then Return 0D
+        Dim n As Double = 0
+        If Not Double.TryParse(s.Substring(0, sp), NumberStyles.Float, CultureInfo.InvariantCulture, n) OrElse n < 0 Then Return 0D
+        Select Case s.Substring(sp + 1).Trim().ToUpperInvariant()
+            Case "K", "KG", "L", "LTR" : Return CDec(n)
+            Case "G", "GM", "ML" : Return CDec(n / 1000.0R)
+            Case Else : Return 0D
+        End Select
+    End Function
+
+    ''' <summary>Pack content as the page script reads it (data-content of a pack).</summary>
+    Protected Function PackContentText(ByVal packSize As Object) As String
+        Return PackContent(Convert.ToString(packSize)).ToString("0.######", CultureInfo.InvariantCulture)
+    End Function
 
     ''' <summary>Quick add of a raw material that is not in the list (the + button). Saved for one vendor unit only: a UNIT user always gets its own unit, HO passes the vendor selected on the page.</summary>
     <System.Web.Script.Services.ScriptMethod(),
@@ -176,6 +271,7 @@ Partial Class Product_Formulation
         dt.Columns.Add(New DataColumn("unit", GetType(String)))
         dt.Columns.Add(New DataColumn("rate", GetType(String)))
         dt.Columns.Add(New DataColumn("matrix_id", GetType(String)))
+        dt.Columns.Add(New DataColumn("rev_flag", GetType(String)))      ' 04-11-2026: "Y" = HO opened this raw material's rate for revision
         ViewState(GridTableKey) = dt
     End Sub
 
@@ -196,7 +292,8 @@ Partial Class Product_Formulation
         gvVendorRawMat.DataBind()
         btnSubmit.Visible = dt.Rows.Count > 0
         lblNextSn.Text = (dt.Rows.Count + 1).ToString()      ' entry line shows the number the next raw material will get
-        btnSubmit.Text = If(ParseInteger(hdnId.Value) > 0, "Submit for HO approval", "Submit for HO approval")
+        ' the text of a saved version is set by ApplyApprovalState (e.g. "Send revised rate to vendor" in HO revise mode); re-binding the grid must not overwrite it
+        If ParseInteger(hdnId.Value) = 0 Then btnSubmit.Text = "Submit for HO approval"
         hdnSkuPrice.Value = CalculateSkuPrice(dt, LossPct()).ToString("0.00", CultureInfo.InvariantCulture)
         lblSkuPriceInfo.Text = hdnSkuPrice.Value
         LockHeaderIfRowsExist(dt)
@@ -218,7 +315,9 @@ Partial Class Product_Formulation
     End Property
 
     Private Sub LockHeaderIfRowsExist(ByVal dt As DataTable)
-        Dim locked As Boolean = dt.Rows.Count > 0 OrElse ParseInteger(hdnId.Value) > 0
+        ' 02-11-2026: the lines come from the HO standard (vendor) or are typed freely (HO), so the fixed data stays changeable until a
+        ' version is saved - picking another product / shade simply loads that standard. A saved version (id) is locked as before.
+        Dim locked As Boolean = ParseInteger(hdnId.Value) > 0
         ddlBrand.Enabled = Not locked
         ddlvendor.Enabled = Not locked
         txtProductSearch.Enabled = Not locked
@@ -241,17 +340,22 @@ Partial Class Product_Formulation
             Dim rate As Decimal = If(txtRowRate Is Nothing, 0D, ParseDecimal(txtRowRate.Text))
             gridRatioTotal += ratio
             gridSkuPrice += rate
-            If txtRowRatio IsNot Nothing Then txtRowRatio.Text = ratio.ToString("0.##", CultureInfo.InvariantCulture)
-            If txtRowRate IsNot Nothing Then txtRowRate.Text = rate.ToString("0.00", CultureInfo.InvariantCulture)
+            If txtRowRatio IsNot Nothing Then
+                txtRowRatio.Text = ratio.ToString("0.##", CultureInfo.InvariantCulture)
+                txtRowRatio.ReadOnly = Not IsStdMode()       ' 02-11-2026: the percentage is HO's - read only for everyone else (a read-only box ignores any posted value)
+            End If
+            If txtRowRate IsNot Nothing Then txtRowRate.Text = If(rate > 0D, rate.ToString("0.00", CultureInfo.InvariantCulture), "")
+            Dim btnDel As LinkButton = TryCast(e.Row.FindControl("btnDeleteRow"), LinkButton)
+            If btnDel IsNot Nothing Then btnDel.Visible = IsStdMode()          ' only HO adds / removes raw materials, in the standard
         ElseIf e.Row.RowType = DataControlRowType.Footer Then
             e.Row.TableSection = TableRowSection.TableFooter
-            SetRatioFooterLabels(e.Row, gridRatioTotal, gridSkuPrice * (1 + LossPct() / 100D))
+            SetRatioFooterLabels(e.Row, gridRatioTotal, gridSkuPrice * (1 + LossPct() / 100D), gridSkuPrice)
             Dim txtLoss As TextBox = TryCast(e.Row.FindControl("txtLossPct"), TextBox)
             If txtLoss IsNot Nothing Then txtLoss.Text = If(LossPct() = 0D, "", LossPct().ToString("0.##", CultureInfo.InvariantCulture))
         End If
     End Sub
 
-    Private Sub SetRatioFooterLabels(ByVal footerRow As GridViewRow, ByVal totalRatio As Decimal, ByVal skuPrice As Decimal)
+    Private Sub SetRatioFooterLabels(ByVal footerRow As GridViewRow, ByVal totalRatio As Decimal, ByVal skuPrice As Decimal, ByVal rawCost As Decimal)
         Dim lblRatioTotal As Label = TryCast(footerRow.FindControl("lblRatioTotal"), Label)
         Dim lblRatioStatus As Label = TryCast(footerRow.FindControl("lblRatioStatus"), Label)
         Dim lblSkuPrice As Label = TryCast(footerRow.FindControl("lblSkuPrice"), Label)
@@ -266,6 +370,13 @@ Partial Class Product_Formulation
             End If
         End If
         If lblSkuPrice IsNot Nothing Then lblSkuPrice.Text = Math.Round(skuPrice, 2).ToString("0.00", CultureInfo.InvariantCulture)
+        ' breakup (02-11-2026): raw material cost + loss amount = SKU price (loss amount = difference of the rounded figures, so the three always add up)
+        Dim lblRm As Label = TryCast(footerRow.FindControl("lblRmCost"), Label)
+        Dim lblLossAmt As Label = TryCast(footerRow.FindControl("lblLossAmt"), Label)
+        Dim lblLossText As Label = TryCast(footerRow.FindControl("lblLossText"), Label)
+        If lblRm IsNot Nothing Then lblRm.Text = Math.Round(rawCost, 2).ToString("0.00", CultureInfo.InvariantCulture)
+        If lblLossAmt IsNot Nothing Then lblLossAmt.Text = (Math.Round(skuPrice, 2) - Math.Round(rawCost, 2)).ToString("0.00", CultureInfo.InvariantCulture)
+        If lblLossText IsNot Nothing Then lblLossText.Text = If(LossPct() > 0D, "(" & LossPct().ToString("0.##", CultureInfo.InvariantCulture) & "%)", "")
     End Sub
 
     Private Function ValidateSubmitInputs() As Boolean
@@ -358,9 +469,30 @@ Partial Class Product_Formulation
         AppendInlineValidation(fieldKey, message)
     End Sub
 
+    ''' <summary>HO standard entry (02-11-2026): brand, product, shade (when the product has shades), raw material and percentage - nothing else.</summary>
+    Private Function ValidateStdAddInputs() As Boolean
+        ClearInlineValidation()
+        Dim isValid As Boolean = True
+        If ShadeRequired() AndAlso ddlShade.SelectedValue = "" Then AppendInlineValidation("Shade", "Please select Shade.") : isValid = False
+        If ddlBrand.SelectedIndex <= 0 Then AppendInlineValidation("Brand", "Please select Brand.") : isValid = False
+        If String.IsNullOrWhiteSpace(hdnProductCode.Value) Then AppendInlineValidation("Product", "Please enter Product.") : isValid = False
+        If String.IsNullOrWhiteSpace(txtSearchText.Text.Trim()) Then
+            AppendInlineValidation("RawMaterial", "Please enter Raw Material.") : isValid = False
+        ElseIf String.IsNullOrWhiteSpace(txtrawmatid.Value) Then
+            AppendInlineValidation("RawMaterial", "Please select Raw Material from the list.") : isValid = False
+        End If
+        Dim ratio As Decimal = ParseDecimal(txtRatio.Text)
+        If String.IsNullOrWhiteSpace(txtRatio.Text) OrElse ratio <= 0D Then
+            AppendInlineValidation("Ratio", "Please enter the percentage.") : isValid = False
+        ElseIf CurrentRatioTotal() + ratio > 100D Then
+            AppendInlineValidation("Ratio", "Total percentage should not be greater than 100%.") : isValid = False
+        End If
+        Return isValid
+    End Function
+
     Protected Sub btnAdd_Click(sender As Object, e As EventArgs)
         CapturePackInputs()
-        If Not ValidateAddInputs() Then BindPacks() : Exit Sub
+        If Not (If(IsStdMode(), ValidateStdAddInputs(), ValidateAddInputs())) Then BindPacks() : Exit Sub
 
         Dim dt As DataTable = GetGridTable()
         Dim selectedRawMatCode As String = txtrawmatid.Value.Trim()
@@ -378,8 +510,8 @@ Partial Class Product_Formulation
         Dim dr As DataRow = dt.NewRow()
         dr("brand_code") = ddlBrand.SelectedValue
         dr("brand_name") = ddlBrand.SelectedItem.Text
-        dr("vendor_code") = ddlvendor.SelectedValue
-        dr("vendor_name") = ddlvendor.SelectedItem.Text
+        dr("vendor_code") = If(IsStdMode(), "", ddlvendor.SelectedValue)
+        dr("vendor_name") = If(IsStdMode(), "", ddlvendor.SelectedItem.Text)
         dr("product_code") = hdnProductCode.Value
         dr("product_name") = hdnProductName.Value
         dr("shade_code") = ddlShade.SelectedValue
@@ -391,7 +523,7 @@ Partial Class Product_Formulation
         dr("rawmat_name") = rawMatName
         dr("ratio") = ParseDecimal(txtRatio.Text).ToString("0.##", CultureInfo.InvariantCulture)
         dr("unit") = ""
-        dr("rate") = ParseDecimal(txtRate.Text).ToString("0.00", CultureInfo.InvariantCulture)
+        dr("rate") = If(IsStdMode(), "", ParseDecimal(txtRate.Text).ToString("0.00", CultureInfo.InvariantCulture))
         dr("matrix_id") = "0"
         dt.Rows.Add(dr)
         ViewState(GridTableKey) = dt
@@ -420,6 +552,145 @@ Partial Class Product_Formulation
     Private Sub ClearControl()
         txtSearchText.Text = "" : txtrawmatid.Value = "" : txtRatio.Text = "" : txtRate.Text = "" : lblErrorMessage.Text = ""
     End Sub
+
+#Region "standard formulation (HO) - Author: MUKESH BHAGAT 02-Nov-2026"
+    ''' <summary>?std=&lt;ssf_id&gt; (opened from the "Standard formulations" view of the list): preselects Brand and Product of that standard; the shade follows once the
+    ''' shade list is built. HO may open any standard (to edit it); a vendor only one inside its Vendor Scope - otherwise nothing is selected and the page says so.
+    ''' Returns the standard's row, or Nothing.</summary>
+    Private Function ApplyStandardFromQuery() As DataRow
+        Dim stdId As Integer = ParseInteger(Convert.ToString(Request.QueryString("std")))
+        If stdId <= 0 Then Return Nothing
+        Dim vendor As String = If(IsHoUser(), "", CurrentVendor())
+        Dim ds As DataSet = New OPC_VendorClass().GetStdFormulationHeader(stdId, vendor)
+        If ds Is Nothing OrElse ds.Tables.Count = 0 OrElse ds.Tables(0).Rows.Count = 0 Then
+            valGrid.Text = "This standard formulation is not available for you (it is not in your Vendor Scope)."
+            Return Nothing
+        End If
+        Dim r As DataRow = ds.Tables(0).Rows(0)
+        Dim brand As String = Convert.ToString(r("ssf_brand_code")).Trim()
+        If ddlBrand.Items.FindByValue(brand) IsNot Nothing Then ddlBrand.SelectedValue = brand
+        hdnProductCode.Value = Convert.ToString(r("ssf_product_code")).Trim()
+        hdnProductName.Value = Convert.ToString(r("product_name")).Trim()
+        txtProductSearch.Text = hdnProductName.Value
+        txtProductSearch.Attributes("readonly") = "readonly"          ' the picked product stays; the reset button clears it
+        Return r
+    End Function
+
+    ''' <summary>The shade the standard / the new formulation is for: "" when the product has no shades.</summary>
+    Private Function CurrentShade() As String
+        Return If(ShadeRequired(), ddlShade.SelectedValue.Trim(), "")
+    End Function
+
+    ''' <summary>True once brand, product and (when the product has shades) shade are picked - the key of a standard formulation.</summary>
+    Private Function StdKeyReady() As Boolean
+        Return ddlBrand.SelectedIndex > 0 AndAlso hdnProductCode.Value.Trim() <> "" AndAlso (Not ShadeRequired() OrElse ddlShade.SelectedValue <> "")
+    End Function
+
+    ''' <summary>Fills the grid of a NEW page (id = 0) with HO's standard formulation of the picked brand + product + shade.
+    ''' Vendor: the lines arrive locked with an empty price. HO: the lines can be changed and saved as a new version of the standard.
+    ''' Nothing is filled when the key is incomplete or HO has not defined the standard yet (the note says which).</summary>
+    Private Sub ReloadStandardRows()
+        If ParseInteger(hdnId.Value) > 0 Then Exit Sub
+        Dim dt As DataTable = GetGridTable()
+        dt.Rows.Clear()
+        Dim std As Boolean = IsStdMode()
+        Dim note As String = "", warn As Boolean = False
+        If Not StdKeyReady() Then
+            note = If(std, "Pick Brand, Product and Shade to load the standard formulation, or to define it.", "Pick Brand, Product and Shade: the raw materials and percentages defined by HO are loaded here.")
+        Else
+            Dim ds As DataSet = New OPC_VendorClass().GetStdFormulation(ddlBrand.SelectedValue.Trim(), hdnProductCode.Value.Trim(), CurrentShade())
+            If ds IsNot Nothing AndAlso ds.Tables.Count > 1 AndAlso ds.Tables(0).Rows.Count > 0 AndAlso ds.Tables(1).Rows.Count > 0 Then
+                Dim h As DataRow = ds.Tables(0).Rows(0)
+                For Each src As DataRow In ds.Tables(1).Rows
+                    Dim dr As DataRow = dt.NewRow()
+                    dr("brand_code") = ddlBrand.SelectedValue : dr("brand_name") = ddlBrand.SelectedItem.Text
+                    dr("vendor_code") = If(std, "", CurrentVendor()) : dr("vendor_name") = ""
+                    dr("product_code") = hdnProductCode.Value : dr("product_name") = hdnProductName.Value
+                    dr("shade_code") = CurrentShade() : dr("shade_name") = If(CurrentShade() = "", "", ddlShade.SelectedItem.Text)
+                    dr("supplier_code") = "" : dr("supplier_name") = ""
+                    dr("site_cost") = "" : dr("mat_price") = "" : dr("site_info") = ""
+                    dr("rawmat_code") = Convert.ToString(src("rawmat_code")).Trim()
+                    dr("rawmat_name") = Convert.ToString(src("rawmat_name")).Trim()
+                    dr("ratio") = ParseDecimal(Convert.ToString(src("ratio_pct"))).ToString("0.##", CultureInfo.InvariantCulture)
+                    dr("unit") = "" : dr("rate") = "" : dr("matrix_id") = "0"
+                    dt.Rows.Add(dr)
+                Next
+                Dim v As String = "version " & Convert.ToString(h("ssf_version")) & ", saved by " & Convert.ToString(h("created_by")) & " on " & Convert.ToDateTime(h("created_on")).ToString("dd/MM/yyyy")
+                note = If(std, "Current standard formulation (" & v & "). Change the lines and save to create a new version.",
+                               "Standard formulation set by HO (" & v & "). Raw materials and percentages are locked - enter your price for each raw material.")
+            Else
+                warn = True
+                note = If(std, "No standard formulation exists yet for this brand / product / shade. Add the raw materials and their percentage (total 100 %).",
+                               "HO has not defined the standard formulation for this brand / product / shade yet, so there is nothing to price. Please contact HO.")
+            End If
+        End If
+        ViewState(GridTableKey) = dt
+        lblStdNote.Text = Server.HtmlEncode(note)
+        pnlStdNote.CssClass = If(warn, "pf-mode-note pf-warn", "pf-mode-note")
+        pnlStdNote.Visible = note <> ""
+        BindRawMatGrid()
+    End Sub
+
+    ''' <summary>"" when the grid is exactly HO's standard (same raw materials and percentages), otherwise the reason. A vendor cannot submit a new formulation without it.</summary>
+    Private Function StandardMismatch() As String
+        If Not StdKeyReady() Then Return "Pick Brand, Product and Shade first."
+        Dim ds As DataSet = New OPC_VendorClass().GetStdFormulation(ddlBrand.SelectedValue.Trim(), hdnProductCode.Value.Trim(), CurrentShade())
+        If ds Is Nothing OrElse ds.Tables.Count < 2 OrElse ds.Tables(1).Rows.Count = 0 Then Return "HO has not defined the standard formulation for this brand / product / shade yet."
+        Dim std As New Dictionary(Of String, Decimal)(StringComparer.OrdinalIgnoreCase)
+        For Each r As DataRow In ds.Tables(1).Rows
+            std(Convert.ToString(r("rawmat_code")).Trim()) = Math.Round(ParseDecimal(Convert.ToString(r("ratio_pct"))), 2)
+        Next
+        Dim grid As DataTable = GetGridTable()
+        If grid.Rows.Count <> std.Count Then Return "The raw materials do not match the HO standard formulation. Please pick the product again."
+        For Each r As DataRow In grid.Rows
+            Dim code As String = Convert.ToString(r("rawmat_code")).Trim()
+            If Not std.ContainsKey(code) OrElse std(code) <> Math.Round(ParseDecimal(Convert.ToString(r("ratio"))), 2) Then Return "The raw materials / percentages do not match the HO standard formulation. Please pick the product again."
+        Next
+        Return ""
+    End Function
+
+    ''' <summary>HO saves the standard formulation (new version) of brand + product + shade.</summary>
+    Protected Sub btnSaveStd_Click(sender As Object, e As EventArgs)
+        If Not IsStdMode() Then Exit Sub
+        Try
+            CapturePackInputs()
+            ClearInlineValidation()
+            Dim ok As Boolean = True
+            If ShadeRequired() AndAlso ddlShade.SelectedValue = "" Then AppendInlineValidation("Shade", "Please select Shade.") : ok = False
+            If ddlBrand.SelectedIndex <= 0 Then AppendInlineValidation("Brand", "Please select Brand.") : ok = False
+            If String.IsNullOrWhiteSpace(hdnProductCode.Value) Then AppendInlineValidation("Product", "Please enter Product.") : ok = False
+            Dim grid As DataTable = GetGridTable()
+            Dim total As Decimal = 0D
+            Dim lines As DataTable = OPC_VendorClass.NewStdFormulationLineTable()
+            Dim srl As Integer = 0
+            For Each r As DataRow In grid.Rows
+                Dim ratio As Decimal = ParseDecimal(Convert.ToString(r("ratio")))
+                If ratio <= 0D Then AppendInlineValidation("Grid", "Every raw material needs a percentage greater than 0.") : ok = False : Exit For
+                total += ratio
+                srl += 1
+                lines.Rows.Add(srl, Convert.ToString(r("rawmat_code")).Trim(), ratio)
+            Next
+            If grid.Rows.Count = 0 Then AppendInlineValidation("Grid", "Please add at least one raw material.") : ok = False
+            If ok AndAlso Math.Round(total, 2) <> 100D Then AppendInlineValidation("Grid", "Total percentage should be equal 100%.") : ok = False
+            If Not ok Then BindRawMatGrid() : Exit Sub
+
+            Dim result As OPC_VendorClass.SkuFormulationSaveResult = New OPC_VendorClass().SaveStdFormulation(ddlBrand.SelectedValue.Trim(), hdnProductCode.Value.Trim(), CurrentShade(), lines, userInfo.userIDEntity)
+            Select Case result.Status
+                Case 1
+                    RmActionPopup.ShowSuccess(Me, "Standard formulation saved (version " & result.Version & "). Vendors will see these raw materials and percentages, locked, when they enter their prices.", "Product_Formulation.aspx")
+                Case 2
+                    RmActionPopup.ShowError(Me, result.Message)
+                    BindRawMatGrid()
+                Case Else
+                    valGrid.Text = If(result.Message = "", "Something went wrong. Try again.", result.Message)
+                    BindRawMatGrid()
+            End Select
+        Catch ex As Exception
+            Session(Constant.SessionKeys.ErrMessage) = ErrorText(ex)
+            Response.Redirect("~/ExceptionPage.aspx")
+        End Try
+    End Sub
+#End Region
 
     Private Sub BrandDetailsListLoad()
         Dim obj As New OPC_VendorClass()
@@ -480,7 +751,13 @@ Partial Class Product_Formulation
     Protected Sub btnSubmit_Click(sender As Object, e As EventArgs) Handles btnSubmit.Click
         Try
             CapturePackInputs()
+            If IsStdMode() Then Exit Sub                 ' HO saves the standard with its own button
             If Not ValidateSubmitInputs() Then BindPacks() : Exit Sub
+            ' 02-11-2026: a NEW formulation must carry exactly HO's standard raw materials and percentages (the boxes are read only; this also stops a stale page)
+            If ParseInteger(hdnId.Value) = 0 Then
+                Dim mismatch As String = StandardMismatch()
+                If mismatch <> "" Then AppendInlineValidation("Grid", mismatch) : BindPacks() : Exit Sub
+            End If
             Dim packError As String = ValidatePacks()
             If packError <> "" Then valPack.Text = packError : BindPacks() : Exit Sub
 
@@ -510,7 +787,7 @@ Partial Class Product_Formulation
                     Dim amtText As String = Convert.ToString(l("amount")).Trim()
                     If name = "" AndAlso amtText = "" Then Continue For      ' blank line ignored
                     lsrl += 1
-                    lines.Rows.Add(key, lsrl, name, ParseDecimal(amtText))
+                    lines.Rows.Add(key, lsrl, name, ParseDecimal(amtText), Convert.ToString(l("item_code")).Trim())
                 Next
             Next
 
@@ -526,7 +803,7 @@ Partial Class Product_Formulation
             Dim obj As New OPC_VendorClass()
             Dim result As OPC_VendorClass.SkuFormulationSaveResult =
                 obj.SaveSkuFormulation(ddlBrand.SelectedValue.Trim(), ddlvendor.SelectedValue.Trim(), hdnProductCode.Value.Trim(), txtRemarks.Text, dtl, packs, lines, userInfo.userIDEntity,
-                                       If(hoRevising, "HO", "VENDOR"), If(hoRevising, txtHoRemarks.Text, ""), LossPct(), ddlSupplier.SelectedValue)
+                                       If(hoRevising, "HO", "VENDOR"), If(hoRevising, txtHoRemarks.Text, ""), LossPct(), ddlSupplier.SelectedValue, FreightRate())
 
             Select Case result.Status
                 Case 1
@@ -588,7 +865,12 @@ Partial Class Product_Formulation
         Dim activeId As Integer = If(h.Table.Columns.Contains("active_sf_id"), ParseInteger(Convert.ToString(h("active_sf_id"))), 0)
         Dim latestId As Integer = If(h.Table.Columns.Contains("latest_sf_id"), ParseInteger(Convert.ToString(h("latest_sf_id"))), 0)
         If releaseNo > 0 Then
-            lblVersionInfo.Text = "Release " & releaseNo & If(status = "APPROVED", " - ACTIVE since " & Convert.ToString(h("sf_valid_from")), " - INACTIVE (valid " & Convert.ToString(h("sf_valid_from")) & " to " & Convert.ToString(h("sf_valid_to")) & ")") &
+            ' 04-11-2026: release dates decide what is in force - SCHEDULED = approved, starts on its effective date; an approved release with an end date is replaced on that date
+            Dim validFromTxt As String = If(IsDBNull(h("sf_valid_from")), "", Convert.ToDateTime(h("sf_valid_from")).ToString("dd/MM/yyyy"))
+            Dim validToTxt As String = If(IsDBNull(h("sf_valid_to")), "", Convert.ToDateTime(h("sf_valid_to")).ToString("dd/MM/yyyy"))
+            lblVersionInfo.Text = "Release " & releaseNo & If(status = "SCHEDULED", " - SCHEDULED: effective from " & validFromTxt & " (the previous release stays in force until then)",
+                                  If(status = "APPROVED", " - ACTIVE since " & validFromTxt & If(validToTxt <> "", ", until " & validToTxt & " (the revised rates start then)", ""),
+                                  " - INACTIVE (valid " & validFromTxt & " to " & validToTxt & ")")) &
                 If(approvedBy <> "", ", approved by " & approvedBy, "")
         Else
             lblVersionInfo.Text = "Cycle " & cycleNo & " / Revision " & revision & " - " & StatusText(status, approvedBy)
@@ -611,6 +893,7 @@ Partial Class Product_Formulation
                 dr("unit") = Convert.ToString(src("sfd_uom"))
                 dr("rate") = ParseDecimal(Convert.ToString(src("sfd_price"))).ToString("0.00", CultureInfo.InvariantCulture)
                 dr("matrix_id") = "0"
+                dr("rev_flag") = If(src.Table.Columns.Contains("sfd_rate_revision_yn"), Convert.ToString(src("sfd_rate_revision_yn")).Trim(), "")
                 dtGrid.Rows.Add(dr)
             Next
         End If
@@ -638,12 +921,29 @@ Partial Class Product_Formulation
                 Dim pchId As Integer = ParseInteger(Convert.ToString(r("pcd_hdr_id")))
                 If Not keyByPchId.ContainsKey(pchId) Then Continue For
                 dtl.Rows.Add(NextKey(dtl, "line_key"), keyByPchId(pchId), ParseInteger(Convert.ToString(r("pcd_id"))), Convert.ToString(r("pcd_cost_name")).Trim(),
-                             ParseDecimal(Convert.ToString(r("pcd_amount"))).ToString("0.00", CultureInfo.InvariantCulture), ParseInteger(Convert.ToString(r("pcd_srl"))), "")
+                             ParseDecimal(Convert.ToString(r("pcd_amount"))).ToString("0.00", CultureInfo.InvariantCulture), ParseInteger(Convert.ToString(r("pcd_srl"))), "",
+                             If(r.Table.Columns.Contains("pcd_item_code"), Convert.ToString(r("pcd_item_code")).Trim(), ""),
+                             If(r.Table.Columns.Contains("pcd_rate_revision_yn"), Convert.ToString(r("pcd_rate_revision_yn")).Trim(), ""))
             Next
         End If
+        ' 04-11-2026 RATE REVISION: HO opened some rates of this formulation - then only those can change (everything else is locked, also checked in the save procedure)
+        ViewState("RevMode") = If(dtGrid.Select("rev_flag = 'Y'").Length > 0 OrElse dtl.Select("rev_flag = 'Y'").Length > 0, "Y", Nothing)
+        ViewState("RevisionVersion") = If(h.Table.Columns.Contains("sf_rate_revision_yn") AndAlso Convert.ToString(h("sf_rate_revision_yn")).Trim() = "Y", "Y", Nothing)
         If CanSeeInternal() Then LoadMaterialPackReview(sfId, hdr, dtl)
         ViewState(PackHdrKey) = hdr
         ViewState(PackDtlKey) = dtl
+        ' 02-11-2026: processing fee and margin % are common to all packs (saved identical on every pack row): show the first pack's values once;
+        ' freight is a rate on the formulation
+        txtComProc.Text = "" : txtComMargin.Text = "" : txtMdComProc.Text = "" : txtMdComMargin.Text = ""
+        If hdr.Rows.Count > 0 Then
+            txtComProc.Text = ParseDecimal(Convert.ToString(hdr.Rows(0)("processing_fee"))).ToString("0.00", CultureInfo.InvariantCulture)
+            txtComMargin.Text = ParseDecimal(Convert.ToString(hdr.Rows(0)("margin_pct"))).ToString("0.00", CultureInfo.InvariantCulture)
+            For Each hr As DataRow In hdr.Rows
+                If txtMdComProc.Text = "" AndAlso ParseDecimal(Convert.ToString(hr("md_processing"))) > 0D Then txtMdComProc.Text = ParseDecimal(Convert.ToString(hr("md_processing"))).ToString("0.00", CultureInfo.InvariantCulture)
+                If txtMdComMargin.Text = "" AndAlso ParseDecimal(Convert.ToString(hr("md_margin"))) > 0D Then txtMdComMargin.Text = ParseDecimal(Convert.ToString(hr("md_margin"))).ToString("0.##", CultureInfo.InvariantCulture)
+            Next
+        End If
+        txtComFreight.Text = ParseDecimal(Convert.ToString(If(h.Table.Columns.Contains("sf_freight_rate"), h("sf_freight_rate"), 0))).ToString("0.00", CultureInfo.InvariantCulture)
         BindPacks()
 
         ' after both sections are bound: banner, HO panel, and who may edit this row
@@ -659,7 +959,7 @@ Partial Class Product_Formulation
             sb.Append(Convert.ToString(r("rawmat_code")).Trim()).Append("|").Append(ParseDecimal(Convert.ToString(r("ratio"))).ToString("0.00", CultureInfo.InvariantCulture)).Append("|") _
               .Append(ParseDecimal(Convert.ToString(r("rate"))).ToString("0.00", CultureInfo.InvariantCulture)).Append(";")
         Next
-        sb.Append("L").Append(LossPct().ToString("0.00", CultureInfo.InvariantCulture)).Append("S").Append(ddlSupplier.SelectedValue).Append("#")
+        sb.Append("L").Append(LossPct().ToString("0.00", CultureInfo.InvariantCulture)).Append("S").Append(ddlSupplier.SelectedValue).Append("F").Append(FreightRate().ToString("0.00", CultureInfo.InvariantCulture)).Append("#")
         For Each h As DataRow In PackHdr().Select("", "pack_key")
             sb.Append(Convert.ToString(h("pack_size")).Trim()).Append("|").Append(ParseDecimal(Convert.ToString(h("processing_fee"))).ToString("0.00", CultureInfo.InvariantCulture)).Append("|") _
               .Append(ParseDecimal(Convert.ToString(h("labour_charge"))).ToString("0.00", CultureInfo.InvariantCulture)).Append("|").Append(ParseDecimal(Convert.ToString(h("margin_pct"))).ToString("0.00", CultureInfo.InvariantCulture)).Append("{")
@@ -681,27 +981,29 @@ Partial Class Product_Formulation
 
 #Region "HO approval + mail"
 #Region "Material Department review (Author: MUKESH BHAGAT 22-10-2026)"
-    ''' <summary>Material Dept users: the FORMULATION_MATERIAL_USERS app setting (login ids) and / or FORMULATION_MATERIAL_GROUPS (group codes, e.g. HO-ADMIN).
-    ''' HO groups and SYSADMIN may also SEE the internal figures; only Material Dept users enter them.</summary>
+    ''' <summary>Material Dept users (Modified-by MUKESH BHAGAT 28-10-2026): whoever holds the "Material Dept Rate Review" form in
+    ''' User Form Access (UsrFrmAccssNewMod.aspx), or SYSADMIN - opc_formulation_material_access. No Web.config lists any more.
+    ''' HO groups and SYSADMIN may also SEE the internal figures; only Material Dept users enter them. Looked up once per request.</summary>
+    Private _isMaterialUser As Nullable(Of Boolean)
     Private Function IsMaterialUser() As Boolean
-        Dim users As String = Convert.ToString(ConfigurationManager.AppSettings("FORMULATION_MATERIAL_USERS"))
-        If String.IsNullOrWhiteSpace(users) Then users = "murthy"
-        For Each u As String In users.Split(","c)
-            If String.Equals(u.Trim(), Convert.ToString(userInfo.userIDEntity).Trim(), StringComparison.OrdinalIgnoreCase) Then Return True
-        Next
-        ' 26-10-2026: whole user groups too (FORMULATION_MATERIAL_GROUPS, e.g. HO-ADMIN)
-        Dim groups As String = Convert.ToString(ConfigurationManager.AppSettings("FORMULATION_MATERIAL_GROUPS"))
-        For Each g As String In groups.Split(","c)
-            If g.Trim() <> "" AndAlso String.Equals(g.Trim(), Convert.ToString(userInfo.userGroupCodeEntity).Trim(), StringComparison.OrdinalIgnoreCase) Then Return True
-        Next
-        Return False
+        If Not _isMaterialUser.HasValue Then
+            Try
+                _isMaterialUser = New OPC_VendorClass().IsFormulationMaterialUser(Convert.ToString(userInfo.userIDEntity).Trim(), Convert.ToString(userInfo.userGroupCodeEntity).Trim())
+            Catch ex As Exception
+                _isMaterialUser = False      ' lookup failure never breaks the page; the user simply gets no Material Dept entry
+            End Try
+        End If
+        Return _isMaterialUser.Value
     End Function
 
-    ''' <summary>Public link to a formulation for the mails (28-10-2026): VMS_SITE_URL from Web.config, else the request's own host.</summary>
+    ''' <summary>Link to a formulation for the mails. Always the published VMS address, same as the requisition dispatch mail,
+    ''' so a local browse does not put localhost in the message.</summary>
     Private Function FormulationLink(ByVal sfId As Integer) As String
-        Dim site As String = Convert.ToString(ConfigurationManager.AppSettings("VMS_SITE_URL")).Trim()
-        If site = "" Then Return Request.Url.GetLeftPart(UriPartial.Authority) & ResolveUrl("~/Product_Formulation.aspx?id=" & sfId)
-        Return site.TrimEnd("/"c) & "/Product_Formulation.aspx?id=" & sfId
+        Dim redirectUrl As String = "Product_Formulation.aspx?id=" & sfId
+        'Dim baseUrl As String = "https://bpilweb.bergerindia.com/vms/"
+        Dim baseUrl As String = "https://bpilmobileuat.bergerindia.com/vmsdemo/"
+        'Dim baseUrl As String = "http://localhost:64930/"
+        Return New Uri(New Uri(baseUrl), redirectUrl).ToString()
     End Function
 
     ''' <summary>Who may see the nearest-site cost and the suggested price: HO and Material Dept. Never a vendor.</summary>
@@ -915,9 +1217,7 @@ Partial Class Product_Formulation
         Dim who As String = If(toMaterial, "Material Dept", "HO")
         Dim toAddress As String = "", ccAddress As String = "", bccAddress As String = ""
         Try
-            Dim dsMail As DataSet = If(toMaterial,
-                                       New OPC_VendorClass().GetSkuFormulationMaterialEmail(Convert.ToString(ConfigurationManager.AppSettings("FORMULATION_MATERIAL_USERS")), Convert.ToString(ConfigurationManager.AppSettings("FORMULATION_MATERIAL_GROUPS"))),
-                                       New OPC_VendorClass().GetSkuFormulationHoEmail())
+            Dim dsMail As DataSet = If(toMaterial, New OPC_VendorClass().GetSkuFormulationMaterialEmail(), New OPC_VendorClass().GetSkuFormulationHoEmail())
             If dsMail IsNot Nothing AndAlso dsMail.Tables.Count > 0 AndAlso dsMail.Tables(0).Rows.Count > 0 Then
                 toAddress = Convert.ToString(dsMail.Tables(0).Rows(0)("TOAddr")).Trim()
                 ccAddress = Convert.ToString(dsMail.Tables(0).Rows(0)("CCAddr")).Trim()
@@ -979,8 +1279,8 @@ Partial Class Product_Formulation
         Dim hdrS As DataTable = PackHdr(), dtlS As DataTable = PackDtl()
         For Each h As DataRow In hdrS.Rows
             Dim mp As Decimal = ParseDecimal(Convert.ToString(h("md_processing"))), mm As Decimal = ParseDecimal(Convert.ToString(h("md_margin")))
-            If mp > 0D Then h("processing_fee") = mp.ToString("0.00", CultureInfo.InvariantCulture)
-            If mm > 0D Then h("margin_pct") = mm.ToString("0.##", CultureInfo.InvariantCulture)
+            If mp > 0D Then h("processing_fee") = mp.ToString("0.00", CultureInfo.InvariantCulture) : txtComProc.Text = mp.ToString("0.00", CultureInfo.InvariantCulture)       ' common charges: one value for every pack
+            If mm > 0D Then h("margin_pct") = mm.ToString("0.##", CultureInfo.InvariantCulture) : txtComMargin.Text = mm.ToString("0.00", CultureInfo.InvariantCulture)
         Next
         For Each l As DataRow In dtlS.Rows
             Dim ma As Decimal = ParseDecimal(Convert.ToString(l("md_amount")))
@@ -1004,6 +1304,7 @@ Partial Class Product_Formulation
     Private Shared Function StatusText(ByVal status As String, ByVal approvedBy As String) As String
         Select Case status
             Case "APPROVED" : Return "APPROVED" & If(approvedBy <> "", " by " & approvedBy, "")
+            Case "SCHEDULED" : Return "APPROVED - SCHEDULED (the previous rates stay in force until the effective date)"
             Case "REJECTED" : Return "REJECTED" & If(approvedBy <> "", " by " & approvedBy, "")
             Case "PENDING_VENDOR" : Return "WAITING FOR VENDOR (HO revised the rate)"
             Case "PENDING_MATERIAL" : Return "UNDER REVIEW AT HO (with Material Dept)"
@@ -1018,6 +1319,16 @@ Partial Class Product_Formulation
     ''' vendor edits only the newest revision (PENDING / REJECTED) or proposes a change on the active release;
     ''' old releases / superseded revisions are read-only with links to the active release and the latest revision;
     ''' HO (other than SYSADMIN) never edits.</summary>
+    ''' <summary>True when HO has opened some rates of this formulation for revision (04-11-2026). Then ONLY those raw material prices / packaging amounts can change.</summary>
+    Private Function RevMode() As Boolean
+        Return Convert.ToString(ViewState("RevMode")) = "Y"
+    End Function
+
+    ''' <summary>True when this version belongs to a rate revision: HO's approval then needs an effective date.</summary>
+    Private Function RevisionVersion() As Boolean
+        Return Convert.ToString(ViewState("RevisionVersion")) = "Y"
+    End Function
+
     Private Sub ApplyApprovalState(ByVal status As String, ByVal hoRemarks As String, ByVal releaseNo As Integer, ByVal isLatest As Boolean, ByVal sfId As Integer, ByVal activeId As Integer, ByVal latestId As Integer)
         pnlHoRemarks.Visible = hoRemarks <> ""
         If hoRemarks <> "" Then
@@ -1037,6 +1348,8 @@ Partial Class Product_Formulation
         ShowMaterialInfo(status)
         btnRevise.Visible = pnlApproval.Visible AndAlso Not reviseMode
         btnApprove.Visible = pnlApproval.Visible AndAlso Not reviseMode
+        divEffective.Visible = btnApprove.Visible AndAlso RevisionVersion()          ' 04-11-2026: HO gives the effective date when approving revised rates
+        If divEffective.Visible Then txtEffectiveFrom.Attributes("min") = Date.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
         btnReject.Visible = pnlApproval.Visible AndAlso Not reviseMode
         lblReviseNote.Text = If(reviseMode, "Revise the ratios / prices / packaging above, write the reason in the remarks, then press 'Send revised rate to vendor'.", "")
         pnlVendorAccept.Visible = status = "PENDING_VENDOR" AndAlso isLatest AndAlso Not hoOnly
@@ -1056,7 +1369,7 @@ Partial Class Product_Formulation
             ' active release: read-only until the vendor presses "Propose change" (then a new negotiation cycle starts on submit)
             Dim proposeMode As Boolean = Convert.ToString(ViewState("ProposeMode")) = "Y"
             editable = isLatest AndAlso proposeMode
-            btnPropose.Visible = isLatest AndAlso Not proposeMode AndAlso Not hoOnly
+            btnPropose.Visible = isLatest AndAlso Not proposeMode AndAlso Not hoOnly AndAlso RevMode()      ' 04-11-2026: only through HO's permission (rates opened for revision)
             btnSubmit.Text = "Submit change for HO approval"
         ElseIf status = "PENDING" Then
             ' vendor may still replace their own proposal; HO edits only after "Revise rate"
@@ -1081,34 +1394,46 @@ Partial Class Product_Formulation
         If Not editable Then
             lblReadOnlyNote.Text = If(status = "INACTIVE" OrElse status = "SUPERSEDED", "This is a historical record and cannot be changed.",
                                    If(Not isLatest, "A newer revision exists - open it to make changes.",
-                                   If(btnPropose.Visible, "Approved and in force. Press 'Propose change' to start a new negotiation.",
+                                   If(btnPropose.Visible, "Approved and in force. HO has opened some rates for revision - press 'Propose change' and change only those rates (highlighted).",
+                                   If(status = "SCHEDULED", "Approved: the revised rates start on their effective date. Until then the previous release stays in force.",
+                                   If(status = "APPROVED" AndAlso Not RevMode() AndAlso Not hoOnly, "Approved and in force. A rate can be changed only after HO opens it for a rate revision.",
                                    If(status = "PENDING_VENDOR", "Waiting for the vendor to accept or counter the revised rate.",
                                    If(status = "PENDING_MATERIAL", If(CanSeeInternal(), "With the Material Department for rate comparison.", "Under review at HO."),
-                                   If(status = "PENDING_HO", If(CanSeeInternal(), "Material Department has replied - HO to decide (approve, reject or revise the rate).", "Under review at HO."), "Read-only view."))))))
+                                   If(status = "PENDING_HO", If(CanSeeInternal(), "Material Department has replied - HO to decide (approve, reject or revise the rate).", "Under review at HO."), "Read-only view."))))))))
         Else
             lblReadOnlyNote.Text = ""
         End If
     End Sub
 
     Private Sub SetEditable(ByVal editable As Boolean)
+        ' 04-11-2026 RATE REVISION: when HO opened some rates, only those can change; supplier, loss %, common charges, packs and lines are locked
+        Dim rev As Boolean = RevMode()
         btnSubmit.Visible = editable AndAlso GetGridTable().Rows.Count > 0
         btnAdd.Visible = editable
-        btnAddPack.Visible = editable
-        txtPackSize.Visible = editable
+        btnAddPack.Visible = editable AndAlso Not rev
+        txtPackSize.Visible = editable AndAlso Not rev
         txtSearchText.Enabled = editable : txtRatio.Enabled = editable : txtRate.Enabled = editable
         If gvVendorRawMat.FooterRow IsNot Nothing Then
             Dim txtLoss As TextBox = TryCast(gvVendorRawMat.FooterRow.FindControl("txtLossPct"), TextBox)
-            If txtLoss IsNot Nothing Then txtLoss.ReadOnly = Not editable
+            If txtLoss IsNot Nothing Then txtLoss.ReadOnly = Not editable OrElse rev
         End If
-        btnNewRawMat.Visible = editable
+        btnNewRawMat.Visible = False
         txtRemarks.Enabled = editable
+        If rev Then ddlSupplier.Enabled = False : ddlShade.Enabled = False
+        ' common charges (02-11-2026): HO / vendor edit them with the formulation; the Material Dept suggestion boxes only while it answers
+        txtComProc.ReadOnly = Not editable OrElse rev : txtComMargin.ReadOnly = Not editable OrElse rev : txtComFreight.ReadOnly = Not editable OrElse rev
+        txtMdComProc.ReadOnly = Not MaterialMode() : txtMdComMargin.ReadOnly = Not MaterialMode()
         ' row delete buttons and pack inputs
+        Dim gridTbl As DataTable = GetGridTable()
         For Each row As GridViewRow In gvVendorRawMat.Rows
             Dim b As LinkButton = TryCast(row.FindControl("btnDeleteRow"), LinkButton)
-            If b IsNot Nothing Then b.Visible = editable
-            For Each id As String In New String() {"txtRowRatio", "txtRowRate"}
+            If b IsNot Nothing Then b.Visible = editable AndAlso IsStdMode()
+            For Each id As String In New String() {"txtRowRate"}      ' 02-11-2026: txtRowRatio stays read only - the percentage belongs to HO's standard
                 Dim t As TextBox = TryCast(row.FindControl(id), TextBox)
-                If t IsNot Nothing Then t.ReadOnly = Not editable
+                If t Is Nothing Then Continue For
+                Dim opened As Boolean = Not rev OrElse (row.RowIndex < gridTbl.Rows.Count AndAlso Convert.ToString(gridTbl.Rows(row.RowIndex)("rev_flag")) = "Y")
+                t.ReadOnly = Not editable OrElse Not opened
+                If rev AndAlso opened AndAlso editable AndAlso Not t.CssClass.Contains("pf-open") Then t.CssClass &= " pf-open"      ' highlighted: HO opened this rate
             Next
             For Each id As String In New String() {"txtSiteCost", "txtMatPrice"}
                 Dim t As TextBox = TryCast(row.FindControl(id), TextBox)
@@ -1118,23 +1443,20 @@ Partial Class Product_Formulation
         For Each item As RepeaterItem In rptPack.Items
             For Each id As String In New String() {"btnRemovePack", "btnAddLine", "txtNewCostName", "txtNewAmount"}
                 Dim c As Control = item.FindControl(id)
-                If c IsNot Nothing Then c.Visible = editable
-            Next
-            For Each id As String In New String() {"txtProcessing", "txtMarginPct"}
-                Dim t As TextBox = TryCast(item.FindControl(id), TextBox)
-                If t IsNot Nothing Then t.ReadOnly = Not editable
-            Next
-            For Each id As String In New String() {"txtMdProcessing", "txtMdMargin"}
-                Dim t As TextBox = TryCast(item.FindControl(id), TextBox)
-                If t IsNot Nothing Then t.ReadOnly = Not MaterialMode()
+                If c IsNot Nothing Then c.Visible = editable AndAlso Not rev
             Next
             Dim rptLines As Repeater = CType(item.FindControl("rptLines"), Repeater)
             For Each li As RepeaterItem In rptLines.Items
                 Dim r As Control = li.FindControl("btnRemoveLine")
-                If r IsNot Nothing Then r.Visible = editable
+                If r IsNot Nothing Then r.Visible = editable AndAlso Not rev
                 For Each id As String In New String() {"txtAmount"}      ' txtCostName stays read-only: the name is picked from the scope items
                     Dim t As TextBox = TryCast(li.FindControl(id), TextBox)
-                    If t IsNot Nothing Then t.ReadOnly = Not editable
+                    If t Is Nothing Then Continue For
+                    Dim lineKey As Integer = ParseInteger(CType(li.FindControl("hdnLineKey"), HiddenField).Value)
+                    Dim lr() As DataRow = PackDtl().Select("line_key = " & lineKey)
+                    Dim opened As Boolean = Not rev OrElse (lr.Length > 0 AndAlso Convert.ToString(lr(0)("rev_flag")) = "Y")
+                    t.ReadOnly = Not editable OrElse Not opened
+                    If rev AndAlso opened AndAlso editable AndAlso Not t.CssClass.Contains("pf-open") Then t.CssClass &= " pf-open"
                 Next
                 Dim mdA As TextBox = TryCast(li.FindControl("txtMdAmount"), TextBox)
                 If mdA IsNot Nothing Then mdA.ReadOnly = Not MaterialMode()
@@ -1179,15 +1501,36 @@ Partial Class Product_Formulation
             valHoRemarks.Text = "Please enter the remarks / negotiated price before rejecting."
             Exit Sub
         End If
+        ' 04-11-2026: approving a RATE REVISION needs HO's effective date (today or later); the previous release stays in force until then
+        Dim effective As Nullable(Of Date) = Nothing
+        If role = "HO" AndAlso action = "A" AndAlso RevisionVersion() Then
+            Dim d As Date
+            If Not Date.TryParseExact(txtEffectiveFrom.Text.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, d) Then
+                CapturePackInputs() : BindPacks()
+                pnlApproval.Visible = True : divEffective.Visible = True
+                valEffective.Text = "Enter the effective date of the revised rates."
+                Exit Sub
+            End If
+            If d < Date.Today Then
+                CapturePackInputs() : BindPacks()
+                pnlApproval.Visible = True : divEffective.Visible = True
+                valEffective.Text = "The effective date cannot be in the past."
+                Exit Sub
+            End If
+            effective = d
+        End If
         Dim obj As New OPC_VendorClass()
-        Dim err As String = obj.ApproveSkuFormulation(sfId, action, If(role = "HO", txtHoRemarks.Text, txtRemarks.Text), userInfo.userIDEntity, role)
+        Dim okMessage As String = ""
+        Dim err As String = obj.ApproveSkuFormulation(sfId, action, If(role = "HO", txtHoRemarks.Text, txtRemarks.Text), userInfo.userIDEntity, role, effective, okMessage)
         If err <> "" Then
             CapturePackInputs() : BindPacks()
             If role = "HO" Then pnlApproval.Visible = True : valHoRemarks.Text = err Else valPack.Text = err
             Exit Sub
         End If
         Dim msg As String
-        If role = "VENDOR" Then
+        If RevisionVersion() AndAlso okMessage <> "" Then
+            msg = okMessage                       ' rate revision: the procedure says what happened (effective date / back to HO)
+        ElseIf role = "VENDOR" Then
             msg = "Revised rate accepted - the formulation is approved and now in force."
         ElseIf action = "A" Then
             msg = "Formulation approved."
@@ -1247,7 +1590,7 @@ Partial Class Product_Formulation
             sb.Append("<tr><td " & td & " colspan='3' align='right'><b>SKU price</b></td><td " & td & " align='right'><b>" & skuPrice.ToString("0.00") & "</b></td></tr></table><br/>")
 
             sb.Append("<b>Packaging cost</b><table style='border-collapse:collapse;font-family:Segoe UI,Arial;font-size:13px;'>")
-            sb.Append("<tr style='background:#375973;color:#fff;'><th " & td & ">Pack size</th><th " & td & ">Material lines</th><th " & td & ">Processing (incl. labour)</th><th " & td & ">Margin %</th><th " & td & ">Total</th></tr>")
+            sb.Append("<tr style='background:#375973;color:#fff;'><th " & td & ">Pack size</th><th " & td & ">Material lines</th><th " & td & ">Processing (incl. labour)</th><th " & td & ">Margin %</th><th " & td & ">Freight</th><th " & td & ">Total</th></tr>")
             For Each h As DataRow In PackHdr().Select("", "pack_key")
                 Dim key As Integer = Convert.ToInt32(h("pack_key"))
                 Dim material As Decimal = 0D
@@ -1261,8 +1604,9 @@ Partial Class Product_Formulation
                 Next
                 Dim proc As Decimal = ParseDecimal(Convert.ToString(h("processing_fee"))), lab As Decimal = ParseDecimal(Convert.ToString(h("labour_charge"))), pct As Decimal = ParseDecimal(Convert.ToString(h("margin_pct")))
                 Dim baseAmt As Decimal = skuPrice + material + proc + lab
-                Dim total As Decimal = Math.Round(baseAmt + baseAmt * pct / 100D, 2)
-                sb.Append("<tr><td " & td & ">" & Server.HtmlEncode(Convert.ToString(h("pack_size"))) & "</td><td " & td & ">" & String.Join(", ", lines.ToArray()) & " (= " & material.ToString("0.00") & ")</td><td " & td & " align='right'>" & proc.ToString("0.00") & "</td><td " & td & " align='right'>" & pct.ToString("0.00") & "</td><td " & td & " align='right'><b>" & total.ToString("0.00") & "</b></td></tr>")
+                Dim freight As Decimal = Math.Round(FreightRate() * PackContent(Convert.ToString(h("pack_size"))), 2)          ' rate per kg / litre x pack content, added after margin (02-11-2026)
+                Dim total As Decimal = Math.Round(baseAmt + baseAmt * pct / 100D + freight, 2)
+                sb.Append("<tr><td " & td & ">" & Server.HtmlEncode(Convert.ToString(h("pack_size"))) & "</td><td " & td & ">" & String.Join(", ", lines.ToArray()) & " (= " & material.ToString("0.00") & ")</td><td " & td & " align='right'>" & proc.ToString("0.00") & "</td><td " & td & " align='right'>" & pct.ToString("0.00") & "</td><td " & td & " align='right'>" & freight.ToString("0.00") & "</td><td " & td & " align='right'><b>" & total.ToString("0.00") & "</b></td></tr>")
             Next
             sb.Append("</table><br/>")
             sb.Append("<p><a href='" & link & "'>" & If(toVendor, "Open the formulation to accept or counter the revised rate", "Open the formulation to approve, reject or revise") & "</a></p>")
@@ -1309,6 +1653,8 @@ Partial Class Product_Formulation
         dtl.Columns.Add("amount", GetType(String))
         dtl.Columns.Add("srl", GetType(Integer))
         dtl.Columns.Add("md_amount", GetType(String))         ' Material Dept suggested amount of the cost line (internal)
+        dtl.Columns.Add("item_code", GetType(String))         ' 02-11-2026: the vendor's packaging item (opc_raw_material_mstr, type PKG); "" = an old line saved by name only
+        dtl.Columns.Add("rev_flag", GetType(String))          ' 04-11-2026: "Y" = HO opened this packaging cost line's amount for revision
         ViewState(PackDtlKey) = dtl
     End Sub
 
@@ -1335,6 +1681,7 @@ Partial Class Product_Formulation
     End Function
 
     Private Sub BindPacks()
+        BindCostNameList(Nothing)          ' loads the vendor's packaging items once (and sets the "no packaging item yet" note)
         rptPack.DataSource = PackHdr()
         rptPack.DataBind()
     End Sub
@@ -1375,17 +1722,15 @@ Partial Class Product_Formulation
 
         Dim hdr As DataTable = PackHdr()
         Dim dtl As DataTable = PackDtl()
+        ' 02-11-2026: processing fee, margin % and the Material Dept suggestions are common to every pack: one value, copied to every pack row
+        For Each hr As DataRow In hdr.Rows
+            hr("processing_fee") = txtComProc.Text.Trim()
+            hr("labour_charge") = "0"      ' labour is part of the processing fee since 19-Oct-2026 (no separate input)
+            hr("margin_pct") = txtComMargin.Text.Trim()
+            If Not txtMdComProc.ReadOnly Then hr("md_processing") = If(ParseDecimal(txtMdComProc.Text) > 0D, ParseDecimal(txtMdComProc.Text).ToString("0.00", CultureInfo.InvariantCulture), "")
+            If Not txtMdComMargin.ReadOnly Then hr("md_margin") = If(ParseDecimal(txtMdComMargin.Text) > 0D, ParseDecimal(txtMdComMargin.Text).ToString("0.##", CultureInfo.InvariantCulture), "")
+        Next
         For Each item As RepeaterItem In rptPack.Items
-            Dim packKey As Integer = ParseInteger(CType(item.FindControl("hdnPackKey"), HiddenField).Value)
-            Dim h() As DataRow = hdr.Select("pack_key = " & packKey)
-            If h.Length > 0 Then
-                h(0)("processing_fee") = CType(item.FindControl("txtProcessing"), TextBox).Text.Trim()
-                h(0)("labour_charge") = "0"      ' labour is part of the processing fee since 19-Oct-2026 (no separate input)
-                h(0)("margin_pct") = CType(item.FindControl("txtMarginPct"), TextBox).Text.Trim()
-                Dim mdP As TextBox = TryCast(item.FindControl("txtMdProcessing"), TextBox), mdM As TextBox = TryCast(item.FindControl("txtMdMargin"), TextBox)
-                If mdP IsNot Nothing AndAlso Not mdP.ReadOnly Then h(0)("md_processing") = If(ParseDecimal(mdP.Text) > 0D, ParseDecimal(mdP.Text).ToString("0.00", CultureInfo.InvariantCulture), "")
-                If mdM IsNot Nothing AndAlso Not mdM.ReadOnly Then h(0)("md_margin") = If(ParseDecimal(mdM.Text) > 0D, ParseDecimal(mdM.Text).ToString("0.##", CultureInfo.InvariantCulture), "")
-            End If
             Dim rptLines As Repeater = CType(item.FindControl("rptLines"), Repeater)
             For Each li As RepeaterItem In rptLines.Items
                 Dim lineKey As Integer = ParseInteger(CType(li.FindControl("hdnLineKey"), HiddenField).Value)
@@ -1414,7 +1759,7 @@ Partial Class Product_Formulation
             End If
         Next
         Dim key As Integer = NextKey(hdr, "pack_key")
-        hdr.Rows.Add(key, 0, packSize, "", "", "", "", "")
+        hdr.Rows.Add(key, 0, packSize, txtComProc.Text.Trim(), "0", txtComMargin.Text.Trim(), If(ParseDecimal(txtMdComProc.Text) > 0D, txtMdComProc.Text.Trim(), ""), If(ParseDecimal(txtMdComMargin.Text) > 0D, txtMdComMargin.Text.Trim(), ""))      ' a new pack takes the common values
         ViewState(PackHdrKey) = hdr
         hdnOpenPack.Value = key.ToString()
         txtPackSize.ClearSelection()
@@ -1422,9 +1767,9 @@ Partial Class Product_Formulation
         BindPacks()
     End Sub
 
-    Private Sub AddLine(ByVal packKey As Integer, Optional ByVal costName As String = "", Optional ByVal amount As String = "")
+    Private Sub AddLine(ByVal packKey As Integer, Optional ByVal costName As String = "", Optional ByVal amount As String = "", Optional ByVal itemCode As String = "")
         Dim dtl As DataTable = PackDtl()
-        dtl.Rows.Add(NextKey(dtl, "line_key"), packKey, 0, costName, amount, dtl.Select("pack_key = " & packKey).Length + 1, "")
+        dtl.Rows.Add(NextKey(dtl, "line_key"), packKey, 0, costName, amount, dtl.Select("pack_key = " & packKey).Length + 1, "", itemCode, "")
         ViewState(PackDtlKey) = dtl
     End Sub
 
@@ -1440,12 +1785,14 @@ Partial Class Product_Formulation
                 If item Is Nothing Then item = TryCast(CType(e.CommandSource, Control).NamingContainer, RepeaterItem)
                 Dim ddlName As DropDownList = If(item Is Nothing, Nothing, TryCast(item.FindControl("txtNewCostName"), DropDownList))
                 Dim txtAmt As TextBox = If(item Is Nothing, Nothing, TryCast(item.FindControl("txtNewAmount"), TextBox))
-                Dim name As String = If(ddlName Is Nothing, "", ddlName.SelectedValue.Trim())
+                ' 02-11-2026: the dropdown lists the vendor's own packaging items: value = item code, text = item name (the name is what the line shows)
+                Dim itemCode As String = If(ddlName Is Nothing, "", ddlName.SelectedValue.Trim())
+                Dim name As String = If(ddlName Is Nothing OrElse ddlName.SelectedItem Is Nothing, "", ddlName.SelectedItem.Text.Trim())
                 Dim amtText As String = If(txtAmt Is Nothing, "", txtAmt.Text.Trim())
-                If name = "" OrElse amtText = "" Then
-                    valPack.Text = "Select the cost name and enter the amount, then press Add."
+                If itemCode = "" OrElse name = "" OrElse amtText = "" Then
+                    valPack.Text = "Select the packaging item and enter the amount, then press Add."
                 Else
-                    AddLine(packKey, name, ParseDecimal(amtText).ToString("0.00", CultureInfo.InvariantCulture))
+                    AddLine(packKey, name, ParseDecimal(amtText).ToString("0.00", CultureInfo.InvariantCulture), itemCode)
                 End If
             Case "RemovePack"
                 Dim hdr As DataTable = PackHdr()
@@ -1488,9 +1835,9 @@ Partial Class Product_Formulation
                 If name = "" AndAlso amtText = "" Then Continue For
                 If name = "" OrElse amtText = "" Then Return "Please fill Cost name and Amount for every line of " & packSize & " packaging."
             Next
-            Dim marginPct As Decimal = ParseDecimal(Convert.ToString(h("margin_pct")))
-            If marginPct < 0D OrElse marginPct > 100D Then Return "Margin % of " & packSize & " packaging must be between 0 and 100."
         Next
+        Dim marginPct As Decimal = ParseDecimal(txtComMargin.Text)
+        If marginPct < 0D OrElse marginPct > 100D Then Return "Margin % must be between 0 and 100."
         Return ""
     End Function
 #End Region
@@ -1509,7 +1856,8 @@ Partial Class Product_Formulation
         If prd = "" Then Exit Sub
 
         Dim obj As New OPC_VendorClass()
-        Dim dsS As DataSet = obj.GetScopeFormulationShades(CurrentVendor(), prd)
+        ' HO standard entry: every shade of the product (no vendor scope); vendor: the shades declared on Vendor Scope
+        Dim dsS As DataSet = If(IsStdMode(), obj.GetStdShades(prd), obj.GetScopeFormulationShades(CurrentVendor(), prd))
         If dsS IsNot Nothing AndAlso dsS.Tables.Count > 0 Then
             For Each r As DataRow In dsS.Tables(0).Rows
                 Dim code As String = Convert.ToString(r("shade_code")).Trim()
@@ -1523,6 +1871,7 @@ Partial Class Product_Formulation
         If ddlShade.Items.Count = 1 Then ddlShade.Items(0).Text = "(no shade)"
         ViewState("HasShades") = If(ddlShade.Items.Count > 1, "Y", "N")
 
+        If IsStdMode() Then Exit Sub          ' the standard has no packaging
         BindPackList()
     End Sub
 
@@ -1552,39 +1901,45 @@ Partial Class Product_Formulation
     Private scopeItems As DataTable
     ''' <summary>Fills the cost-name dropdown of one pack with the packaging (PKG) items (all of them until the pack -> item master exists).</summary>
     Private Sub BindCostNameList(ByVal ddl As DropDownList)
-        If ddl Is Nothing Then Exit Sub
         If scopeItems Is Nothing Then
             scopeItems = New DataTable()
+            scopeItems.Columns.Add("item_code", GetType(String))
             scopeItems.Columns.Add("item_name", GetType(String))
-            If True Then      ' all PKG items until the pack -> item master exists
-                Dim ds As DataSet = New OPC_VendorClass().GetPackagingItemList()
+            ' 02-11-2026: only the packaging items THIS vendor created (Raw Material List, type Packaging) - the Berger PKG list is no longer offered here
+            Dim vendor As String = CurrentVendor()
+            If vendor <> "" Then
+                Dim ds As DataSet = New OPC_VendorClass().GetVendorPkgItems(vendor)
                 If ds IsNot Nothing AndAlso ds.Tables.Count > 0 Then
                     For Each r As DataRow In ds.Tables(0).Rows
-                        scopeItems.Rows.Add(Convert.ToString(r("item_name")).Trim())
+                        scopeItems.Rows.Add(Convert.ToString(r("item_code")).Trim(), Convert.ToString(r("item_name")).Trim())
                     Next
                 End If
             End If
+            lblPkgNote.Text = If(vendor <> "" AndAlso scopeItems.Rows.Count = 0, "No packaging item has been created for this vendor yet. The vendor creates them on Raw Material List (Add, Type = Packaging); they then appear in this list.", "")
         End If
+        If ddl Is Nothing Then Exit Sub
         ddl.Items.Clear()
         ddl.Items.Add(New ListItem(Constant.Common.Selec, ""))
         For Each r As DataRow In scopeItems.Rows
-            ddl.Items.Add(New ListItem(Convert.ToString(r("item_name")), Convert.ToString(r("item_name"))))
+            ddl.Items.Add(New ListItem(Convert.ToString(r("item_name")), Convert.ToString(r("item_code"))))
         Next
     End Sub
 
     ''' <summary>A vendor (UNIT) login never sees the Vendor column: the grid column and the entry cell are removed server-side
     ''' (hiding them with CSS leaves a gap in the fixed-layout table). Called on every load so it survives postbacks.</summary>
     Private Sub HideVendorColumn()
-        For Each col As DataControlField In gvVendorRawMat.Columns
-            If col.HeaderText.StartsWith("Vendor") Then col.Visible = False
-        Next
-        tdVendorEntry.Visible = False
+        divFxVendor.Visible = False          ' 02-11-2026: the vendor is a field of the fixed data block now (the grid has no Vendor column any more)
     End Sub
 
     ''' <summary>The vendor the formulation is for: a vendor (UNIT) login = its own unit, HO / SYSADMIN = the vendor picked on the page.</summary>
     Private Function CurrentVendor() As String
         If userInfo.userGroupCodeEntity = Constant.UserFormAccess.UNIT Then Return Convert.ToString(userInfo.userBranchEntity).Trim()
         Return ddlvendor.SelectedValue.Trim()
+    End Function
+
+    ''' <summary>Context key of the product autocomplete: "vendor|brandId". The browser rebuilds the same key when either dropdown changes (30-10-2026).</summary>
+    Private Function ProductSearchContext() As String
+        Return If(IsStdMode(), "STD", CurrentVendor()) & "|" & ddlBrand.SelectedValue.Trim()
     End Function
 
     ''' <summary>HO changed the vendor: product, shade and packs must be picked again from that vendor's scope.</summary>
@@ -1594,10 +1949,11 @@ Partial Class Product_Formulation
         hdnProductCode.Value = ""
         hdnProductName.Value = ""
         hdnSkucode.Value = ""
-        aceProductSearch.ContextKey = CurrentVendor()
+        aceProductSearch.ContextKey = ProductSearchContext()
         aceRawMaterialSearch.ContextKey = CurrentVendor()
         BindScopeLookups()
         BindPacks()
+        ReloadStandardRows()
     End Sub
 
     ''' <summary>A shade must be chosen only when the product has shades (many products have none).</summary>
@@ -1608,15 +1964,17 @@ Partial Class Product_Formulation
     ''' <summary>Shade changed: the pack sizes depend on product + shade, so the pack list is rebuilt.</summary>
     Protected Sub ddlShade_SelectedIndexChanged(sender As Object, e As EventArgs)
         CapturePackInputs()
-        BindPackList()
+        If Not IsStdMode() Then BindPackList()
         BindPacks()
+        ReloadStandardRows()          ' 02-11-2026: the shade completes the key of the HO standard
     End Sub
 
-    ''' <summary>Raised from the client right after a product is picked: reload shade and pack lists.</summary>
+    ''' <summary>Raised from the client right after a product is picked: reload shade and pack lists, and the HO standard of the product.</summary>
     Protected Sub btnProductPicked_Click(sender As Object, e As EventArgs)
         CapturePackInputs()
         BindScopeLookups()
         BindPacks()
+        ReloadStandardRows()
     End Sub
 #End Region
 

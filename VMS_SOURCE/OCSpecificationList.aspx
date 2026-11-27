@@ -85,7 +85,7 @@
             <div class="card">
                 <div class="card-body">
                     <div class="table-responsive">
-                        <asp:GridView ID="gvOcSpecification" runat="server" AutoGenerateColumns="False" AllowPaging="True" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="No record(s) found.">
+                        <asp:GridView ID="gvOcSpecification" runat="server" AutoGenerateColumns="False" AllowPaging="False" BorderWidth="1" CssClass="table table-hover upgradDataGrid" EmptyDataText="No record(s) found.">
                             <RowStyle CssClass="tlrowlight" />
                             <PagerStyle CssClass="PagerGrid" HorizontalAlign="Right" />
                             <HeaderStyle CssClass="headerGrid" />
