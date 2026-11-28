@@ -221,6 +221,14 @@
                                             <asp:TextBox ID="txtVendorName" ClientIDMode="Static" CssClass="form-control" runat="server" AutoComplete="Off" Placeholder="Enter Here"></asp:TextBox>
                                         </div>
                                         <div style="display: flex; flex-direction: column; gap: 2px">
+                                            <label class="form-control-label">Type:<span class="mandatory">*</span></label>
+                                            <asp:DropDownList ID="ddlDespatchType" ClientIDMode="Static" runat="server" CssClass="form-control">
+                                                <asp:ListItem Text="Select" Value="" />
+                                                <asp:ListItem Text="Depot Despatch" Value="Depot Despatch" />
+                                                <asp:ListItem Text="Direct Despatch" Value="Direct Despatch" />
+                                            </asp:DropDownList>
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 2px">
                                             <label class="form-control-label">From Date:<span class="mandatory">*</span></label>
                                             <asp:TextBox
                                                 ID="txtFromDate"
@@ -260,7 +268,7 @@
                                                 Format="dd-MM-yyyy">
                                             </ajaxToolkit:CalendarExtender>
                                         </div>
-                                        <asp:Button ID="btnSubmit" ClientIDMode="Static" runat="server" Text="Search" CssClass="btn btn-primary btn-sm" OnClick="btnSubmit_Click" OnClientClick="return validateDateRange();" />
+                                        <asp:Button ID="btnSubmit" ClientIDMode="Static" runat="server" Text="Search" CssClass="btn btn-primary btn-sm" OnClick="btnSubmit_Click" OnClientClick="return validateSearch();" />
                                         <%-- Modified-by MUKESH BHAGAT on 01-10-2026 : Excel download removed from here - client
                                              wants it on the Dispatched / Delivered / GRN Not Done / Manual GRN / Paid detail
                                              pages (VendorReleaseReconciliation.aspx, opened via the links below), not on this
@@ -268,6 +276,7 @@
                                         <asp:Button ID="btnReset" runat="server" Text="Reset" CssClass="btn btn-outline-danger btn-sm" OnClick="btnReset_Click" />
                                     </div>
                                     <div id="dateError" class="date-error"></div>
+                                    <asp:Label ID="lblTypeError" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                                     <asp:Label ID="valBrandName" runat="server" ClientIDMode="Static" CssClass="dispatch-field-error"></asp:Label>
                                 </div>
                             </div>
@@ -511,6 +520,34 @@
 
         </script>
         <script>
+            function validateSearch() {
+                var typeOk = validateDespatchType();
+                var datesOk = validateDateRange();
+                return typeOk && datesOk;
+            }
+
+            function validateDespatchType() {
+                var ddl = document.getElementById('ddlDespatchType');
+                var err = document.getElementById('lblTypeError');
+
+                ddl.classList.remove("field-invalid");
+                err.innerHTML = "";
+
+                if (ddl.value === "") {
+                    ddl.classList.add("field-invalid");
+                    err.innerHTML = "Please select a Type.";
+                    return false;
+                }
+                return true;
+            }
+
+            $(document).on('change', '#ddlDespatchType', function () {
+                if (this.value !== "") {
+                    this.classList.remove("field-invalid");
+                    document.getElementById('lblTypeError').innerHTML = "";
+                }
+            });
+
             function validateDateRange() {
 
                 var fromDate = document.getElementById('<%= txtFromDate.ClientID %>');
@@ -579,13 +616,14 @@
                 var noMoreData = false;
                 var loadSeq = 0;
                 var suppressScrollUntil = 0;
-                var filters = { vendor: '', fromDate: '', toDate: '' };
+                var filters = { vendor: '', fromDate: '', toDate: '', type: '' };
                 var gridSel = '#<%= gvFgVendorlist.ClientID %>';
 
                 function captureFilters() {
                     filters.vendor = $('#txtVendorName').val() || '';
                     filters.fromDate = $('#txtFromDate').val() || '';
                     filters.toDate = $('#txtToDate').val() || '';
+                    filters.type = $('#ddlDespatchType').val() || '';
                 }
 
                 function dataRows() {
@@ -611,7 +649,7 @@
                     var seq = ++loadSeq;
                     showVendorSkeleton($el);
 
-                    PageMethods.GetMoreVendorPayments(pageIndex, filters.vendor, filters.fromDate, filters.toDate,
+                    PageMethods.GetMoreVendorPayments(pageIndex, filters.vendor, filters.fromDate, filters.toDate, filters.type,
                         function (result) {
                             if (seq !== loadSeq) return;
                             hideVendorSkeleton();
@@ -704,6 +742,7 @@
                         + '&vendorCode=' + encodeURIComponent($a.attr('data-code') || '')
                         + '&fromDate=' + encodeURIComponent($('#txtFromDate').val() || '')
                         + '&toDate=' + encodeURIComponent($('#txtToDate').val() || '')
+                        + '&type=' + encodeURIComponent(filters.type)
                         + '&flag=' + encodeURIComponent(($a.attr('data-flag') || '').toUpperCase());
                 });
 
