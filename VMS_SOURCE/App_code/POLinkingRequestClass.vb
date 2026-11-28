@@ -676,11 +676,11 @@ Public Class POLinkingRequestClass
         End Try
     End Function
 
-    Public Function GetVendorPaymentDashboardDetails(ByVal vendorName As String, ByVal fromDate As Nullable(Of DateTime), ByVal toDate As Nullable(Of DateTime), ByVal userId As String) As DataSet
+    Public Function GetVendorPaymentDashboardDetails(ByVal vendorName As String, ByVal fromDate As Nullable(Of DateTime), ByVal toDate As Nullable(Of DateTime), ByVal userId As String, Optional ByVal despatchType As String = "") As DataSet
 
         Try
             Dim DS As DataSet
-            Dim sqlParams(3) As SqlParameter
+            Dim sqlParams(4) As SqlParameter
 
             sqlParams(0) = New SqlParameter()
             sqlParams(0).ParameterName = "@from_date"
@@ -706,6 +706,8 @@ Public Class POLinkingRequestClass
             sqlParams(3).Direction = ParameterDirection.Input
             sqlParams(3).Value = If(String.IsNullOrEmpty(vendorName), DBNull.Value, CObj(vendorName))
 
+            sqlParams(4) = DespatchTypeParam(despatchType)
+
             'sqlParams(4) = New SqlParameter()
             'sqlParams(4).ParameterName = "@page_number"
             'sqlParams(4).DbType = DbType.Int32
@@ -726,10 +728,10 @@ Public Class POLinkingRequestClass
         End Try
     End Function
 
-    Public Function GetGrnNotDoneList(ByVal unitCode As String, ByVal fromDate As String, ByVal toDate As String, ByVal pageNo As Integer, ByVal pageSize As Integer) As DataSet
+    Public Function GetGrnNotDoneList(ByVal unitCode As String, ByVal fromDate As String, ByVal toDate As String, ByVal pageNo As Integer, ByVal pageSize As Integer, Optional ByVal despatchType As String = "") As DataSet
         Try
             Dim DS As DataSet
-            Dim sqlParams(2) As SqlParameter
+            Dim sqlParams(3) As SqlParameter
 
             sqlParams(0) = New SqlParameter()
             sqlParams(0).ParameterName = "@unit_code"
@@ -760,6 +762,8 @@ Public Class POLinkingRequestClass
             'sqlParams(4).DbType = DbType.Int32
             'sqlParams(4).Direction = ParameterDirection.Input
             'sqlParams(4).Value = pageSize
+
+            sqlParams(3) = DespatchTypeParam(despatchType)
 
             DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[get_grn_not_done_details]", CommandType.StoredProcedure, sqlParams)
             Return DS
@@ -769,10 +773,10 @@ Public Class POLinkingRequestClass
         End Try
     End Function
 
-    Public Function GetManualGrnList(ByVal unitCode As String, ByVal fromDate As String, ByVal toDate As String, ByVal pageNo As Integer, ByVal pageSize As Integer) As DataSet
+    Public Function GetManualGrnList(ByVal unitCode As String, ByVal fromDate As String, ByVal toDate As String, ByVal pageNo As Integer, ByVal pageSize As Integer, Optional ByVal despatchType As String = "") As DataSet
         Try
             Dim DS As DataSet
-            Dim sqlParams(2) As SqlParameter
+            Dim sqlParams(3) As SqlParameter
 
             sqlParams(0) = New SqlParameter()
             sqlParams(0).ParameterName = "@unit_code"
@@ -804,6 +808,8 @@ Public Class POLinkingRequestClass
             'sqlParams(4).Direction = ParameterDirection.Input
             'sqlParams(4).Value = pageSize
 
+            sqlParams(3) = DespatchTypeParam(despatchType)
+
             DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[get_manual_grn_details]", CommandType.StoredProcedure, sqlParams)
             Return DS
 
@@ -812,10 +818,10 @@ Public Class POLinkingRequestClass
         End Try
     End Function
 
-    Public Function GetInvPaymentList(ByVal unitCode As String, ByVal fromDate As String, ByVal toDate As String, ByVal pageNo As Integer, ByVal pageSize As Integer) As DataSet
+    Public Function GetInvPaymentList(ByVal unitCode As String, ByVal fromDate As String, ByVal toDate As String, ByVal pageNo As Integer, ByVal pageSize As Integer, Optional ByVal despatchType As String = "") As DataSet
         Try
             Dim DS As DataSet
-            Dim sqlParams(2) As SqlParameter
+            Dim sqlParams(3) As SqlParameter
 
             sqlParams(0) = New SqlParameter()
             sqlParams(0).ParameterName = "@unit_code"
@@ -851,6 +857,8 @@ Public Class POLinkingRequestClass
             'invoices (invoice_amount - amount_paid = 0), the same rule as the dashboard tile count and
             'the Excel report. The old SP listed every release with a GRN, so GRN-done-but-unpaid rows
             'showed under Paid. Roll-back = use "[dbo].[get_inv_payment_details]" again.
+            sqlParams(3) = DespatchTypeParam(despatchType)
+
             DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[get_inv_payment_details_vr1]", CommandType.StoredProcedure, sqlParams)
             Return DS
 
@@ -859,10 +867,10 @@ Public Class POLinkingRequestClass
         End Try
     End Function
 
-    Public Function GetDispatchList(ByVal unitCode As String, ByVal fromDate As String, ByVal toDate As String, ByVal pageNo As Integer, ByVal pageSize As Integer) As DataSet
+    Public Function GetDispatchList(ByVal unitCode As String, ByVal fromDate As String, ByVal toDate As String, ByVal pageNo As Integer, ByVal pageSize As Integer, Optional ByVal despatchType As String = "") As DataSet
         Try
             Dim DS As DataSet
-            Dim sqlParams(2) As SqlParameter
+            Dim sqlParams(3) As SqlParameter
 
             sqlParams(0) = New SqlParameter()
             sqlParams(0).ParameterName = "@unit_code"
@@ -893,6 +901,8 @@ Public Class POLinkingRequestClass
             'sqlParams(4).DbType = DbType.Int32
             'sqlParams(4).Direction = ParameterDirection.Input
             'sqlParams(4).Value = pageSize
+
+            sqlParams(3) = DespatchTypeParam(despatchType)
 
             DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[get_dispatched_details]", CommandType.StoredProcedure, sqlParams)
             Return DS
@@ -902,10 +912,10 @@ Public Class POLinkingRequestClass
         End Try
     End Function
 
-    Public Function GetDeliveredList(ByVal unitCode As String, ByVal fromDate As String, ByVal toDate As String, ByVal pageNo As Integer, ByVal pageSize As Integer) As DataSet
+    Public Function GetDeliveredList(ByVal unitCode As String, ByVal fromDate As String, ByVal toDate As String, ByVal pageNo As Integer, ByVal pageSize As Integer, Optional ByVal despatchType As String = "") As DataSet
         Try
             Dim DS As DataSet
-            Dim sqlParams(2) As SqlParameter
+            Dim sqlParams(3) As SqlParameter
 
             sqlParams(0) = New SqlParameter()
             sqlParams(0).ParameterName = "@unit_code"
@@ -937,12 +947,24 @@ Public Class POLinkingRequestClass
             'sqlParams(4).Direction = ParameterDirection.Input
             'sqlParams(4).Value = pageSize
 
+            sqlParams(3) = DespatchTypeParam(despatchType)
+
             DS = DBFactory.GetHelper().ExecuteDataSet("[dbo].[get_delivered_details]", CommandType.StoredProcedure, sqlParams)
             Return DS
 
         Catch ex As Exception
             Throw
         End Try
+    End Function
+
+    'Despatch type filter: "Depot Despatch" / "Direct Despatch"; empty = all.
+    Private Shared Function DespatchTypeParam(ByVal despatchType As String) As SqlParameter
+        Dim p As New SqlParameter()
+        p.ParameterName = "@type"
+        p.DbType = DbType.String
+        p.Direction = ParameterDirection.Input
+        p.Value = If(String.IsNullOrEmpty(despatchType), DBNull.Value, CObj(despatchType))
+        Return p
     End Function
 
     Public Function InsertRawMaterialPo(ByVal vendor_code As String, ByVal supplier_code As String, ByVal user_id As String, ByVal tbl As DataTable, ByVal freightGst As Nullable(Of Decimal), ByVal freightCost As Decimal, Optional ByVal refPoNo As String = "") As String
