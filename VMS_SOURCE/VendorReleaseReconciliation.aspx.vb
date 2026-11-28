@@ -28,7 +28,12 @@ Partial Class VendorReleaseReconciliation
             Dim vendorCode As String = Request.QueryString("vendorCode")
             Dim fromDate As String = Request.QueryString("fromDate")
             Dim toDate As String = Request.QueryString("toDate")
+            Dim despatchType As String = Request.QueryString("type")
             SelectedFlag = Request.QueryString("flag")
+
+            If despatchType IsNot Nothing AndAlso ddltype.Items.FindByValue(despatchType) IsNot Nothing Then
+                ddltype.SelectedValue = despatchType
+            End If
 
             'Set date filters
             If Not String.IsNullOrEmpty(fromDate) Then
@@ -167,21 +172,25 @@ Partial Class VendorReleaseReconciliation
     Private Function GetCurrentListDataSet(ByVal fromDate As SqlDateTime, ByVal toDate As SqlDateTime, ByVal pageNo As Integer, ByVal pageSize As Integer) As DataSet
         Dim obj As New POLinkingRequestClass
         Dim ds As New DataSet
+        Dim despatchType As String = ddltype.SelectedValue
         If SelectedFlag = "GRNNOTDONE" Then
             lblPanelTitle.Text = "Grn Not Done List"
-            ds = obj.GetGrnNotDoneList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize)
+            ds = obj.GetGrnNotDoneList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize, despatchType)
         ElseIf SelectedFlag = "MANUALGRN" Then
             lblPanelTitle.Text = "Manual Grn List"
-            ds = obj.GetManualGrnList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize)
+            ds = obj.GetManualGrnList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize, despatchType)
         ElseIf SelectedFlag = "PAID" Then
             lblPanelTitle.Text = "Payment List"
-            ds = obj.GetInvPaymentList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize)
+            ds = obj.GetInvPaymentList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize, despatchType)
         ElseIf SelectedFlag = "DISPATCHED" Then
             lblPanelTitle.Text = "Dispatched List"
-            ds = obj.GetDispatchList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize)
+            ds = obj.GetDispatchList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize, despatchType)
         ElseIf SelectedFlag = "DELIVERED" Then
             lblPanelTitle.Text = "Delivered List"
-            ds = obj.GetDeliveredList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize)
+            ds = obj.GetDeliveredList(ddlUnit.SelectedValue, fromDate, toDate, pageNo, pageSize, despatchType)
+        End If
+        If Not String.IsNullOrEmpty(SelectedFlag) AndAlso Not String.IsNullOrEmpty(despatchType) Then
+            lblPanelTitle.Text &= " - " & despatchType
         End If
         Return ds
     End Function
@@ -284,7 +293,7 @@ Partial Class VendorReleaseReconciliation
         ddlUnit.Enabled = False
         divStatus.Visible = False
         divDepot.Visible = False
-        divType.Visible = False
+        ddltype.Enabled = False
 
     End Sub
 #End Region
@@ -330,7 +339,7 @@ Partial Class VendorReleaseReconciliation
     'Excel download on this detail page - Dispatched/Delivered/GRN Not Done/Manual GRN/Paid - not
     'on the dashboard). Rewritten to use the SAME data as the grid (GetCurrentListDataSet /
     'SelectedFlag), not the old GetVendorInvoice_ReleaseList_vr1 search, which never matched what
-    'gvVendorInvoiceDtls actually shows (ddlStatus/ddltype/ddldepot are not read by BindGrid at all).
+    'gvVendorInvoiceDtls actually shows (ddlStatus/ddldepot are not read by BindGrid at all).
     Protected Sub btndownload_Click(sender As Object, e As EventArgs)
         CheckLogin()
         lblErrorMessage.Text = String.Empty
@@ -391,7 +400,8 @@ Partial Class VendorReleaseReconciliation
             }
 
             Dim filterLine As String = "From : " & txtFromDate.Text.Trim() & "   To : " & txtTodate.Text.Trim() &
-                "   Unit : " & If(ddlUnit.SelectedItem Is Nothing, "", ddlUnit.SelectedItem.Text)
+                "   Unit : " & If(ddlUnit.SelectedItem Is Nothing, "", ddlUnit.SelectedItem.Text) &
+                If(String.IsNullOrEmpty(ddltype.SelectedValue), "", "   Type : " & ddltype.SelectedValue)
 
             'Modified-by MUKESH BHAGAT on 01-10-2026 : file name was hardcoded to
             '"Vendor_Release_Reconciliation" for every view, so Dispatched/Delivered/GRN Not
