@@ -5,13 +5,24 @@ Public Class VendorPaymentSearchCriteria
     Private from_date As String
     Private to_date As String
     Private page_no As Integer
+    Private despatch_type As String
 
     Public Sub New()
         vendor_name = String.Empty
         from_date = String.Empty
         to_date = String.Empty
         page_no = 0
+        despatch_type = String.Empty
     End Sub
+
+    Public Property DespatchType() As String
+        Get
+            Return despatch_type
+        End Get
+        Set(ByVal value As String)
+            despatch_type = value
+        End Set
+    End Property
 
     Public Property VendorName() As String
         Get

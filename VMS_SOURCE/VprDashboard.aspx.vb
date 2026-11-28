@@ -32,6 +32,7 @@ Partial Class VprDashboard
         dto.FromDate = txtFromDate.Text.Trim()
         dto.ToDate = txtToDate.Text.Trim()
         dto.PageNo = gvFgVendorlist.PageIndex
+        dto.DespatchType = ddlDespatchType.SelectedValue
         Session("PaymentReconciliationSearchCriteria") = dto
     End Sub
 
@@ -43,6 +44,9 @@ Partial Class VprDashboard
             txtFromDate.Text = searchCriteria.FromDate
             txtToDate.Text = searchCriteria.ToDate
             gvFgVendorlist.PageIndex = searchCriteria.PageNo
+            If ddlDespatchType.Items.FindByValue(searchCriteria.DespatchType) IsNot Nothing Then
+                ddlDespatchType.SelectedValue = searchCriteria.DespatchType
+            End If
         End If
         'Update session with current values
         SaveSearchCriteria()
@@ -86,7 +90,7 @@ Partial Class VprDashboard
             Dim toDate As Nullable(Of DateTime) = GetDateValue(txtToDate.Text)
 
             Dim obj As POLinkingRequestClass = New POLinkingRequestClass()
-            Dim ds As DataSet = obj.GetVendorPaymentDashboardDetails(vendorName, fromDate, toDate, userInfo.userIDEntity)
+            Dim ds As DataSet = obj.GetVendorPaymentDashboardDetails(vendorName, fromDate, toDate, userInfo.userIDEntity, ddlDespatchType.SelectedValue)
             'RmGridHelper.BindPaged(gvRmPendingList, table)
             If ds IsNot Nothing AndAlso ds.Tables.Count > 0 AndAlso ds.Tables(0).Rows.Count > 0 Then
                 Dim dateRow As DataRow = ds.Tables(0).Rows(0)
@@ -131,7 +135,7 @@ Partial Class VprDashboard
     End Function
 
     <System.Web.Services.WebMethod()>
-    Public Shared Function GetMoreVendorPayments(pageIndex As Integer, vendorName As String, fromDate As String, toDate As String) As Object
+    Public Shared Function GetMoreVendorPayments(pageIndex As Integer, vendorName As String, fromDate As String, toDate As String, despatchType As String) As Object
         Dim userId As String = String.Empty
         Dim sessionUser = System.Web.HttpContext.Current.Session(Constant.SessionKeys.UserInfo)
         If sessionUser IsNot Nothing Then
@@ -139,7 +143,7 @@ Partial Class VprDashboard
         End If
 
         Dim obj As New POLinkingRequestClass()
-        Dim ds As DataSet = obj.GetVendorPaymentDashboardDetails(If(vendorName, String.Empty), ParseDashDate(fromDate), ParseDashDate(toDate), userId)
+        Dim ds As DataSet = obj.GetVendorPaymentDashboardDetails(If(vendorName, String.Empty), ParseDashDate(fromDate), ParseDashDate(toDate), userId, If(despatchType, String.Empty))
         Dim rows As New List(Of Object)
         Dim total As Integer = 0
 
@@ -254,6 +258,11 @@ Partial Class VprDashboard
     'End Sub
 
     Protected Sub btnSubmit_Click(sender As Object, e As EventArgs)
+        If String.IsNullOrEmpty(ddlDespatchType.SelectedValue) Then
+            lblTypeError.Text = "Please select a Type."
+            Exit Sub
+        End If
+        lblTypeError.Text = String.Empty
         gvFgVendorlist.PageIndex = 0
         SaveSearchCriteria()
         BindGrid()
@@ -263,6 +272,8 @@ Partial Class VprDashboard
         txtVendorName.Text = String.Empty
         txtFromDate.Text = String.Empty
         txtToDate.Text = String.Empty
+        ddlDespatchType.SelectedValue = String.Empty
+        lblTypeError.Text = String.Empty
         gvFgVendorlist.PageIndex = 0
         BindGrid()
     End Sub
@@ -319,12 +330,20 @@ Partial Class VprDashboard
             Dim toDate As String = txtToDate.Text
             Dim flag As String = e.CommandName.ToUpper()
 
+            'Type the grid was last bound with, not the dropdown's current (possibly unsearched) value.
+            Dim despatchType As String = String.Empty
+            Dim criteria As VendorPaymentSearchCriteria = TryCast(Session("PaymentReconciliationSearchCriteria"), VendorPaymentSearchCriteria)
+            If criteria IsNot Nothing Then
+                despatchType = criteria.DespatchType
+            End If
+
             Response.Redirect(
                 "VendorReleaseReconciliation.aspx" &
                 "?vendorName=" & Server.UrlEncode(vendorName) &
                 "&vendorCode=" & Server.UrlEncode(unitCode) &
                 "&fromDate=" & Server.UrlEncode(fromDate) &
                 "&toDate=" & Server.UrlEncode(toDate) &
+                "&type=" & Server.UrlEncode(despatchType) &
                 "&flag=" & Server.UrlEncode(flag)
             )
             'If (e.CommandName = "Dispatched") Then
